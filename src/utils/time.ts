@@ -39,3 +39,38 @@ export function getMinutesUntilNextDeparture(
   const nextTime = upcomingTimes.sort((a, b) => a - b)[0];
   return nextTime - nowMinutes;
 }
+
+export function getFirstDeparture(
+  data: ScheduleEntry[],
+  column: string
+): string | null {
+  let earliestMinutes: number | null = null;
+
+  for (const row of data) {
+    const hour = parseInt(row["시간대"]);
+    const cell = row[column];
+    if (!cell || cell === "-" || cell.trim() === "") continue;
+
+    const minutes = cell
+      .split(",")
+      .map((m) => parseInt(m.trim()))
+      .filter((m) => !isNaN(m));
+
+    for (const min of minutes) {
+      const totalMinutes = hour * 60 + min;
+      if (earliestMinutes === null || totalMinutes < earliestMinutes) {
+        earliestMinutes = totalMinutes;
+      }
+    }
+  }
+
+  if (earliestMinutes !== null) {
+    const hours = Math.floor(earliestMinutes / 60);
+    const minutes = earliestMinutes % 60;
+    return `${hours.toString().padStart(2, "0")}시 ${minutes
+      .toString()
+      .padStart(2, "0")}분`;
+  }
+
+  return null;
+}

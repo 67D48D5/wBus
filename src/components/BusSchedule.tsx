@@ -2,7 +2,7 @@
 
 "use client";
 
-import { getMinutesUntilNextDeparture } from "@/utils/time";
+import { getMinutesUntilNextDeparture, getFirstDeparture } from "@/utils/time";
 import type { ScheduleEntry } from "@/types/schedule";
 
 import { useEffect, useState } from "react";
@@ -94,6 +94,10 @@ export default function BusSchedule({ routeId }: Props) {
       ? rawMinutesLeft + 7
       : rawMinutesLeft;
 
+  const firstDeparture = departureColumn
+    ? getFirstDeparture(data, departureColumn)
+    : null;
+
   return (
     <div className="fixed bottom-[200px] left-4 w-70 z-[999]">
       {/* 상단 바 */}
@@ -144,8 +148,8 @@ export default function BusSchedule({ routeId }: Props) {
             )
           </p>
         ) : (
-          <p className="mt-2 text-s text-red-600 font-bold">
-            ❌ 운행 종료
+          <p className="mt-2 text-sm text-gray-700 font-bold">
+            🚫 지금은 운행하지 않아요. 첫차는 {firstDeparture}입니다.
           </p>
         )}
 
