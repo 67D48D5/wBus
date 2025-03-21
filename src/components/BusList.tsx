@@ -24,7 +24,7 @@ type BusListProps = {
 
 export default function BusList({ routeId }: BusListProps) {
   const [busList, setBusList] = useState<BusItem[]>([]);
-  const map = useMapContext();
+  const { map } = useMapContext();
 
   const repRouteId = getRepresentativeRouteId(routeId);
   const stops = useBusStops(repRouteId ?? "");

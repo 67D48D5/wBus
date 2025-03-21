@@ -1,12 +1,24 @@
 // src/components/MapWithProvider.tsx
 
-'use client';
+"use client";
 
-import { useMap } from 'react-leaflet';
-import { MapContext } from '@/context/MapContext';
+import { useEffect } from "react";
+import { useMap } from "react-leaflet";
+import { useMapContext } from "@/context/MapContext";
 
-export default function MapProvider({ children }: { children: React.ReactNode }) {
-  const map = useMap();
-  
-  return <MapContext.Provider value={map}>{children}</MapContext.Provider>;
+export default function MapProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const leafletMap = useMap(); // Leaflet map 인스턴스
+  const { setMap } = useMapContext(); // 전역 컨텍스트에 setMap 사용
+
+  useEffect(() => {
+    if (leafletMap) {
+      setMap(leafletMap); // ✅ leafletMap을 전역 컨텍스트에 저장
+    }
+  }, [leafletMap]);
+
+  return <>{children}</>;
 }

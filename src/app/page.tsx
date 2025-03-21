@@ -5,6 +5,7 @@
 import NavBar from "@/components/NavBar";
 import MapWrapper from "@/components/MapWrapper";
 import BusSchedule from "@/components/BusSchedule";
+import BusList from "@/components/BusList";
 
 import { useState } from "react";
 
@@ -15,6 +16,7 @@ export default function Home() {
     <div className="w-full h-screen relative">
       <NavBar onRouteChange={(routeId) => setSelectedRoute(routeId)} />
       <BusSchedule routeId={selectedRoute} />
+      <BusList routeId={selectedRoute} />
       <MapWrapper routeId={selectedRoute} />
     </div>
   );

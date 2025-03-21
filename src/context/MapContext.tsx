@@ -2,9 +2,28 @@
 
 "use client";
 
-import { createContext, useContext } from 'react';
-import type { Map } from 'leaflet';
+import { createContext, useContext, useState } from "react";
+import type { Map } from "leaflet";
 
-export const MapContext = createContext<Map | null>(null);
+type MapContextType = {
+  map: Map | null;
+  setMap: (map: Map) => void;
+};
 
-export const useMapContext = () => useContext(MapContext);
+export const MapContext = createContext<MapContextType | undefined>(undefined);
+
+export function useMapContext() {
+  const ctx = useContext(MapContext);
+  if (!ctx) throw new Error("useMapContext must be used within MapProvider");
+  return ctx;
+}
+
+export function MapProvider({ children }: { children: React.ReactNode }) {
+  const [map, setMap] = useState<Map | null>(null);
+
+  return (
+    <MapContext.Provider value={{ map, setMap }}>
+      {children}
+    </MapContext.Provider>
+  );
+}

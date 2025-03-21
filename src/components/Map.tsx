@@ -1,14 +1,13 @@
 // src/components/Map.tsx
 
-'use client';
+"use client";
 
-import { MapContainer, TileLayer } from 'react-leaflet';
-import BusMarker from './BusMarker';
-import MyLocation from './MyLocation';
-import MapProvider from './MapWithProvider';
-import BusStopMarker from './BusStopMarker';
-import BusRoutePolyline from './BusRoutePolyline';
-import BusList from './BusList';
+import { MapContainer, TileLayer } from "react-leaflet";
+import BusMarker from "./BusMarker";
+import MyLocation from "./MyLocation";
+import MapProvider from "./MapWithProvider";
+import BusStopMarker from "./BusStopMarker";
+import BusRoutePolyline from "./BusRoutePolyline";
 
 type MapProps = {
   routeId: string;
@@ -31,7 +30,6 @@ export default function Map({ routeId }: MapProps) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <BusMarker routeId={routeId} />
-        <BusList routeId={routeId} />
         <BusStopMarker routeId={routeId} />
         <BusRoutePolyline routeId={routeId} />
         <MyLocation />
