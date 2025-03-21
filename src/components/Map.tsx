@@ -7,6 +7,8 @@ import BusMarker from './BusMarker';
 import BusList from './BusList';
 import MyLocation from './MyLocation';
 import MapProvider from './MapWithProvider';
+import BusStopMarker from './BusStopMarker';
+import BusRoutePolyline from './BusRoutePolyline';
 
 type MapProps = {
   routeId: string;
@@ -29,6 +31,8 @@ export default function Map({ routeId }: MapProps) {
         />
         <BusMarker routeId={routeId} />
         <BusList routeId={routeId} />
+        <BusStopMarker routeId={routeId} />
+        <BusRoutePolyline routeId={routeId} />
         <MyLocation />
       </MapProvider>
     </MapContainer>

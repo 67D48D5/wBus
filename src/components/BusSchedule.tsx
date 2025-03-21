@@ -136,14 +136,16 @@ export default function BusSchedule({ routeId }: Props) {
   `}
       >
         {minutesLeft !== null && (
-          <p className="mt-2 text-xs text-blue-700 font-semibold">
+          <p className="mt-2 text-s text-gray-700 font-bold">
             📌 다음 버스: {minutesLeft}분 후 (
             {departureColumn === "회촌발"
-              ? "학관 정류장 도착 예상"
+              ? "학관 정류장 도착"
               : "학관 정류장 출발"}
             )
           </p>
         )}
+
+        <br />
 
         {data.length > 0 && headers.length > 0 ? (
           <table className="w-full text-xs border-t border-gray-200">

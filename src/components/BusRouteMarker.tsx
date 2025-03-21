@@ -1,2 +1,0 @@
-// src/components/BusRouteMarker.tsx
-
