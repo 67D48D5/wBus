@@ -8,6 +8,7 @@ import MyLocation from './MyLocation';
 import MapProvider from './MapWithProvider';
 import BusStopMarker from './BusStopMarker';
 import BusRoutePolyline from './BusRoutePolyline';
+import BusList from './BusList';
 
 type MapProps = {
   routeId: string;
@@ -30,6 +31,7 @@ export default function Map({ routeId }: MapProps) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <BusMarker routeId={routeId} />
+        <BusList routeId={routeId} />
         <BusStopMarker routeId={routeId} />
         <BusRoutePolyline routeId={routeId} />
         <MyLocation />

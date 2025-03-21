@@ -18,7 +18,7 @@ export default function BusSchedule({ routeId }: Props) {
   const [note, setNote] = useState("");
   const [weekday, setWeekday] = useState(true);
   const [hasGeneral, setHasGeneral] = useState(false);
-  const [open, setOpen] = useState(true); // ⬅️ 추가: 접힘 상태
+  const [open, setOpen] = useState(true); 
 
   useEffect(() => {
     const loadCSV = async () => {

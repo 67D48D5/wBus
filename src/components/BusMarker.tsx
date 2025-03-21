@@ -2,13 +2,15 @@
 
 "use client";
 
-import { fetchBusLocationData } from "@/utils/fetchData";
-import { useBusStops } from "@/hooks/useBusStops";
+import {
+  fetchBusLocationData,
+  fetchBusStopLocationData,
+} from "@/utils/fetchData";
 import { getRepresentativeRouteId } from "@/utils/getRepresentativeRouteId";
 import { busIconUp, busIconDown } from "@/constants/icons";
 
 import { Marker, Popup } from "react-leaflet";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type BusItem = {
   gpslati: number;
@@ -19,14 +21,41 @@ type BusItem = {
   nodeord: number;
 };
 
+type BusStop = {
+  gpslati: number;
+  gpslong: number;
+  nodeid: string;
+  nodenm: string;
+  nodeord: number;
+  updowncd: number;
+};
+
 type BusMarkerProps = {
   routeId: string;
 };
 
+const stopsCache: Record<string, BusStop[]> = {};
+
 export default function BusMarker({ routeId }: BusMarkerProps) {
   const [busList, setBusList] = useState<BusItem[]>([]);
+  const [stops, setStops] = useState<BusStop[]>([]);
   const repRouteId = getRepresentativeRouteId(routeId);
-  const stops = useBusStops(routeId); // 대표 routeId 기반으로 호출
+
+  useEffect(() => {
+    const loadStops = async () => {
+      if (!repRouteId) return;
+      if (stopsCache[repRouteId]) {
+        setStops(stopsCache[repRouteId]);
+        return;
+      }
+
+      const fetched = await fetchBusStopLocationData(repRouteId);
+      stopsCache[repRouteId] = fetched;
+      setStops(fetched);
+    };
+
+    loadStops();
+  }, [repRouteId]);
 
   useEffect(() => {
     const fetchAllBuses = async () => {
@@ -41,8 +70,7 @@ export default function BusMarker({ routeId }: BusMarkerProps) {
           vehicleCodes.map((id) => fetchBusLocationData(id))
         );
 
-        const merged = results.flat();
-        setBusList(merged);
+        setBusList(results.flat());
       } catch (error) {
         console.error("❌ Failed to fetch multiple buses:", error);
       }
@@ -53,12 +81,16 @@ export default function BusMarker({ routeId }: BusMarkerProps) {
     return () => clearInterval(interval);
   }, [routeId]);
 
+  if (!repRouteId) return null;
+
   return (
     <>
       {busList.map((bus, idx) => {
-        // 정류장 목록에서 현재 nodeid와 일치하는 정류장 찾기
         const matchedStop = stops.find((stop) => stop.nodeid === bus.nodeid);
-        const updown = matchedStop?.updowncd;
+        if (!matchedStop) {
+          console.warn("⚠️ 정류장 매칭 실패:", bus.nodeid);
+        }
+        const updown = matchedStop?.updowncd ?? 0;
 
         return (
           <Marker
@@ -67,11 +99,10 @@ export default function BusMarker({ routeId }: BusMarkerProps) {
             icon={updown === 1 ? busIconDown : busIconUp}
           >
             <Popup>
-              🚌 차량: {bus.vehicleno}
-              <br />
-              📍 정류장: {bus.nodenm}
-              <br />
-              {updown === 1 ? "⬇️ 하행" : "⬆️ 상행"}
+              <div className="font-bold mb-1">
+                {updown === 1 ? "⬆️" : "⬇️"} {routeId}번
+              </div>
+              {bus.vehicleno}, {bus.nodenm}
             </Popup>
           </Marker>
         );
