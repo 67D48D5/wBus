@@ -2,24 +2,13 @@
 
 "use client";
 
-import { Marker, Popup } from "react-leaflet";
-import { useEffect, useState } from "react";
 import { fetchBusLocationData } from "@/utils/fetchData";
-import L from "leaflet";
 import { useBusStops } from "@/hooks/useBusStops";
 import { getRepresentativeRouteId } from "@/utils/getRepresentativeRouteId";
+import { busIconUp, busIconDown } from "@/constants/icons";
 
-const busIconUp = new L.Icon({
-  iconUrl: "/images/bus-icon-ur.png",
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
-});
-
-const busIconDown = new L.Icon({
-  iconUrl: "/images/bus-icon-dl.png",
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
-});
+import { Marker, Popup } from "react-leaflet";
+import { useEffect, useState } from "react";
 
 type BusItem = {
   gpslati: number;
