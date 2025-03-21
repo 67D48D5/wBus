@@ -30,7 +30,6 @@ export default function Map({ routeId }: MapProps) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <BusMarker routeId={routeId} />
-        <BusList routeId={routeId} />
         <BusStopMarker routeId={routeId} />
         <BusRoutePolyline routeId={routeId} />
         <MyLocation />
