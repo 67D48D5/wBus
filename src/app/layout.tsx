@@ -2,6 +2,9 @@
 
 import "./globals.css";
 
+import { Analytics } from "@vercel/analytics/react"
+import { SpeedInsights } from '@vercel/speed-insights/next';
+
 import { MapProvider } from "@/context/MapContext";
 import { Geist, Geist_Mono } from "next/font/google";
 
@@ -31,6 +34,8 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <MapProvider>{children}</MapProvider>
+        <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );
