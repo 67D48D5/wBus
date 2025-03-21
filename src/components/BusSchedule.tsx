@@ -147,10 +147,15 @@ export default function BusSchedule({ routeId }: Props) {
               : "학관 정류장 출발"}
             )
           </p>
-        ) : (
-          <p className="mt-2 text-sm text-gray-700 font-bold">
-            🚫 지금은 운행하지 않아요. 첫차는 {firstDeparture}입니다.
+        ) : firstDeparture ? (
+          <p className="mt-2 text-sm text-gray-700 font-bold leading-snug">
+            🚫 지금은 운행하지 않아요.
+            <br />
+            첫차는 <span className="text-blue-700">{firstDeparture}</span>
+            입니다.
           </p>
+        ) : (
+          <p className="mt-2 text-sm text-gray-500">시간표 정보가 없습니다.</p>
         )}
 
         <br />
