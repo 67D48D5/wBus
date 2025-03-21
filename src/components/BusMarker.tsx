@@ -6,9 +6,17 @@ import { Marker, Popup } from "react-leaflet";
 import { useEffect, useState } from "react";
 import { fetchBusLocationData } from "@/utils/fetchData";
 import L from "leaflet";
+import { useBusStops } from "@/hooks/useBusStops";
+import { getRepresentativeRouteId } from "@/utils/getRepresentativeRouteId";
 
-const busIcon = new L.Icon({
+const busIconUp = new L.Icon({
   iconUrl: "/images/bus-icon-ur.png",
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+});
+
+const busIconDown = new L.Icon({
+  iconUrl: "/images/bus-icon-dl.png",
   iconSize: [32, 32],
   iconAnchor: [16, 32],
 });
@@ -18,6 +26,8 @@ type BusItem = {
   gpslong: number;
   vehicleno: string;
   nodenm: string;
+  nodeid: string;
+  nodeord: number;
 };
 
 type BusMarkerProps = {
@@ -26,6 +36,8 @@ type BusMarkerProps = {
 
 export default function BusMarker({ routeId }: BusMarkerProps) {
   const [busList, setBusList] = useState<BusItem[]>([]);
+  const repRouteId = getRepresentativeRouteId(routeId);
+  const stops = useBusStops(routeId); // 대표 routeId 기반으로 호출
 
   useEffect(() => {
     const fetchAllBuses = async () => {
@@ -54,15 +66,27 @@ export default function BusMarker({ routeId }: BusMarkerProps) {
 
   return (
     <>
-      {busList.map((bus, idx) => (
-        <Marker key={idx} position={[bus.gpslati, bus.gpslong]} icon={busIcon}>
-          <Popup>
-            🚌 차량: {bus.vehicleno}
-            <br />
-            📍 정류장: {bus.nodenm}
-          </Popup>
-        </Marker>
-      ))}
+      {busList.map((bus, idx) => {
+        // 정류장 목록에서 현재 nodeid와 일치하는 정류장 찾기
+        const matchedStop = stops.find((stop) => stop.nodeid === bus.nodeid);
+        const updown = matchedStop?.updowncd;
+
+        return (
+          <Marker
+            key={`${bus.vehicleno}-${idx}`}
+            position={[bus.gpslati, bus.gpslong]}
+            icon={updown === 1 ? busIconDown : busIconUp}
+          >
+            <Popup>
+              🚌 차량: {bus.vehicleno}
+              <br />
+              📍 정류장: {bus.nodenm}
+              <br />
+              {updown === 1 ? "⬇️ 하행" : "⬆️ 상행"}
+            </Popup>
+          </Marker>
+        );
+      })}
     </>
   );
 }
