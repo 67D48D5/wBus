@@ -16,11 +16,13 @@ export default function BusStopMarker({ routeId }: Props) {
     <>
       {stops.map((stop) => (
         <Marker
-          key={`${stop.nodeid}-${stop.updowncd}`} // 👈 이제 고유함 보장
+          key={`${stop.nodeid}-${stop.updowncd}`}
           position={[stop.gpslati, stop.gpslong]}
           icon={busStopIcon}
         >
-          <Popup>{stop.nodenm}</Popup>
+          <Popup>
+            <strong>{stop.nodenm}</strong>
+          </Popup>
         </Marker>
       ))}
     </>

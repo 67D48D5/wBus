@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { fetchBusStopLocationData } from "@/utils/fetchData";
 import { getRepresentativeRouteId } from "@/utils/getRepresentativeRouteId";
+import { getRouteNameFromId } from "@/utils/getRouteNameFromId";
 
 type BusStop = {
   gpslati: number;
@@ -15,16 +16,18 @@ type BusStop = {
 
 const busStopCache: Record<string, BusStop[]> = {};
 
-export function useBusStops(routeName: string) {
+export function useBusStops(routeId: string) {
   const [busStops, setBusStops] = useState<BusStop[]>([]);
   const isMounted = useRef(false);
 
   useEffect(() => {
-    if (!routeName) return;
-    
+    if (!routeId) return;
+
     isMounted.current = true;
 
     const loadBusStops = async () => {
+      const routeName = getRouteNameFromId(routeId) ?? routeId;
+
       const repRouteId = getRepresentativeRouteId(routeName);
       if (!repRouteId) {
         console.warn(`❌ No representative routeId found for ${routeName}`);
@@ -48,7 +51,7 @@ export function useBusStops(routeName: string) {
     return () => {
       isMounted.current = false;
     };
-  }, [routeName]);
+  }, [routeId]);
 
   return busStops;
 }

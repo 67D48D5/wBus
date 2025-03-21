@@ -1,16 +1,21 @@
 // src/components/BusList.tsx
 
+// src/components/BusList.tsx
+
 "use client";
 
 import { useEffect, useState } from "react";
 import { fetchBusLocationData } from "@/utils/fetchData";
 import { useMapContext } from "@/context/MapContext";
+import { useBusStops } from "@/hooks/useBusStops";
+import { getRepresentativeRouteId } from "@/utils/getRepresentativeRouteId";
 
 type BusItem = {
   gpslati: number;
   gpslong: number;
   vehicleno: string;
   nodenm: string;
+  nodeid: string;
 };
 
 type BusListProps = {
@@ -19,7 +24,10 @@ type BusListProps = {
 
 export default function BusList({ routeId }: BusListProps) {
   const [busList, setBusList] = useState<BusItem[]>([]);
-  const map = useMapContext(); // ✅ context에서 지도 인스턴스 얻기
+  const map = useMapContext();
+
+  const repRouteId = getRepresentativeRouteId(routeId);
+  const stops = useBusStops(repRouteId ?? "");
 
   useEffect(() => {
     const fetchAllBuses = async () => {
@@ -53,23 +61,36 @@ export default function BusList({ routeId }: BusListProps) {
         {busList.length === 0 && (
           <li className="text-gray-400 px-2 py-2">버스 정보 없음</li>
         )}
-        {busList.map((bus, idx) => (
-          <li
-            key={idx}
-            className="flex justify-between items-center px-2 py-2 cursor-pointer hover:bg-gray-100"
-            onClick={() => {
-              if (map) {
-                map.flyTo([bus.gpslati, bus.gpslong], map.getZoom(), {
-                  animate: true,
-                  duration: 1.5,
-                });
-              }
-            }}
-          >
-            <span className="font-bold">{bus.vehicleno}</span>
-            <span className="text-gray-500 text-xs">🧭 {bus.nodenm}</span>
-          </li>
-        ))}
+        {busList.map((bus, idx) => {
+          const matchedStop = stops.find(
+            (stop) => stop.nodeid.trim() === bus.nodeid.trim()
+          );
+          const updown = matchedStop?.updowncd;
+
+          if (!matchedStop) {
+            console.warn("⚠️ 정류장 매칭 실패:", bus.nodeid);
+          }
+
+          return (
+            <li
+              key={idx}
+              className="flex justify-between items-center px-2 py-2 cursor-pointer hover:bg-gray-100"
+              onClick={() => {
+                if (map) {
+                  map.flyTo([bus.gpslati, bus.gpslong], map.getZoom(), {
+                    animate: true,
+                    duration: 1.5,
+                  });
+                }
+              }}
+            >
+              <span className="font-bold">{bus.vehicleno}</span>
+              <span className="text-gray-500 text-xs">
+                {updown === 1 ? "⬆️" : updown === 0 ? "⬇️" : "❓"} {bus.nodenm}
+              </span>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
