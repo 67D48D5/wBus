@@ -1,13 +1,10 @@
 // src/components/BusList.tsx
 
-// src/components/BusList.tsx
-
 "use client";
 
-import { useEffect, useState } from "react";
-import { fetchBusLocationData } from "@/utils/fetchData";
 import { useMapContext } from "@/context/MapContext";
 import { useBusStops } from "@/hooks/useBusStops";
+import { useBusData } from "@/hooks/useBusData";
 import { getRepresentativeRouteId } from "@/utils/getRepresentativeRouteId";
 
 type BusItem = {
@@ -23,33 +20,10 @@ type BusListProps = {
 };
 
 export default function BusList({ routeId }: BusListProps) {
-  const [busList, setBusList] = useState<BusItem[]>([]);
   const { map } = useMapContext();
-
+  const busList = useBusData(routeId); // ✅ 이거 하나면 끝!
   const repRouteId = getRepresentativeRouteId(routeId);
   const stops = useBusStops(repRouteId ?? "");
-
-  useEffect(() => {
-    const fetchAllBuses = async () => {
-      try {
-        const res = await fetch("/routeIds.json");
-        const data = await res.json();
-        const vehicleIds: string[] = data[routeId];
-        if (!vehicleIds || vehicleIds.length === 0) return;
-
-        const results = await Promise.all(
-          vehicleIds.map((id) => fetchBusLocationData(id))
-        );
-        setBusList(results.flat());
-      } catch (err) {
-        console.error("❌ BusList fetch error:", err);
-      }
-    };
-
-    fetchAllBuses();
-    const interval = setInterval(fetchAllBuses, 10000);
-    return () => clearInterval(interval);
-  }, [routeId]);
 
   return (
     <div className="fixed bottom-4 left-4 bg-white/90 rounded-lg shadow-md px-4 py-3 w-70 z-[998]">

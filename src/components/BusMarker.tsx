@@ -2,84 +2,20 @@
 
 "use client";
 
-import {
-  fetchBusLocationData,
-  fetchBusStopLocationData,
-} from "@/utils/fetchData";
-import { getRepresentativeRouteId } from "@/utils/getRepresentativeRouteId";
-import { busIconUp, busIconDown } from "@/constants/icons";
-
 import { Marker, Popup } from "react-leaflet";
-import { useEffect, useRef, useState } from "react";
-
-type BusItem = {
-  gpslati: number;
-  gpslong: number;
-  vehicleno: string;
-  nodenm: string;
-  nodeid: string;
-  nodeord: number;
-};
-
-type BusStop = {
-  gpslati: number;
-  gpslong: number;
-  nodeid: string;
-  nodenm: string;
-  nodeord: number;
-  updowncd: number;
-};
+import { getRepresentativeRouteId } from "@/utils/getRepresentativeRouteId";
+import { useBusStops } from "@/hooks/useBusStops";
+import { useBusData } from "@/hooks/useBusData";
+import { busIconUp, busIconDown } from "@/constants/icons";
 
 type BusMarkerProps = {
   routeId: string;
 };
 
-const stopsCache: Record<string, BusStop[]> = {};
-
 export default function BusMarker({ routeId }: BusMarkerProps) {
-  const [busList, setBusList] = useState<BusItem[]>([]);
-  const [stops, setStops] = useState<BusStop[]>([]);
   const repRouteId = getRepresentativeRouteId(routeId);
-
-  useEffect(() => {
-    const loadStops = async () => {
-      if (!repRouteId) return;
-      if (stopsCache[repRouteId]) {
-        setStops(stopsCache[repRouteId]);
-        return;
-      }
-
-      const fetched = await fetchBusStopLocationData(repRouteId);
-      stopsCache[repRouteId] = fetched;
-      setStops(fetched);
-    };
-
-    loadStops();
-  }, [repRouteId]);
-
-  useEffect(() => {
-    const fetchAllBuses = async () => {
-      try {
-        const routeIdsRes = await fetch("/routeIds.json");
-        const routeIdsData = await routeIdsRes.json();
-        const vehicleCodes: string[] = routeIdsData[routeId];
-
-        if (!vehicleCodes || vehicleCodes.length === 0) return;
-
-        const results = await Promise.all(
-          vehicleCodes.map((id) => fetchBusLocationData(id))
-        );
-
-        setBusList(results.flat());
-      } catch (error) {
-        console.error("❌ Failed to fetch multiple buses:", error);
-      }
-    };
-
-    fetchAllBuses();
-    const interval = setInterval(fetchAllBuses, 10000);
-    return () => clearInterval(interval);
-  }, [routeId]);
+  const stops = useBusStops(repRouteId ?? "");
+  const busList = useBusData(routeId); // 공통 훅 사용
 
   if (!repRouteId) return null;
 
