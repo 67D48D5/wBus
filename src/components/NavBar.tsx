@@ -13,6 +13,10 @@ export default function NavBar({ onRouteChange }: NavBarProps) {
   const [selectedRoute, setSelectedRoute] = useState<string>("30");
 
   useEffect(() => {
+    if (onRouteChange) {
+      onRouteChange(selectedRoute);
+    }
+    
     const fetchRoutes = async () => {
       try {
         const res = await fetch("/routeIds.json");
@@ -24,7 +28,7 @@ export default function NavBar({ onRouteChange }: NavBarProps) {
     };
 
     fetchRoutes();
-  }, []);
+  }, [onRouteChange]);
 
   return (
     <nav className="fixed top-0 left-0 w-full h-14 bg-[#003876] shadow-md z-[999] flex items-center justify-between px-6">

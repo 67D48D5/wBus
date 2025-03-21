@@ -26,7 +26,7 @@ export default function BusList({ routeId }: BusListProps) {
   const stops = useBusStops(repRouteId ?? "");
 
   return (
-    <div className="fixed bottom-4 left-4 bg-white/90 rounded-lg shadow-md px-4 py-3 w-70 z-[998]">
+    <div className="fixed bottom-4 left-4 bg-white/90 rounded-lg shadow-md px-4 py-3 w-60 z-[998]">
       <h2 className="text-sm font-bold text-gray-700 mb-2">
         🚍 {routeId}번 버스 목록 (
         {busList.length > 0 ? `${busList.length}대` : "없음"})

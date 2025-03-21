@@ -99,7 +99,10 @@ export default function BusSchedule({ routeId }: Props) {
     : null;
 
   return (
-    <div className="fixed bottom-[200px] left-4 w-70 z-[999]">
+    <div
+      className={`fixed bottom-[200px] left-4 w-60 z-[999] 
+    max-h-[calc(100vh-3.5rem-220px)] overflow-y-auto`}
+    >
       {/* 상단 바 */}
       <div
         className="bg-white shadow-md ring-1 ring-gray-300 rounded-t-lg px-4 py-2 flex justify-between items-center cursor-pointer"
