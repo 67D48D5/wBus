@@ -7,7 +7,7 @@ import { useState } from "react";
 import L from "leaflet";
 
 export default function MyLocation() {
-  const map = useMapContext();
+  const { map } = useMapContext();
   const [marker, setMarker] = useState<L.Marker | null>(null);
 
   const handleClick = () => {
