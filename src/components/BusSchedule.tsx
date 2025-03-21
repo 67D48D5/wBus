@@ -152,7 +152,7 @@ export default function BusSchedule({ routeId }: Props) {
           </p>
         ) : firstDeparture ? (
           <p className="mt-2 text-sm text-gray-700 font-bold leading-snug">
-            🚫 지금은 학관 정류장에서 출발하지 않아요. 첫차는
+            🚫 지금은 학생회관 버스 정류장에서 출발 예정인 버스가 없어요. 첫차는
             <span className="text-blue-700"> {firstDeparture}</span>
             입니다.
           </p>
