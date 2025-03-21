@@ -2,10 +2,11 @@
 
 "use client";
 
+import { getMinutesUntilNextDeparture } from "@/utils/time";
+import type { ScheduleEntry } from "@/types/schedule";
+
 import { useEffect, useState } from "react";
 import Papa from "papaparse";
-
-type ScheduleEntry = Record<string, string>;
 
 type Props = {
   routeId: string;
@@ -77,6 +78,22 @@ export default function BusSchedule({ routeId }: Props) {
     loadCSV();
   }, [routeId, weekday]);
 
+  const departureColumn = headers.includes("연세대발")
+    ? "연세대발"
+    : headers.includes("회촌발")
+    ? "회촌발"
+    : null;
+
+  const rawMinutesLeft = departureColumn
+    ? getMinutesUntilNextDeparture(data, departureColumn)
+    : null;
+
+  // 회촌이면 7분 추가
+  const minutesLeft =
+    rawMinutesLeft !== null && departureColumn === "회촌발"
+      ? rawMinutesLeft + 7
+      : rawMinutesLeft;
+
   return (
     <div className="fixed bottom-[200px] left-4 w-70 z-[999]">
       {/* 상단 바 */}
@@ -118,6 +135,16 @@ export default function BusSchedule({ routeId }: Props) {
     }
   `}
       >
+        {minutesLeft !== null && (
+          <p className="mt-2 text-xs text-blue-700 font-semibold">
+            📌 다음 버스: {minutesLeft}분 후 (
+            {departureColumn === "회촌발"
+              ? "학관 정류장 도착 예상"
+              : "학관 정류장 출발"}
+            )
+          </p>
+        )}
+
         {data.length > 0 && headers.length > 0 ? (
           <table className="w-full text-xs border-t border-gray-200">
             <thead>
