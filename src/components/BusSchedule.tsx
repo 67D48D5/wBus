@@ -18,7 +18,7 @@ export default function BusSchedule({ routeId }: Props) {
   const [note, setNote] = useState("");
   const [weekday, setWeekday] = useState(true);
   const [hasGeneral, setHasGeneral] = useState(false);
-  const [open, setOpen] = useState(true); 
+  const [open, setOpen] = useState(true);
 
   useEffect(() => {
     const loadCSV = async () => {
@@ -135,13 +135,17 @@ export default function BusSchedule({ routeId }: Props) {
     }
   `}
       >
-        {minutesLeft !== null && (
+        {minutesLeft !== null ? (
           <p className="mt-2 text-s text-gray-700 font-bold">
             📌 다음 버스: {minutesLeft}분 후 (
             {departureColumn === "회촌발"
               ? "학관 정류장 도착"
               : "학관 정류장 출발"}
             )
+          </p>
+        ) : (
+          <p className="mt-2 text-s text-red-600 font-bold">
+            ❌ 운행 종료
           </p>
         )}
 
