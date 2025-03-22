@@ -32,10 +32,10 @@ export default function BusList({ routeName }: BusListProps) {
     <div className="fixed bottom-4 left-4 bg-white/90 rounded-lg shadow-md px-4 py-3 w-60 z-20">
       <h2 className="text-sm font-bold text-gray-700 mb-2">
         🚍 {routeName}번 버스 목록 (
-        {busList.length > 0 ? `${busList.length}대` : "없음"})
+        {busList.length > 0 ? `${busList.length}대 운행 중` : "없음"})
       </h2>
 
-      <ul className="text-sm text-gray-800 h-[120px] overflow-y-auto divide-y divide-gray-200">
+      <ul className="text-sm text-gray-800 h-[90px] overflow-y-auto divide-y divide-gray-200">
         {error && (
           <li className="text-red-500 px-2 py-2 text-xs">⚠️ {error}</li>
         )}
@@ -64,8 +64,8 @@ export default function BusList({ routeName }: BusListProps) {
               }}
             >
               <span className="font-bold">{bus.vehicleno}</span>
-              <span className="text-gray-500 text-xs">
-                {updown === 1 ? "⬆️" : updown === 0 ? "⬇️" : "❓"} {bus.nodenm}
+              <span className="text-gray-500 text-[10px]">
+                {bus.nodenm} {updown === 1 ? "⬆️" : updown === 0 ? "⬇️" : "❓"}
               </span>
             </li>
           );

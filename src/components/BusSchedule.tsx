@@ -114,7 +114,7 @@ export default function BusSchedule({ routeName }: BusScheduleProps) {
 
   return (
     <div
-      className={`fixed bottom-[200px] left-4 w-60 z-10 
+      className={`fixed bottom-[170px] left-4 w-60 z-10 
     max-h-[calc(100vh-3.5rem-220px)] overflow-y-auto`}
     >
       {/* 상단 바 */}
