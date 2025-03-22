@@ -120,7 +120,7 @@ export default function BusSchedule({ routeId }: Props) {
               }}
               className="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50 transition"
             >
-              🔄 {weekday ? "주말" : "평일"}
+              🔄 {weekday ? "휴일" : "평일"}
             </button>
           )}
           <span
