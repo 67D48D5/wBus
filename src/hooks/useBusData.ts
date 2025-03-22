@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { fetchBusLocationData } from "@/utils/fetchData";
+import { getRouteIds } from "@/utils/getRouteIds";
 
 type BusItem = {
   gpslati: number;
@@ -63,32 +64,25 @@ export function useBusData(routeId: string): {
   return { data: busList, error };
 }
 
-export function startBusPolling(routeId: string) {
+export async function startBusPolling(routeId: string) {
   const fetchAndUpdate = async () => {
     try {
-      let vehicleIds: string[];
-
-      // routeIds.json 요청 try-catch
-      try {
-        const res = await fetch("/routeIds.json");
-        if (!res.ok) throw new Error("🚫 routeIds.json 요청 실패");
-        const data = await res.json();
-        vehicleIds = data[routeId];
-      } catch (e) {
-        throw new Error("📁 routeIds.json 파일을 불러올 수 없습니다.");
-      }
+      const routeIds = await getRouteIds(); // ✅ 유틸에서 캐싱된 값 사용
+      const vehicleIds = routeIds[routeId];
 
       if (!vehicleIds || vehicleIds.length === 0) {
         throw new Error("🚫 해당 노선의 vehicleId를 찾을 수 없습니다.");
       }
 
-      // 각 vehicleId별 요청 → 개별적으로 처리
       const results = await Promise.allSettled(
         vehicleIds.map((id) => fetchBusLocationData(id))
       );
 
       const buses = results
-        .filter((r): r is PromiseFulfilledResult<BusItem[]> => r.status === "fulfilled")
+        .filter(
+          (r): r is PromiseFulfilledResult<BusItem[]> =>
+            r.status === "fulfilled"
+        )
         .map((r) => r.value)
         .flat();
 
@@ -98,7 +92,7 @@ export function startBusPolling(routeId: string) {
 
       cache[routeId] = buses;
       dataListeners[routeId]?.forEach((cb) => cb(buses));
-      errorListeners[routeId]?.forEach((cb) => cb(null)); // 정상
+      errorListeners[routeId]?.forEach((cb) => cb(null));
     } catch (err: any) {
       console.error("❌ Bus polling error:", err);
       errorListeners[routeId]?.forEach((cb) =>
@@ -107,9 +101,7 @@ export function startBusPolling(routeId: string) {
     }
   };
 
-  // Initial fetch
   fetchAndUpdate();
-  
   const interval = setInterval(fetchAndUpdate, 10000);
   return () => clearInterval(interval);
 }

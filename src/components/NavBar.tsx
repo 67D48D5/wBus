@@ -4,31 +4,22 @@
 
 import { useEffect, useState } from "react";
 
+import { useRouteIds } from "@/hooks/useRouteIds";
+
 type NavBarProps = {
   onRouteChange?: (routeId: string) => void;
 };
 
 export default function NavBar({ onRouteChange }: NavBarProps) {
-  const [routes, setRoutes] = useState<string[]>([]);
   const [selectedRoute, setSelectedRoute] = useState<string>("30");
+  const routeIds = useRouteIds();
+  const routes = routeIds ? Object.keys(routeIds) : [];
 
   useEffect(() => {
     if (onRouteChange) {
       onRouteChange(selectedRoute);
     }
-    
-    const fetchRoutes = async () => {
-      try {
-        const res = await fetch("/routeIds.json");
-        const data = await res.json();
-        setRoutes(Object.keys(data));
-      } catch (error) {
-        console.error("❌ Failed to load routeIds.json:", error);
-      }
-    };
-
-    fetchRoutes();
-  }, [onRouteChange]);
+  }, [onRouteChange, selectedRoute]);
 
   return (
     <nav className="fixed top-0 left-0 w-full h-14 bg-[#003876] shadow-md z-[999] flex items-center justify-between px-6">
