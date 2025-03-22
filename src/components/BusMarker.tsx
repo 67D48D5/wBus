@@ -23,9 +23,10 @@ export default function BusMarker({ routeId }: BusMarkerProps) {
     <>
       {busList.map((bus, idx) => {
         const matchedStop = stops.find((stop) => stop.nodeid === bus.nodeid);
-        if (!matchedStop) {
+        if (!matchedStop && bus.nodeid) {
           console.warn("⚠️ 정류장 매칭 실패:", bus.nodeid);
         }
+        
         const updown = matchedStop?.updowncd ?? 0;
 
         return (
