@@ -39,9 +39,7 @@ export function useBusData(routeName: string): {
     };
 
     const updateError = (msg: string | null) => {
-      if (msg) {
-        alert(msg);
-      }
+      /* if (msg) { alert(msg); } */
       setError(msg);
     };
 
@@ -102,6 +100,8 @@ export function startBusPolling(routeName: string) {
   };
 
   fetchAndUpdate();
+
+  // Polling every 10 seconds
   const interval = setInterval(fetchAndUpdate, 10000);
   return () => clearInterval(interval);
 }
