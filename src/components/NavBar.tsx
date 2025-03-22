@@ -24,7 +24,7 @@ export default function NavBar({ onRouteChange }: NavBarProps) {
   return (
     <nav className="fixed top-0 left-0 w-full h-14 bg-[#003876] shadow-md z-50 flex items-center justify-between px-6">
       <h1 className="text-xl font-extrabold tracking-wide text-white drop-shadow-sm">
-        ymccb
+        YMCCB
       </h1>
       <div className="flex items-center space-x-3">
         <select
