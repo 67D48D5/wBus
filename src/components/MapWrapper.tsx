@@ -7,9 +7,9 @@ import dynamic from "next/dynamic";
 const DynamicMap = dynamic(() => import("./Map"), { ssr: false });
 
 type MapWrapperProps = {
-  routeId: string;
+  routeName: string;
 };
 
-export default function MapWrapper({ routeId }: MapWrapperProps) {
-  return <DynamicMap routeId={routeId} />;
+export default function MapWrapper({ routeName }: MapWrapperProps) {
+  return <DynamicMap routeName={routeName} />;
 }

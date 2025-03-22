@@ -9,12 +9,12 @@ import BusStopMarker from "./BusStopMarker";
 import BusRoutePolyline from "./BusRoutePolyline";
 
 type MapProps = {
-  routeId: string;
+  routeName: string;
 };
 
 const defaultPosition: [number, number] = [37.278925, 127.902296];
 
-export default function Map({ routeId }: MapProps) {
+export default function Map({ routeName }: MapProps) {
   return (
     <MapContainer
       center={defaultPosition}
@@ -27,9 +27,9 @@ export default function Map({ routeId }: MapProps) {
           attribution="&copy; OpenStreetMap contributors"
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <BusMarker routeId={routeId} />
-        <BusStopMarker routeId={routeId} />
-        <BusRoutePolyline routeId={routeId} />
+        <BusMarker routeName={routeName} />
+        <BusStopMarker routeName={routeName} />
+        <BusRoutePolyline routeName={routeName} />
       </MapProvider>
     </MapContainer>
   );

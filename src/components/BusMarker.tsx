@@ -2,32 +2,38 @@
 
 "use client";
 
+import { useEffect, useState } from "react";
 import { Marker, Popup } from "react-leaflet";
-import { getRepresentativeRouteId } from "@/utils/getRepresentativeRouteId";
 import { useBusStops } from "@/hooks/useBusStops";
 import { useBusData } from "@/hooks/useBusData";
 import { busIconUp, busIconDown } from "@/constants/icons";
+import { getRouteInfo } from "@/utils/getRouteInfo";
+import type { RouteInfo } from "@/types/route";
 
 type BusMarkerProps = {
-  routeId: string;
+  routeName: string;
 };
 
-export default function BusMarker({ routeId }: BusMarkerProps) {
-  const repRouteId = getRepresentativeRouteId(routeId);
-  const stops = useBusStops(repRouteId ?? "");
-  const { data: busList, error } = useBusData(routeId);
+export default function BusMarker({ routeName }: BusMarkerProps) {
+  const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
 
-  if (!repRouteId) return null;
+  useEffect(() => {
+    const load = async () => {
+      const info = await getRouteInfo(routeName);
+      setRouteInfo(info);
+    };
+    load();
+  }, [routeName]);
+
+  const { data: busList, error } = useBusData(routeName);
+  const stops = useBusStops(routeName);
+
+  if (!routeInfo) return null;
 
   return (
     <>
-      {busList.map((bus, idx) => {
+      {busList.map((bus) => {
         const matchedStop = stops.find((stop) => stop.nodeid === bus.nodeid);
-        
-        if (!matchedStop && bus.nodeid) {
-          console.warn("⚠️ 정류장 매칭 실패:", bus.nodeid);
-        }
-        
         const updown = matchedStop?.updowncd ?? 0;
 
         return (
@@ -38,7 +44,7 @@ export default function BusMarker({ routeId }: BusMarkerProps) {
           >
             <Popup>
               <div className="font-bold mb-1">
-                {updown === 1 ? "⬆️" : "⬇️"} {routeId}번
+                {updown === 1 ? "⬆️" : "⬇️"} {routeName}번
               </div>
               {bus.vehicleno}, {bus.nodenm}
             </Popup>

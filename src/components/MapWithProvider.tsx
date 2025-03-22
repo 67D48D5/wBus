@@ -16,7 +16,7 @@ export default function MapProvider({
 
   useEffect(() => {
     if (leafletMap) {
-      setMap(leafletMap); // ✅ leafletMap을 전역 컨텍스트에 저장
+      setMap(leafletMap);
     }
   }, [leafletMap]);
 

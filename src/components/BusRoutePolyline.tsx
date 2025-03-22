@@ -7,11 +7,11 @@ import { useBusStops } from "@/hooks/useBusStops";
 import { useMemo } from "react";
 
 type Props = {
-  routeId: string;
+  routeName: string;
 };
 
-export default function BusRoutePolyline({ routeId }: Props) {
-  const stops = useBusStops(routeId);
+export default function BusRoutePolyline({ routeName }: Props) {
+  const stops = useBusStops(routeName);
 
   const { upStops, downStops } = useMemo(() => {
     // 먼저 nodeord 기준 정렬

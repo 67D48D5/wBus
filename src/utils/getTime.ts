@@ -1,4 +1,4 @@
-// src/utils/time.ts
+// src/utils/getTime.ts
 
 import type { ScheduleEntry } from "@/types/schedule";
 
@@ -23,7 +23,7 @@ export function getMinutesUntilNextDeparture(
 
     const minutes = cell
       .split(",")
-      .map((m: string) => parseInt(m.trim())) // 🔧 여기에 타입 추가!
+      .map((m: string) => parseInt(m.trim()))
       .filter((m) => !isNaN(m));
 
     for (const min of minutes) {

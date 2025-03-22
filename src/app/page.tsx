@@ -17,20 +17,19 @@ const MyLocation = dynamic(() => import("@/components/MyLocation"), {
 });
 
 export default function Home() {
-  const [selectedRoute, setSelectedRoute] = useState("30");
+  const [selectedRouteName, setSelectedRouteName] = useState("30");
 
   useEffect(() => {
-    const stop = startBusPolling(selectedRoute);
+    const stop = startBusPolling(selectedRouteName);
     return stop;
-  }, [selectedRoute]);
-  
+  }, [selectedRouteName]);
+
   return (
     <div className="w-full h-screen relative">
-      <MapWrapper routeId={selectedRoute} />
-      
-      <NavBar onRouteChange={(routeId) => setSelectedRoute(routeId)} />
-      <BusSchedule routeId={selectedRoute} />
-      <BusList routeId={selectedRoute} />
+      <MapWrapper routeName={selectedRouteName} />
+      <NavBar onRouteChange={(routeName) => setSelectedRouteName(routeName)} />
+      <BusSchedule routeName={selectedRouteName} />
+      <BusList routeName={selectedRouteName} />
       <MyLocation />
     </div>
   );

@@ -4,22 +4,22 @@
 
 import { useEffect, useState } from "react";
 
-import { useRouteIds } from "@/hooks/useRouteIds";
+import { useRouteMap } from "@/hooks/useRouteMap";
 
 type NavBarProps = {
-  onRouteChange?: (routeId: string) => void;
+  onRouteChange?: (routeName: string) => void;
 };
 
 export default function NavBar({ onRouteChange }: NavBarProps) {
-  const [selectedRoute, setSelectedRoute] = useState<string>("30");
-  const routeIds = useRouteIds();
-  const routes = routeIds ? Object.keys(routeIds) : [];
+  const [selectedRouteName, setselectedRouteName] = useState<string>("30");
+  const routeName = useRouteMap();
+  const routes = routeName ? Object.keys(routeName) : [];
 
   useEffect(() => {
     if (onRouteChange) {
-      onRouteChange(selectedRoute);
+      onRouteChange(selectedRouteName);
     }
-  }, [onRouteChange, selectedRoute]);
+  }, [onRouteChange, selectedRouteName]);
 
   return (
     <nav className="fixed top-0 left-0 w-full h-14 bg-[#003876] shadow-md z-50 flex items-center justify-between px-6">
@@ -29,16 +29,16 @@ export default function NavBar({ onRouteChange }: NavBarProps) {
       <div className="flex items-center space-x-3">
         <select
           className="px-3 py-1 rounded text-sm text-[#003876] bg-white shadow-sm"
-          value={selectedRoute}
+          value={selectedRouteName}
           onChange={(e) => {
             const value = e.target.value;
-            setSelectedRoute(value); // 내부 상태 업데이트
+            setselectedRouteName(value); // 내부 상태 업데이트
             onRouteChange?.(value); // 부모에게 콜백 (있으면)
           }}
         >
-          {routes.map((routeId) => (
-            <option key={routeId} value={routeId}>
-              {routeId}번
+          {routes.map((routeName) => (
+            <option key={routeName} value={routeName}>
+              {routeName}번
             </option>
           ))}
         </select>

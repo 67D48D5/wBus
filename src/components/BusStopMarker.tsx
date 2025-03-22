@@ -6,11 +6,11 @@ import { busStopIcon } from "@/constants/icons";
 import { Marker, Popup } from "react-leaflet";
 
 type Props = {
-  routeId: string;
+  routeName: string;
 };
 
-export default function BusStopMarker({ routeId }: Props) {
-  const stops = useBusStops(routeId);
+export default function BusStopMarker({ routeName }: Props) {
+  const stops = useBusStops(routeName);
 
   return (
     <>

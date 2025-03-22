@@ -2,17 +2,17 @@
 
 "use client";
 
-import { getMinutesUntilNextDeparture, getFirstDeparture } from "@/utils/time";
+import { getMinutesUntilNextDeparture, getFirstDeparture } from "@/utils/getTime";
 import type { ScheduleEntry } from "@/types/schedule";
 
 import { useEffect, useState } from "react";
 import Papa from "papaparse";
 
-type Props = {
-  routeId: string;
+type BusScheduleProps = {
+  routeName: string;
 };
 
-export default function BusSchedule({ routeId }: Props) {
+export default function BusSchedule({ routeName }: BusScheduleProps) {
   const [data, setData] = useState<ScheduleEntry[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
   const [note, setNote] = useState("");
@@ -32,7 +32,7 @@ export default function BusSchedule({ routeId }: Props) {
   useEffect(() => {
     const loadCSV = async () => {
       try {
-        const res = await fetch(`/schedules/${routeId}.csv`);
+        const res = await fetch(`/schedules/${routeName}.csv`);
         const text = await res.text();
         const lines = text.split("\n").filter((line) => line.trim());
 
@@ -85,7 +85,7 @@ export default function BusSchedule({ routeId }: Props) {
     };
 
     loadCSV();
-  }, [routeId, weekday]);
+  }, [routeName, weekday]);
 
   useEffect(() => {
     if (!departureColumn || data.length === 0) {
@@ -120,7 +120,7 @@ export default function BusSchedule({ routeId }: Props) {
         onClick={() => setOpen(!open)}
       >
         <h2 className="font-bold text-sm text-gray-700">
-          🕒 {routeId}번 시간표
+          🕒 {routeName}번 시간표
         </h2>
         <div className="flex items-center space-x-2">
           {!hasGeneral && (
