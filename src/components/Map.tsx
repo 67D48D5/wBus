@@ -4,7 +4,6 @@
 
 import { MapContainer, TileLayer } from "react-leaflet";
 import BusMarker from "./BusMarker";
-import MyLocation from "./MyLocation";
 import MapProvider from "./MapWithProvider";
 import BusStopMarker from "./BusStopMarker";
 import BusRoutePolyline from "./BusRoutePolyline";
@@ -31,7 +30,6 @@ export default function Map({ routeId }: MapProps) {
         <BusMarker routeId={routeId} />
         <BusStopMarker routeId={routeId} />
         <BusRoutePolyline routeId={routeId} />
-        <MyLocation />
       </MapProvider>
     </MapContainer>
   );
