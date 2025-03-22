@@ -44,7 +44,7 @@ export default function BusList({ routeId }: BusListProps) {
           );
           const updown = matchedStop?.updowncd;
 
-          if (!matchedStop) {
+          if (!matchedStop && bus.nodeid) {
             console.warn("⚠️ 정류장 매칭 실패:", bus.nodeid);
           }
 
