@@ -143,16 +143,25 @@ export default function BusSchedule({ routeId }: Props) {
   `}
       >
         {minutesLeft !== null && minutesLeft < 60 ? (
-          <p className="mt-2 text-s text-gray-700 font-bold leading-snug">
-            📌{" "}
-            {departureColumn === "회촌발"
-              ? "학생회관 정류장 도착"
-              : "학생회관 정류장 출발"}
-            <br />
+          <p className="mt-2 text-s text-gray-700 leading-snug">
+            <span className="font-bold">
+              📌{" "}
+              {departureColumn === "회촌발"
+                ? "학생회관 정류장 도착"
+                : "학생회관 정류장 출발"}
+              <br />
+            </span>
             {minutesLeft === 0 ? (
-              <>곧 출발해요!</>
+              <>
+                대기 중인 버스가 <span className="text-red-600">곧 출발</span>
+                해요!
+              </>
             ) : (
-              <>다음 버스: {minutesLeft}분 후</>
+              <>
+                다음 버스는{" "}
+                <span className="text-blue-600">{minutesLeft}분 후</span>{" "}
+                출발합니다.
+              </>
             )}
           </p>
         ) : firstDeparture ? (
