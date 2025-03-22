@@ -20,6 +20,15 @@ export default function BusSchedule({ routeId }: Props) {
   const [hasGeneral, setHasGeneral] = useState(false);
   const [open, setOpen] = useState(true);
 
+  const [minutesLeft, setMinutesLeft] = useState<number | null>(null);
+  const [firstDeparture, setFirstDeparture] = useState<string | null>(null);
+
+  const departureColumn = headers.includes("연세대발")
+    ? "연세대발"
+    : headers.includes("회촌발")
+    ? "회촌발"
+    : null;
+
   useEffect(() => {
     const loadCSV = async () => {
       try {
@@ -78,25 +87,27 @@ export default function BusSchedule({ routeId }: Props) {
     loadCSV();
   }, [routeId, weekday]);
 
-  const departureColumn = headers.includes("연세대발")
-    ? "연세대발"
-    : headers.includes("회촌발")
-    ? "회촌발"
-    : null;
+  useEffect(() => {
+    if (!departureColumn || data.length === 0) {
+      setMinutesLeft(null);
+      setFirstDeparture(null);
+      return;
+    }
 
-  const rawMinutesLeft = departureColumn
-    ? getMinutesUntilNextDeparture(data, departureColumn)
-    : null;
+    const update = () => {
+      const raw = getMinutesUntilNextDeparture(data, departureColumn);
+      const corrected =
+        raw !== null && departureColumn === "회촌발" ? raw + 7 : raw;
 
-  // 회촌이면 7분 추가
-  const minutesLeft =
-    rawMinutesLeft !== null && departureColumn === "회촌발"
-      ? rawMinutesLeft + 7
-      : rawMinutesLeft;
+      setMinutesLeft(corrected);
+      setFirstDeparture(getFirstDeparture(data, departureColumn));
+    };
 
-  const firstDeparture = departureColumn
-    ? getFirstDeparture(data, departureColumn)
-    : null;
+    update(); // 최초 실행
+    
+    const timer = setInterval(update, 10000); // 10초마다 재계산
+    return () => clearInterval(timer);
+  }, [departureColumn, data]);
 
   return (
     <div
