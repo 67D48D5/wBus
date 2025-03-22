@@ -151,7 +151,7 @@ export default function BusSchedule({ routeName }: BusScheduleProps) {
         className={`transition-all duration-300 text-sm bg-white/90 shadow-md ring-1 ring-t-0 ring-gray-300 rounded-b-lg
     ${
       open
-        ? "max-h-[80px] p-4 opacity-100 overflow-y-auto"
+        ? "max-h-[120px] p-4 opacity-100 overflow-y-auto"
         : "max-h-0 p-0 opacity-0 overflow-hidden pointer-events-none"
     }
   `}
