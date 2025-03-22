@@ -16,9 +16,9 @@ Yonsei Mirae Campus City Bus
 3. API Gateway에 apigw.json 파일을 import
 
 ⚠️ 아래부터는 미구현 사항입니다.  
-4. .env 파일 생성
-5. .env 파일에 API Gateway URL 추가
-6. Next.js 환경 변수 설정
+4. .env 파일 생성  
+5. .env 파일에 API Gateway URL 추가  
+6. Next.js 환경 변수 설정  
 
 ```bash
 cp .env.example .env.local
