@@ -2,7 +2,10 @@
 
 "use client";
 
-import { getMinutesUntilNextDeparture, getFirstDeparture } from "@/utils/getTime";
+import {
+  getMinutesUntilNextDeparture,
+  getFirstDeparture,
+} from "@/utils/getTime";
 import type { ScheduleEntry } from "@/types/schedule";
 
 import { useEffect, useState } from "react";
@@ -163,9 +166,16 @@ export default function BusSchedule({ routeName }: BusScheduleProps) {
               정보
             </span>
             <br />
-            {minutesLeft === 0 ? (
+            {minutesLeft <= 3 ? (
               <>
-                대기 중인 버스가 <span className="text-red-600">곧 출발</span>
+                대기 중인 버스가{" "}
+                <span className="text-red-600 font-semibold">
+                  곧 출발
+                  <span className="text-xs text-gray-500">
+                    ({minutesLeft}분 이내)
+                    {" "}
+                  </span>
+                </span>
                 해요!
               </>
             ) : (
