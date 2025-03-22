@@ -21,7 +21,7 @@ type BusListProps = {
 
 export default function BusList({ routeId }: BusListProps) {
   const { map } = useMapContext();
-  const busList = useBusData(routeId); // ✅ 이거 하나면 끝!
+  const { data: busList, error } = useBusData(routeId);
   const repRouteId = getRepresentativeRouteId(routeId);
   const stops = useBusStops(repRouteId ?? "");
 
@@ -33,8 +33,11 @@ export default function BusList({ routeId }: BusListProps) {
       </h2>
       <ul className="text-sm text-gray-800 h-[120px] overflow-y-auto divide-y divide-gray-200">
         {busList.length === 0 && (
-          <li className="text-gray-400 px-2 py-2">버스 정보 없음</li>
+          <li className="text-gray-400 px-2 py-2">
+            현재 운행 중인 차량이 없습니다.
+          </li>
         )}
+
         {busList.map((bus, idx) => {
           const matchedStop = stops.find(
             (stop) => stop.nodeid.trim() === bus.nodeid.trim()

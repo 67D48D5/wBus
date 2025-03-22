@@ -12,57 +12,104 @@ type BusItem = {
 };
 
 const cache: Record<string, BusItem[]> = {};
-const listeners: Record<string, ((data: BusItem[]) => void)[]> = {};
+const dataListeners: Record<string, ((data: BusItem[]) => void)[]> = {};
+const errorListeners: Record<string, ((errMsg: string | null) => void)[]> = {};
 
-export function useBusData(routeId: string): BusItem[] {
+export function useBusData(routeId: string): {
+  data: BusItem[];
+  error: string | null;
+} {
   const [busList, setBusList] = useState<BusItem[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!routeId) return;
 
-    // 캐시에 있으면 즉시 사용
     if (cache[routeId]) {
       setBusList(cache[routeId]);
+      setTimeout(() => {
+        dataListeners[routeId]?.forEach((cb) => cb(cache[routeId]!));
+      }, 0);
     }
 
-    // 리스너 등록
-    const update = (data: BusItem[]) => setBusList(data);
-    listeners[routeId] = listeners[routeId] || [];
-    listeners[routeId].push(update);
+    const updateData = (data: BusItem[]) => {
+      setBusList(data);
+      setError(null); // 데이터 성공 → 에러 초기화
+    };
+
+    const updateError = (msg: string | null) => {
+      if (msg) {
+        alert(msg);
+      }
+      setError(msg);
+    };
+
+    dataListeners[routeId] = dataListeners[routeId] || [];
+    errorListeners[routeId] = errorListeners[routeId] || [];
+
+    dataListeners[routeId].push(updateData);
+    errorListeners[routeId].push(updateError);
 
     return () => {
-      listeners[routeId] = listeners[routeId].filter((fn) => fn !== update);
+      dataListeners[routeId] = dataListeners[routeId].filter(
+        (fn) => fn !== updateData
+      );
+      errorListeners[routeId] = errorListeners[routeId].filter(
+        (fn) => fn !== updateError
+      );
     };
   }, [routeId]);
 
-  return busList;
+  return { data: busList, error };
 }
 
-// 공유 폴링 함수
 export function startBusPolling(routeId: string) {
   const fetchAndUpdate = async () => {
     try {
-      const res = await fetch("/routeIds.json");
-      const data = await res.json();
-      const vehicleIds: string[] = data[routeId];
-      if (!vehicleIds || vehicleIds.length === 0) return;
+      let vehicleIds: string[];
 
-      const results = await Promise.all(
+      // routeIds.json 요청 try-catch
+      try {
+        const res = await fetch("/routeIds.json");
+        if (!res.ok) throw new Error("🚫 routeIds.json 요청 실패");
+        const data = await res.json();
+        vehicleIds = data[routeId];
+      } catch (e) {
+        throw new Error("📁 routeIds.json 파일을 불러올 수 없습니다.");
+      }
+
+      if (!vehicleIds || vehicleIds.length === 0) {
+        throw new Error("🚫 해당 노선의 vehicleId를 찾을 수 없습니다.");
+      }
+
+      // 각 vehicleId별 요청 → 개별적으로 처리
+      const results = await Promise.allSettled(
         vehicleIds.map((id) => fetchBusLocationData(id))
       );
-      const buses = results.flat();
-      cache[routeId] = buses;
 
-      // 등록된 모든 리스너에 데이터 전달
-      (listeners[routeId] || []).forEach((cb) => cb(buses));
-    } catch (err) {
+      const buses = results
+        .filter((r): r is PromiseFulfilledResult<BusItem[]> => r.status === "fulfilled")
+        .map((r) => r.value)
+        .flat();
+
+      if (buses.length === 0) {
+        throw new Error("❗ 버스 데이터 응답이 없습니다.");
+      }
+
+      cache[routeId] = buses;
+      dataListeners[routeId]?.forEach((cb) => cb(buses));
+      errorListeners[routeId]?.forEach((cb) => cb(null)); // 정상
+    } catch (err: any) {
       console.error("❌ Bus polling error:", err);
+      errorListeners[routeId]?.forEach((cb) =>
+        cb(err.message || "❗ 알 수 없는 에러가 발생했습니다.")
+      );
     }
   };
 
   // Initial fetch
   fetchAndUpdate();
-
+  
   const interval = setInterval(fetchAndUpdate, 10000);
   return () => clearInterval(interval);
 }

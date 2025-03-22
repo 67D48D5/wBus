@@ -40,14 +40,14 @@ export default function MyLocation() {
         const myIcon = new L.Icon({
             iconUrl: "/images/geo-alt-fill.svg",
             iconSize: [32, 32],
-            iconAnchor: [16, 32], // 마커 아래 중심점
-            popupAnchor: [0, -30], // 말풍선 살짝 위로
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -30], 
           });
 
         const newMarker = L.marker([latitude, longitude], { icon: myIcon })
           .addTo(map)
           .bindPopup("<b>📍 내 위치</b>")
-          .openPopup(); // ← 바로 말풍선 열기
+          .openPopup(); 
 
         setMarker(newMarker);
       },

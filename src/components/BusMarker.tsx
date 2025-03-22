@@ -15,7 +15,7 @@ type BusMarkerProps = {
 export default function BusMarker({ routeId }: BusMarkerProps) {
   const repRouteId = getRepresentativeRouteId(routeId);
   const stops = useBusStops(repRouteId ?? "");
-  const busList = useBusData(routeId); // 공통 훅 사용
+  const { data: busList, error } = useBusData(routeId);
 
   if (!repRouteId) return null;
 
@@ -30,7 +30,7 @@ export default function BusMarker({ routeId }: BusMarkerProps) {
 
         return (
           <Marker
-            key={`${bus.vehicleno}-${idx}`}
+            key={`${bus.vehicleno}-${bus.gpslati}-${bus.gpslong}`}
             position={[bus.gpslati, bus.gpslong]}
             icon={updown === 1 ? busIconDown : busIconUp}
           >
