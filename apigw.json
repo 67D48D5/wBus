@@ -1,0 +1,93 @@
+{
+  "openapi" : "3.0.1",
+  "info" : {
+    "title" : "ymccb",
+    "description" : "API Proxy for \"ymccb\" Project",
+    "version" : "2025-03-22 00:46:33UTC"
+  },
+  "servers" : [ {
+    "url" : "https://gl87xfcx95.execute-api.ap-northeast-2.amazonaws.com/{basePath}",
+    "variables" : {
+      "basePath" : {
+        "default" : ""
+      }
+    }
+  } ],
+  "paths" : {
+    "/busLocation/{routeId}" : {
+      "get" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for GET /busLocation/{routeId}"
+          }
+        },
+        "x-amazon-apigateway-integration" : {
+          "requestParameters" : {
+            "append:querystring.numOfRows" : "32",
+            "append:querystring.pageNo" : "1",
+            "append:querystring._type" : "json",
+            "append:querystring.cityCode" : "32020",
+            "append:querystring.routeId" : "$request.path.routeId",
+            "append:querystring.serviceKey" : "API_KEY"
+          },
+          "payloadFormatVersion" : "1.0",
+          "type" : "http_proxy",
+          "httpMethod" : "GET",
+          "uri" : "http://apis.data.go.kr/1613000/BusLcInfoInqireService/getRouteAcctoBusLcList",
+          "connectionType" : "INTERNET",
+          "timeoutInMillis" : 30000
+        }
+      },
+      "parameters" : [ {
+        "name" : "routeId",
+        "in" : "path",
+        "description" : "Generated path parameter for routeId",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ]
+    },
+    "/busStopLocation/{routeId}" : {
+      "get" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for GET /busStopLocation/{routeId}"
+          }
+        },
+        "x-amazon-apigateway-integration" : {
+          "requestParameters" : {
+            "append:querystring.numOfRows" : "512",
+            "append:querystring.pageNo" : "1",
+            "append:querystring._type" : "json",
+            "append:querystring.cityCode" : "32020",
+            "append:querystring.routeId" : "$request.path.routeId",
+            "append:querystring.serviceKey" : "API_KEY"
+          },
+          "payloadFormatVersion" : "1.0",
+          "type" : "http_proxy",
+          "httpMethod" : "GET",
+          "uri" : "http://apis.data.go.kr/1613000/BusRouteInfoInqireService/getRouteAcctoThrghSttnList",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "parameters" : [ {
+        "name" : "routeId",
+        "in" : "path",
+        "description" : "Generated path parameter for routeId",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ]
+    }
+  },
+  "x-amazon-apigateway-cors" : {
+    "allowMethods" : [ "GET" ],
+    "allowHeaders" : [ "*" ],
+    "maxAge" : 0,
+    "allowCredentials" : false,
+    "allowOrigins" : [ "https://ymccb.vercel.app" ]
+  },
+  "x-amazon-apigateway-importexport-version" : "1.0"
+}
