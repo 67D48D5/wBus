@@ -26,12 +26,12 @@ export default function Home() {
   
   return (
     <div className="w-full h-screen relative">
+      <MapWrapper routeId={selectedRoute} />
+      
       <NavBar onRouteChange={(routeId) => setSelectedRoute(routeId)} />
       <BusSchedule routeId={selectedRoute} />
       <BusList routeId={selectedRoute} />
       <MyLocation />
-
-      <MapWrapper routeId={selectedRoute} />
     </div>
   );
 }
