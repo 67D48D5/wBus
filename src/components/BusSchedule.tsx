@@ -170,19 +170,19 @@ export default function BusSchedule({ routeName }: BusScheduleProps) {
               <>
                 대기 중인 버스가{" "}
                 <span className="text-red-600 font-semibold">
-                  곧 출발
-                  <span className="text-xs text-gray-500">
-                    ({minutesLeft}분 이내)
-                    {" "}
-                  </span>
+                  곧 {departureColumn === "회촌발" ? "도착" : "출발"}
                 </span>
                 해요!
+                <br />
+                <span className="text-xs text-gray-500">
+                  ({minutesLeft}분 이내)
+                </span>
               </>
             ) : (
               <>
-                다음 버스는{" "}
+                다음 버스는 약{" "}
                 <span className="text-blue-600">{minutesLeft}분 후</span>{" "}
-                출발합니다.
+                {departureColumn === "회촌발" ? "도착" : "출발"}합니다.
               </>
             )}
           </p>
