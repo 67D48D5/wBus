@@ -18,7 +18,7 @@ export default function BusRoutePolyline({ routeName }: Props) {
         <Polyline
           key={`up-${idx}`}
           positions={coords}
-          pathOptions={{ color: "blue", weight: 4 }}
+          pathOptions={{ color: "red", weight: 4 }}
         />
       ))}
 
@@ -26,7 +26,7 @@ export default function BusRoutePolyline({ routeName }: Props) {
         <Polyline
           key={`down-${idx}`}
           positions={coords}
-          pathOptions={{ color: "red", weight: 4 }}
+          pathOptions={{ color: "blue", weight: 4 }}
         />
       ))}
     </>
