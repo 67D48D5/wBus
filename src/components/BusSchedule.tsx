@@ -105,7 +105,7 @@ export default function BusSchedule({ routeId }: Props) {
     >
       {/* 상단 바 */}
       <div
-        className="bg-white shadow-md ring-1 ring-gray-300 rounded-t-lg px-4 py-2 flex justify-between items-center cursor-pointer"
+        className="bg-white/90 shadow-md ring-1 ring-gray-300 rounded-t-lg px-4 py-2 flex justify-between items-center cursor-pointer"
         onClick={() => setOpen(!open)}
       >
         <h2 className="font-bold text-sm text-gray-700">
@@ -134,7 +134,7 @@ export default function BusSchedule({ routeId }: Props) {
 
       {/* 항상 렌더링되며, 상태로 스타일만 변경 */}
       <div
-        className={`transition-all duration-300 text-sm bg-white shadow-md ring-1 ring-t-0 ring-gray-300 rounded-b-lg
+        className={`transition-all duration-300 text-sm bg-white/90 shadow-md ring-1 ring-t-0 ring-gray-300 rounded-b-lg
     ${
       open
         ? "max-h-[300px] p-4 opacity-100 overflow-y-auto"
