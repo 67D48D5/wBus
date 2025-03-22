@@ -2,8 +2,8 @@
 
 import "./globals.css";
 
-import { Analytics } from "@vercel/analytics/react"
-import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import { MapProvider } from "@/context/MapContext";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -21,6 +21,9 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "ymccb",
   description: "연세대 미래캠퍼스 버스 실시간 위치 및 시간표 시스템",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({

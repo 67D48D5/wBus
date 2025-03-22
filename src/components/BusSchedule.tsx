@@ -148,9 +148,10 @@ export default function BusSchedule({ routeId }: Props) {
               📌{" "}
               {departureColumn === "회촌발"
                 ? "학생회관 정류장 도착"
-                : "학생회관 정류장 출발"}
-              <br />
+                : "학생회관 정류장 출발"}{" "}
+              정보
             </span>
+            <br />
             {minutesLeft === 0 ? (
               <>
                 대기 중인 버스가 <span className="text-red-600">곧 출발</span>
