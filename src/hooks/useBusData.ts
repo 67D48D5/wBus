@@ -85,7 +85,7 @@ export function startBusPolling(routeName: string) {
         .flat();
 
       if (buses.length === 0) {
-        throw new Error("❗ 버스 데이터 응답이 없습니다.");
+        throw new Error("버스 데이터 응답이 없습니다.");
       }
 
       cache[routeName] = buses;
@@ -94,7 +94,7 @@ export function startBusPolling(routeName: string) {
     } catch (err: any) {
       console.error("❌ Bus polling error:", err);
       errorListeners[routeName]?.forEach((cb) =>
-        cb(err.message || "❗ 알 수 없는 에러가 발생했습니다.")
+        cb(err.message || "알 수 없는 에러가 발생했습니다.")
       );
     }
   };

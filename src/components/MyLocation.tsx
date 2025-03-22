@@ -3,6 +3,8 @@
 "use client";
 
 import { useMapContext } from "@/context/MapContext";
+import { myIcon, findMyLocationIcon } from "@/constants/icons";
+
 import { useState } from "react";
 import L from "leaflet";
 
@@ -25,29 +27,22 @@ export default function MyLocation() {
       (pos) => {
         const { latitude, longitude } = pos.coords;
 
-        // 지도 중심 이동
+        // Fly to the current location
         map.flyTo([latitude, longitude], 17, {
           animate: true,
           duration: 1.5,
         });
 
-        // 기존 마커 제거
+        // Remove existing marker
         if (marker) {
           map.removeLayer(marker);
         }
 
-        // 새 마커 추가
-        const myIcon = new L.Icon({
-            iconUrl: "/images/geo-alt-fill.svg",
-            iconSize: [32, 32],
-            iconAnchor: [16, 32],
-            popupAnchor: [0, -30], 
-          });
-
+        // Add a new marker
         const newMarker = L.marker([latitude, longitude], { icon: myIcon })
           .addTo(map)
-          .bindPopup("<b>📍 내 위치</b>")
-          .openPopup(); 
+          .bindPopup("<b>내 위치</b>")
+          .openPopup();
 
         setMarker(newMarker);
       },
@@ -60,9 +55,9 @@ export default function MyLocation() {
   return (
     <button
       onClick={handleClick}
-      className="fixed bottom-4 right-4 z-30 bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2 rounded shadow-md"
+      className="fixed bottom-4 right-4 z-30 bg-white hover:bg-blue-700 text-black text-xs px-3 py-2 rounded shadow-md"
     >
-      📍
+      <img src={findMyLocationIcon.options.iconUrl} alt="내 위치 찾기" />
     </button>
   );
 }
