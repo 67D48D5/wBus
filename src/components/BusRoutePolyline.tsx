@@ -14,10 +14,13 @@ export default function BusRoutePolyline({ routeId }: Props) {
   const stops = useBusStops(routeId);
 
   const { upStops, downStops } = useMemo(() => {
+    // 먼저 nodeord 기준 정렬
+    const sorted = [...stops].sort((a, b) => a.nodeord - b.nodeord);
+
     const up: [number, number][] = [];
     const down: [number, number][] = [];
 
-    stops.forEach((stop) => {
+    sorted.forEach((stop) => {
       const point: [number, number] = [stop.gpslati, stop.gpslong];
       if (stop.updowncd === 0) {
         up.push(point);

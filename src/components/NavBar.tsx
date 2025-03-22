@@ -22,7 +22,7 @@ export default function NavBar({ onRouteChange }: NavBarProps) {
   }, [onRouteChange, selectedRoute]);
 
   return (
-    <nav className="fixed top-0 left-0 w-full h-14 bg-[#003876] shadow-md z-[999] flex items-center justify-between px-6">
+    <nav className="fixed top-0 left-0 w-full h-14 bg-[#003876] shadow-md z-50 flex items-center justify-between px-6">
       <h1 className="text-xl font-extrabold tracking-wide text-white drop-shadow-sm">
         ymccb
       </h1>

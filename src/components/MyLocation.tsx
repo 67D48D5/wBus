@@ -60,7 +60,7 @@ export default function MyLocation() {
   return (
     <button
       onClick={handleClick}
-      className="fixed bottom-4 right-4 z-[1001] bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2 rounded shadow-md"
+      className="fixed bottom-4 right-4 z-30 bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2 rounded shadow-md"
     >
       📍
     </button>

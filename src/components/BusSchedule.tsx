@@ -104,14 +104,14 @@ export default function BusSchedule({ routeId }: Props) {
     };
 
     update(); // 최초 실행
-    
+
     const timer = setInterval(update, 10000); // 10초마다 재계산
     return () => clearInterval(timer);
   }, [departureColumn, data]);
 
   return (
     <div
-      className={`fixed bottom-[200px] left-4 w-60 z-[999] 
+      className={`fixed bottom-[200px] left-4 w-60 z-10 
     max-h-[calc(100vh-3.5rem-220px)] overflow-y-auto`}
     >
       {/* 상단 바 */}

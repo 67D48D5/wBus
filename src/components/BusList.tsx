@@ -24,9 +24,10 @@ export default function BusList({ routeId }: BusListProps) {
   const { data: busList, error } = useBusData(routeId);
   const repRouteId = getRepresentativeRouteId(routeId);
   const stops = useBusStops(repRouteId ?? "");
+  const sortedStops = [...stops].sort((a, b) => a.nodeord - b.nodeord);
 
   return (
-    <div className="fixed bottom-4 left-4 bg-white/90 rounded-lg shadow-md px-4 py-3 w-60 z-[998]">
+    <div className="fixed bottom-4 left-4 bg-white/90 rounded-lg shadow-md px-4 py-3 w-60 z-20">
       <h2 className="text-sm font-bold text-gray-700 mb-2">
         🚍 {routeId}번 버스 목록 (
         {busList.length > 0 ? `${busList.length}대` : "없음"})
@@ -39,9 +40,7 @@ export default function BusList({ routeId }: BusListProps) {
         )}
 
         {busList.map((bus, idx) => {
-          const matchedStop = stops.find(
-            (stop) => stop.nodeid.trim() === bus.nodeid.trim()
-          );
+          const matchedStop = sortedStops.find((stop) => stop.nodeid === bus.nodeid);
           const updown = matchedStop?.updowncd;
 
           if (!matchedStop && bus.nodeid) {
