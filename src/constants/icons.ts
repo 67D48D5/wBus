@@ -9,13 +9,13 @@ export const busStopIcon = new L.Icon({
 });
 
 export const busIconUp = new L.Icon({
-  iconUrl: "/images/bus-icon-up.png",
+  iconUrl: new URL("/images/bus-icon-up.png", import.meta.url).toString(),
   iconSize: [64, 64],
   iconAnchor: [32, 32],
 });
 
 export const busIconDown = new L.Icon({
-  iconUrl: "/images/bus-icon-down.png",
+  iconUrl: new URL("/images/bus-icon-down.png", import.meta.url).toString(),
   iconSize: [64, 64],
   iconAnchor: [32, 32],
 });
