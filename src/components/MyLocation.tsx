@@ -41,7 +41,7 @@ export default function MyLocation() {
             iconUrl: "/images/geo-alt-fill.svg",
             iconSize: [32, 32],
             iconAnchor: [16, 32],
-            popupAnchor: [0, -30], 
+            popupAnchor: [0, 30], 
           });
 
         const newMarker = L.marker([latitude, longitude], { icon: myIcon })
