@@ -1,6 +1,6 @@
 // src/hooks/useBusStops.ts
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { fetchBusStopLocationData } from "@/utils/fetchData";
 import { getRepresentativeRouteId } from "@/utils/getRepresentativeRouteId";
 import { getRouteNameFromId } from "@/utils/getRouteNameFromId";
@@ -14,44 +14,50 @@ type BusStop = {
   updowncd: number;
 };
 
-const busStopCache: Record<string, BusStop[]> = {};
+const stopCache: Record<string, BusStop[]> = {};
+const stopPromises: Record<string, Promise<BusStop[]>> = {};
 
 export function useBusStops(routeId: string) {
-  const [busStops, setBusStops] = useState<BusStop[]>([]);
-  const isMounted = useRef(false);
+  const [stops, setStops] = useState<BusStop[]>([]);
 
   useEffect(() => {
     if (!routeId) return;
 
-    isMounted.current = true;
+    const load = async () => {
+      try {
+        const routeName = getRouteNameFromId(routeId) ?? routeId;
+        const repRouteId = getRepresentativeRouteId(routeName);
 
-    const loadBusStops = async () => {
-      const routeName = getRouteNameFromId(routeId) ?? routeId;
+        if (!repRouteId) {
+          console.warn(`❌ No representative routeId found for ${routeName}`);
+          return;
+        }
 
-      const repRouteId = getRepresentativeRouteId(routeName);
-      if (!repRouteId) {
-        console.warn(`❌ No representative routeId found for ${routeName}`);
-        return;
-      }
+        if (stopCache[repRouteId]) {
+          setStops(stopCache[repRouteId]);
+          return;
+        }
 
-      if (busStopCache[repRouteId]) {
-        setBusStops(busStopCache[repRouteId]);
-        return;
-      }
+        if (!stopPromises[repRouteId]) {
+          stopPromises[repRouteId] = fetchBusStopLocationData(repRouteId)
+            .then((data) => {
+              stopCache[repRouteId] = data;
+              return data;
+            })
+            .finally(() => {
+              delete stopPromises[repRouteId];
+            });
+        }
 
-      const stops = await fetchBusStopLocationData(repRouteId);
-      if (isMounted.current) {
-        setBusStops(stops);
-        busStopCache[repRouteId] = stops;
+        const fetched = await stopPromises[repRouteId];
+        setStops(fetched);
+      } catch (err) {
+        console.error("❌ useBusStops fetch error:", err);
       }
     };
 
-    loadBusStops();
-
-    return () => {
-      isMounted.current = false;
-    };
+    load();
   }, [routeId]);
 
-  return busStops;
+  return stops;
 }
