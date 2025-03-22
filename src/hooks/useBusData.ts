@@ -64,7 +64,7 @@ export function useBusData(routeId: string): {
   return { data: busList, error };
 }
 
-export async function startBusPolling(routeId: string) {
+export function startBusPolling(routeId: string) {
   const fetchAndUpdate = async () => {
     try {
       const routeIds = await getRouteIds(); // ✅ 유틸에서 캐싱된 값 사용
