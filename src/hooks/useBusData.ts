@@ -3,14 +3,7 @@
 import { useEffect, useState } from "react";
 import { fetchBusLocationData } from "@/utils/fetchData";
 import { getRouteMap } from "@/utils/getRouteMap";
-
-type BusItem = {
-  gpslati: number;
-  gpslong: number;
-  vehicleno: string;
-  nodenm: string;
-  nodeid: string;
-};
+import type { BusItem } from "@/types/route";
 
 export type BusDataError =
   | "ERR:NONE_RUNNING" // 운행 종료

@@ -22,6 +22,8 @@ export default function BusStopMarker({ routeName }: Props) {
         >
           <Popup>
             <strong>{stop.nodenm}</strong>
+            <br />
+            {stop.nodeno}
           </Popup>
         </Marker>
       ))}

@@ -11,6 +11,15 @@ export type BusStop = {
   gpslong: number;
   nodeid: string;
   nodenm: string;
+  nodeno: number;
   nodeord: number;
   updowncd: number;
+};
+
+export type BusItem = {
+  gpslati: number;
+  gpslong: number;
+  vehicleno: string;
+  nodenm: string;
+  nodeid: string;
 };
