@@ -126,5 +126,28 @@ export function startBusPolling(routeName: string) {
   fetchAndUpdate();
 
   const interval = setInterval(fetchAndUpdate, 10000);
-  return () => clearInterval(interval);
+
+  const handleVisibility = () => {
+    if (document.visibilityState === "visible") {
+      // console.log("포커스 복귀됨 -> 데이터 재요청");
+      fetchAndUpdate();
+    }
+  };
+
+  const handlePageShow = (event: PageTransitionEvent) => {
+    if (event.persisted) {
+      // console.log("pageshow (persisted) → 재요청");
+      fetchAndUpdate();
+    }
+  };
+
+  document.addEventListener("visibilitychange", handleVisibility);
+  window.addEventListener("pageshow", handlePageShow);
+
+  return () => {
+    clearInterval(interval);
+    
+    document.removeEventListener("visibilitychange", handleVisibility);
+    window.removeEventListener("pageshow", handlePageShow);
+  };
 }
