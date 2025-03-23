@@ -1,8 +1,10 @@
-// src/hooks/useClosestStopOrd.ts
+// src/hooks/useClosestStop.ts
 
 import { useEffect, useState } from "react";
 import { useMapContext } from "@/context/MapContext";
 import { useBusStops } from "./useBusStops";
+
+import type { BusStop } from "@/types/route";
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const toRad = (deg: number) => (deg * Math.PI) / 180;
@@ -50,4 +52,12 @@ export function useClosestStopOrd(routeName: string): number | null {
   }, [map, stops]);
 
   return closestOrd;
+}
+
+export function findClosestStopByGPS(lat: number, lng: number, stops: BusStop[]) {
+  return stops.reduce((closest, stop) => {
+    const distCurrent = getDistance(lat, lng, stop.gpslati, stop.gpslong);
+    const distBest = getDistance(lat, lng, closest.gpslati, closest.gpslong);
+    return distCurrent < distBest ? stop : closest;
+  }, stops[0]);
 }
