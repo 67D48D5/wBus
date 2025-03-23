@@ -52,8 +52,11 @@ export function useBusData(routeName: string): {
       setError(null);
     };
 
+    const isError = (msg: BusDataError): boolean => msg !== null;
+
     const updateError = (msg: BusDataError) => {
       setError(msg);
+      if (isError(msg)) setBusList([]);
     };
 
     dataListeners[routeName] = dataListeners[routeName] || [];
@@ -89,31 +92,36 @@ export function startBusPolling(routeName: string) {
         vehicleIds.map((id) => fetchBusLocationData(id))
       );
 
-      const buses: BusItem[] = [];
-      let anySuccess = false;
+      const fulfilledResults = results.filter(
+        (r): r is PromiseFulfilledResult<BusItem[]> => r.status === "fulfilled"
+      );
 
-      results.forEach((result) => {
-        if (result.status === "fulfilled") {
-          buses.push(...result.value);
-          anySuccess = true;
-        }
-      });
-
-      if (!anySuccess) {
+      // 모두 실패한 경우 = 네트워크 문제
+      if (fulfilledResults.length === 0) {
         throw new Error("ERR:NETWORK");
       }
 
+      const buses = fulfilledResults.flatMap((r) => r.value);
       cache[routeName] = buses;
       dataListeners[routeName]?.forEach((cb) => cb(buses));
-      errorListeners[routeName]?.forEach((cb) =>
-        buses.length === 0 ? cb("ERR:NONE_RUNNING") : cb(null)
-      );
+
+      // 응답은 있었지만 데이터가 없으면 = 운행 종료
+      if (buses.length === 0) {
+        errorListeners[routeName]?.forEach((cb) => cb("ERR:NONE_RUNNING"));
+      } else {
+        errorListeners[routeName]?.forEach((cb) => cb(null));
+      }
     } catch (err: any) {
       console.error("❌ Bus polling error:", err);
+
+      // 버스 목록 초기화
+      cache[routeName] = [];
+      dataListeners[routeName]?.forEach((cb) => cb([])); // 중요!! ❗
+
       const errorCode: BusDataError =
+        err.message === "ERR:INVALID_ROUTE" ||
         err.message === "ERR:NONE_RUNNING" ||
-        err.message === "ERR:NETWORK" ||
-        err.message === "ERR:INVALID_ROUTE"
+        err.message === "ERR:NETWORK"
           ? err.message
           : "ERR:NETWORK";
 

@@ -50,7 +50,9 @@ export default function BusList({ routeName }: BusListProps) {
               ? "⚠️ 네트워크 오류가 발생했습니다."
               : error === "ERR:INVALID_ROUTE"
               ? "⚠️ 유효하지 않은 노선입니다."
-              : "현재 운행 중인 차량이 없습니다."}
+              : !error
+              ? "버스 데이터를 불러오는 중..."
+              : "⚠️ 알 수 없는 오류가 발생했습니다."}
           </li>
         )}
 
