@@ -8,9 +8,9 @@ import { useBusStops } from "@/hooks/useBusStops";
 import { useBusData } from "@/hooks/useBusData";
 import { busIconUp, busIconDown } from "@/constants/icons";
 import { getRouteInfo } from "@/utils/getRouteInfo";
-import { findClosestStopByGPS } from "@/hooks/useClosestStop";
 
 import type { RouteInfo } from "@/types/route";
+import { useBusDirection } from "@/hooks/useBusDirection";
 
 type BusMarkerProps = {
   routeName: string;
@@ -28,7 +28,7 @@ export default function BusMarker({ routeName }: BusMarkerProps) {
   }, [routeName]);
 
   const { data: busList, error } = useBusData(routeName);
-  const stops = useBusStops(routeName);
+  const getDirection = useBusDirection(routeName);
 
   if (!routeInfo) return null;
   if (busList.length === 0) return null;
@@ -36,12 +36,7 @@ export default function BusMarker({ routeName }: BusMarkerProps) {
   return (
     <>
       {busList.map((bus) => {
-        const matchedStop = findClosestStopByGPS(
-          bus.gpslati,
-          bus.gpslong,
-          stops
-        );
-        const updown = matchedStop?.updowncd ?? 0;
+        const updown = getDirection(bus.nodeid, bus.nodeord);
 
         return (
           <Marker

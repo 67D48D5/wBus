@@ -22,4 +22,5 @@ export type BusItem = {
   vehicleno: string;
   nodenm: string;
   nodeid: string;
+  nodeord: number;
 };

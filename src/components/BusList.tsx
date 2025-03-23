@@ -7,9 +7,11 @@ import { useMapContext } from "@/context/MapContext";
 import { useBusStops } from "@/hooks/useBusStops";
 import { useBusData } from "@/hooks/useBusData";
 import { getRouteInfo } from "@/utils/getRouteInfo";
-import { findClosestStopByGPS, useClosestStopOrd } from "@/hooks/useClosestStop";
+import { useBusDirection } from "@/hooks/useBusDirection";
+import { useClosestStopOrd } from "@/hooks/useClosestStop";
 
 import type { RouteInfo } from "@/types/route";
+
 
 type BusListProps = {
   routeName: string;
@@ -28,10 +30,11 @@ export default function BusList({ routeName }: BusListProps) {
   }, [routeName]);
 
   const { data: busList, error } = useBusData(routeName);
+  const getDirection = useBusDirection(routeName);
+
   const stops = useBusStops(routeName);
-
   const closestOrd = useClosestStopOrd(routeName);
-
+  
   const sortedBusList = useMemo(() => {
     if (!closestOrd) return busList;
     const stopMap = new Map(stops.map((s) => [s.nodeid, s.nodeord]));
@@ -75,8 +78,7 @@ export default function BusList({ routeName }: BusListProps) {
         )}
 
         {sortedBusList.map((bus) => {
-          const matchedStop = findClosestStopByGPS(bus.gpslati, bus.gpslong, stops);
-          const updown = matchedStop?.updowncd;
+          const updown = getDirection(bus.nodeid, bus.nodeord);
 
           return (
             <li
