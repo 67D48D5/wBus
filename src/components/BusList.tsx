@@ -91,7 +91,7 @@ export default function BusList({ routeName }: BusListProps) {
               }}
             >
               <span className="font-bold">{bus.vehicleno}</span>
-              <span className="text-gray-500 text-[10px]">
+              <span className="text-gray-500 text-[10px] text-left">
                 {bus.nodenm} {updown === 1 ? "⬆️" : updown === 0 ? "⬇️" : "❓"}
               </span>
             </li>
