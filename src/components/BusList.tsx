@@ -8,7 +8,7 @@ import { useBusStops } from "@/hooks/useBusStops";
 import { useBusData } from "@/hooks/useBusData";
 import { getRouteInfo } from "@/utils/getRouteInfo";
 import type { RouteInfo } from "@/types/route";
-import { useClosestStopOrd } from "@/hooks/useClosetStopOrd";
+import { useClosestStopOrd } from "@/hooks/useClosestStopOrd";
 
 type BusListProps = {
   routeName: string;
