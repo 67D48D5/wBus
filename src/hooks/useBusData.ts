@@ -4,13 +4,8 @@ import { useEffect, useState } from "react";
 import { fetchBusLocationData } from "@/utils/fetchData";
 import { getRouteMap } from "@/utils/getRouteMap";
 
+import type { BusDataError } from "@/types/error";
 import type { BusItem } from "@/types/data";
-
-export type BusDataError =
-  | "ERR:NONE_RUNNING" // 운행 종료
-  | "ERR:NETWORK" // 네트워크 문제
-  | "ERR:INVALID_ROUTE" // routeId 없음
-  | null; // 정상
 
 const cache: Record<string, BusItem[]> = {};
 const dataListeners: Record<string, ((data: BusItem[]) => void)[]> = {};
