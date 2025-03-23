@@ -2,14 +2,14 @@
 
 "use client";
 
+import { useEffect, useState } from "react";
+import Papa from "papaparse";
 import {
   getMinutesUntilNextDeparture,
   getFirstDeparture,
 } from "@/utils/getTime";
-import type { ScheduleEntry } from "@/types/schedule";
 
-import { useEffect, useState } from "react";
-import Papa from "papaparse";
+import type { ScheduleEntry } from "@/types/schedule";
 
 type BusScheduleProps = {
   routeName: string;

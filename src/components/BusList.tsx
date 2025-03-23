@@ -12,7 +12,6 @@ import { useClosestStopOrd } from "@/hooks/useClosestStop";
 
 import type { RouteInfo } from "@/types/route";
 
-
 type BusListProps = {
   routeName: string;
 };
@@ -34,7 +33,7 @@ export default function BusList({ routeName }: BusListProps) {
 
   const stops = useBusStops(routeName);
   const closestOrd = useClosestStopOrd(routeName);
-  
+
   const sortedBusList = useMemo(() => {
     if (!closestOrd) return busList;
     const stopMap = new Map(stops.map((s) => [s.nodeid, s.nodeord]));

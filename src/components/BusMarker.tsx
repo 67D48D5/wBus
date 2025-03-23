@@ -4,13 +4,12 @@
 
 import { useEffect, useState } from "react";
 import { Marker, Popup } from "react-leaflet";
-import { useBusStops } from "@/hooks/useBusStops";
 import { useBusData } from "@/hooks/useBusData";
-import { busIconUp, busIconDown } from "@/constants/icons";
 import { getRouteInfo } from "@/utils/getRouteInfo";
+import { busIconUp, busIconDown } from "@/constants/icons";
+import { useBusDirection } from "@/hooks/useBusDirection";
 
 import type { RouteInfo } from "@/types/route";
-import { useBusDirection } from "@/hooks/useBusDirection";
 
 type BusMarkerProps = {
   routeName: string;
