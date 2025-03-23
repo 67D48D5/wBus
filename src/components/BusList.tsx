@@ -34,7 +34,7 @@ export default function BusList({ routeName }: BusListProps) {
   const sortedBusList = useMemo(() => {
     if (!closestOrd) return busList;
     const stopMap = new Map(stops.map((s) => [s.nodeid, s.nodeord]));
-  
+
     return [...busList].sort((a, b) => {
       const ordA = stopMap.get(a.nodeid) ?? Infinity;
       const ordB = stopMap.get(b.nodeid) ?? Infinity;
@@ -43,16 +43,19 @@ export default function BusList({ routeName }: BusListProps) {
   }, [busList, stops, closestOrd]);
 
   return (
-    <div className="fixed bottom-4 left-4 bg-white/90 rounded-lg shadow-md px-4 py-3 w-60 z-20">
-      <h2 className="text-sm font-bold text-gray-700 mb-2">
-        🚍 {routeName}번 버스 목록 (
-        {busList.length > 0 ? `${busList.length}대 운행 중` : "없음"})
-      </h2>
+    <div className="fixed bottom-4 left-4 bg-white/90 rounded-lg shadow-md w-60 z-20">
+      <div className="px-4 pt-3">
+        <h2 className="text-sm font-bold text-gray-700 mb-2">
+          🚍 {routeName}번 버스 목록 (
+          {busList.length > 0 ? `${busList.length}대 운행 중` : "없음"})
+        </h2>
+      </div>
 
-      <ul className="text-sm text-gray-800 h-[90px] overflow-y-auto divide-y divide-gray-200">
+      {/* 스크롤 영역은 padding 없이 분리 */}
+      <ul className="text-sm text-gray-800 h-[90px] overflow-y-auto divide-y divide-gray-200 px-4 pb-3">
         {busList.length === 0 && (
           <li
-            className={`px-2 py-2 text-xs ${
+            className={`py-2 text-xs ${
               error && error !== "ERR:NONE_RUNNING"
                 ? "text-red-500"
                 : "text-gray-500"
@@ -77,7 +80,7 @@ export default function BusList({ routeName }: BusListProps) {
           return (
             <li
               key={`${bus.vehicleno}-${bus.gpslati}-${bus.gpslong}`}
-              className="flex justify-between items-center px-2 py-2 cursor-pointer hover:bg-gray-100"
+              className="flex justify-between items-center py-2 cursor-pointer hover:bg-gray-100"
               onClick={() => {
                 if (map) {
                   map.flyTo([bus.gpslati, bus.gpslong], map.getZoom(), {
