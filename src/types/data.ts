@@ -1,4 +1,4 @@
-// src/types/route.ts
+// src/types/data.ts
 
 export type RouteInfo = {
   routeName: string; // 사용자에게 보여주는 노선 이름 (ex. "30")
@@ -23,4 +23,12 @@ export type BusItem = {
   nodenm: string;
   nodeid: string;
   nodeord: number;
+};
+
+export type ArrivalInfo = {
+  arrprevstationcnt: number;
+  arrtime: number;
+  routeid: string;
+  routeno: string;
+  vehicletp: string;
 };

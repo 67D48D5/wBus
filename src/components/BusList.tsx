@@ -10,7 +10,7 @@ import { getRouteInfo } from "@/utils/getRouteInfo";
 import { useBusDirection } from "@/hooks/useBusDirection";
 import { useClosestStopOrd } from "@/hooks/useClosestStop";
 
-import type { RouteInfo } from "@/types/route";
+import type { RouteInfo } from "@/types/data";
 
 type BusListProps = {
   routeName: string;

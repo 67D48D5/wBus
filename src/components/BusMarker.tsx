@@ -9,7 +9,7 @@ import { getRouteInfo } from "@/utils/getRouteInfo";
 import { busIconUp, busIconDown } from "@/constants/icons";
 import { useBusDirection } from "@/hooks/useBusDirection";
 
-import type { RouteInfo } from "@/types/route";
+import type { RouteInfo } from "@/types/data";
 
 type BusMarkerProps = {
   routeName: string;

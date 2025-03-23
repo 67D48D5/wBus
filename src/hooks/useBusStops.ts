@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { fetchBusStopLocationData } from "@/utils/fetchData";
 import { getRouteInfo } from "@/utils/getRouteInfo";
 
-import type { BusStop } from "@/types/route";
+import type { BusStop } from "@/types/data";
 
 const stopCache: Record<string, BusStop[]> = {};
 const stopPromises: Record<string, Promise<BusStop[]>> = {};

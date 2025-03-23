@@ -1,6 +1,6 @@
 // src/utils/getRouteInfo.ts
 
-import type { RouteInfo } from "@/types/route";
+import type { RouteInfo } from "@/types/data";
 
 let cache: Record<string, string[]> | null = null;
 let pending: Promise<Record<string, string[]>> | null = null;

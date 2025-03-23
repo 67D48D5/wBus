@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { fetchBusLocationData } from "@/utils/fetchData";
 import { getRouteMap } from "@/utils/getRouteMap";
 
-import type { BusItem } from "@/types/route";
+import type { BusItem } from "@/types/data";
 
 export type BusDataError =
   | "ERR:NONE_RUNNING" // 운행 종료
@@ -146,7 +146,7 @@ export function startBusPolling(routeName: string) {
 
   return () => {
     clearInterval(interval);
-    
+
     document.removeEventListener("visibilitychange", handleVisibility);
     window.removeEventListener("pageshow", handlePageShow);
   };
