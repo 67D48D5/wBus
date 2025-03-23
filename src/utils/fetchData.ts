@@ -53,11 +53,12 @@ export async function fetchBusArrivalInfoData(busStopId: string) {
   }
 
   const data = await response.json();
+  const rawItem = data.response?.body?.items?.item;
 
-  const items = data.response?.body?.items?.item;
-  if (!items) {
+  if (!rawItem) {
     return [];
   }
 
+  const items = Array.isArray(rawItem) ? rawItem : [rawItem];
   return items;
 }
