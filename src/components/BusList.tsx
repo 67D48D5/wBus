@@ -2,12 +2,13 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMapContext } from "@/context/MapContext";
 import { useBusStops } from "@/hooks/useBusStops";
 import { useBusData } from "@/hooks/useBusData";
 import { getRouteInfo } from "@/utils/getRouteInfo";
 import type { RouteInfo } from "@/types/route";
+import { useClosestStopOrd } from "@/hooks/useClosetStopOrd";
 
 type BusListProps = {
   routeName: string;
@@ -27,6 +28,19 @@ export default function BusList({ routeName }: BusListProps) {
 
   const { data: busList, error } = useBusData(routeName);
   const stops = useBusStops(routeName);
+
+  const closestOrd = useClosestStopOrd(routeName);
+
+  const sortedBusList = useMemo(() => {
+    if (!closestOrd) return busList;
+    const stopMap = new Map(stops.map((s) => [s.nodeid, s.nodeord]));
+  
+    return [...busList].sort((a, b) => {
+      const ordA = stopMap.get(a.nodeid) ?? Infinity;
+      const ordB = stopMap.get(b.nodeid) ?? Infinity;
+      return Math.abs(ordA - closestOrd) - Math.abs(ordB - closestOrd);
+    });
+  }, [busList, stops, closestOrd]);
 
   return (
     <div className="fixed bottom-4 left-4 bg-white/90 rounded-lg shadow-md px-4 py-3 w-60 z-20">
@@ -56,7 +70,7 @@ export default function BusList({ routeName }: BusListProps) {
           </li>
         )}
 
-        {busList.map((bus) => {
+        {sortedBusList.map((bus) => {
           const matchedStop = stops.find((stop) => stop.nodeid === bus.nodeid);
           const updown = matchedStop?.updowncd;
 
