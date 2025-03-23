@@ -12,19 +12,33 @@ type BusItem = {
   nodeid: string;
 };
 
+export type BusDataError =
+  | "ERR:NONE_RUNNING" // 운행 종료
+  | "ERR:NETWORK" // 네트워크 문제
+  | "ERR:INVALID_ROUTE" // routeId 없음
+  | null; // 정상
+
 const cache: Record<string, BusItem[]> = {};
 const dataListeners: Record<string, ((data: BusItem[]) => void)[]> = {};
-const errorListeners: Record<string, ((errMsg: string | null) => void)[]> = {};
+const errorListeners: Record<string, ((errMsg: BusDataError) => void)[]> = {};
+
+function clearOtherCaches(current: string) {
+  Object.keys(cache).forEach((key) => {
+    if (key !== current) delete cache[key];
+  });
+}
 
 export function useBusData(routeName: string): {
   data: BusItem[];
-  error: string | null;
+  error: BusDataError;
 } {
   const [busList, setBusList] = useState<BusItem[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<BusDataError>(null);
 
   useEffect(() => {
     if (!routeName) return;
+
+    clearOtherCaches(routeName);
 
     if (cache[routeName]) {
       setBusList(cache[routeName]);
@@ -35,11 +49,10 @@ export function useBusData(routeName: string): {
 
     const updateData = (data: BusItem[]) => {
       setBusList(data);
-      setError(null); // 데이터 성공 → 에러 초기화
+      setError(null);
     };
 
-    const updateError = (msg: string | null) => {
-      /* if (msg) { alert(msg); } */
+    const updateError = (msg: BusDataError) => {
       setError(msg);
     };
 
@@ -69,39 +82,47 @@ export function startBusPolling(routeName: string) {
       const vehicleIds = routeNames[routeName];
 
       if (!vehicleIds || vehicleIds.length === 0) {
-        throw new Error("🚫 해당 노선의 vehicleId를 찾을 수 없습니다.");
+        throw new Error("ERR:INVALID_ROUTE");
       }
 
       const results = await Promise.allSettled(
         vehicleIds.map((id) => fetchBusLocationData(id))
       );
 
-      const buses = results
-        .filter(
-          (r): r is PromiseFulfilledResult<BusItem[]> =>
-            r.status === "fulfilled"
-        )
-        .map((r) => r.value)
-        .flat();
+      const buses: BusItem[] = [];
+      let anySuccess = false;
 
-      if (buses.length === 0) {
-        throw new Error("버스 데이터 응답이 없습니다.");
+      results.forEach((result) => {
+        if (result.status === "fulfilled") {
+          buses.push(...result.value);
+          anySuccess = true;
+        }
+      });
+
+      if (!anySuccess) {
+        throw new Error("ERR:NETWORK");
       }
 
       cache[routeName] = buses;
       dataListeners[routeName]?.forEach((cb) => cb(buses));
-      errorListeners[routeName]?.forEach((cb) => cb(null));
+      errorListeners[routeName]?.forEach((cb) =>
+        buses.length === 0 ? cb("ERR:NONE_RUNNING") : cb(null)
+      );
     } catch (err: any) {
       console.error("❌ Bus polling error:", err);
-      errorListeners[routeName]?.forEach((cb) =>
-        cb(err.message || "알 수 없는 에러가 발생했습니다.")
-      );
+      const errorCode: BusDataError =
+        err.message === "ERR:NONE_RUNNING" ||
+        err.message === "ERR:NETWORK" ||
+        err.message === "ERR:INVALID_ROUTE"
+          ? err.message
+          : "ERR:NETWORK";
+
+      errorListeners[routeName]?.forEach((cb) => cb(errorCode));
     }
   };
 
   fetchAndUpdate();
 
-  // Polling every 10 seconds
   const interval = setInterval(fetchAndUpdate, 10000);
   return () => clearInterval(interval);
 }

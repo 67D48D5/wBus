@@ -36,13 +36,21 @@ export default function BusList({ routeName }: BusListProps) {
       </h2>
 
       <ul className="text-sm text-gray-800 h-[90px] overflow-y-auto divide-y divide-gray-200">
-        {error && (
-          <li className="text-red-500 px-2 py-2 text-xs">⚠️ {error}</li>
-        )}
-
-        {busList.length === 0 && !error && (
-          <li className="text-gray-400 px-2 py-2">
-            현재 운행 중인 차량이 없습니다.
+        {busList.length === 0 && (
+          <li
+            className={`px-2 py-2 text-xs ${
+              error && error !== "ERR:NONE_RUNNING"
+                ? "text-red-500"
+                : "text-gray-500"
+            }`}
+          >
+            {error === "ERR:NONE_RUNNING"
+              ? "운행이 종료되었습니다."
+              : error === "ERR:NETWORK"
+              ? "⚠️ 네트워크 오류가 발생했습니다."
+              : error === "ERR:INVALID_ROUTE"
+              ? "⚠️ 유효하지 않은 노선입니다."
+              : "현재 운행 중인 차량이 없습니다."}
           </li>
         )}
 

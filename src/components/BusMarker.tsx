@@ -29,6 +29,7 @@ export default function BusMarker({ routeName }: BusMarkerProps) {
   const stops = useBusStops(routeName);
 
   if (!routeInfo) return null;
+  if (busList.length === 0) return null;
 
   return (
     <>
