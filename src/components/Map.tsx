@@ -18,7 +18,7 @@ const defaultPosition: [number, number] = [37.278925, 127.902296];
 export default function Map({ routeName }: MapProps) {
   return (
     <MapContainer
-      center={[37.278925, 127.902296]}
+      center={defaultPosition}
       zoom={17}
       scrollWheelZoom={true}
       className="w-full h-full"
