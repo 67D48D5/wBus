@@ -12,7 +12,7 @@ type MapProps = {
   routeName: string;
 };
 
-const defaultPosition: [number, number] = [37.278925, 127.902296];
+const defaultPosition: [number, number] = [37.28115, 127.901946];
 
 export default function Map({ routeName }: MapProps) {
   return (
