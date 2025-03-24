@@ -44,3 +44,15 @@ export function useBusArrivalInfo(busStopId: string | null) {
 
   return { data, loading, error };
 }
+
+export function getNextBusArrivalInfo(routeName: string, data: ArrivalInfo[]) {
+  const target = data.find(
+    (bus) => bus.routeno.replace("-", "") === routeName.replace("-", "")
+  );
+  if (!target) return null;
+
+  return {
+    minutes: Math.ceil(target.arrtime / 60),
+    stopsAway: target.arrprevstationcnt,
+  };
+}

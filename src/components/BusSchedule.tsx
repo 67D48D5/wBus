@@ -2,116 +2,22 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
-import Papa from "papaparse";
-import {
-  getMinutesUntilNextDeparture,
-  getFirstDeparture,
-} from "@/utils/getTime";
-
-import type { ScheduleEntry } from "@/types/schedule";
+import { useState } from "react";
+import { useScheduleData } from "@/hooks/useScheduleData";
+import { renderScheduleStatusMessage } from "@/utils/getTime";
 
 type BusScheduleProps = {
   routeName: string;
 };
 
 export default function BusSchedule({ routeName }: BusScheduleProps) {
-  const [data, setData] = useState<ScheduleEntry[]>([]);
-  const [headers, setHeaders] = useState<string[]>([]);
-  const [note, setNote] = useState("");
   const [weekday, setWeekday] = useState(true);
-  const [hasGeneral, setHasGeneral] = useState(false);
   const [open, setOpen] = useState(true);
 
-  const [minutesLeft, setMinutesLeft] = useState<number | null>(null);
-  const [firstDeparture, setFirstDeparture] = useState<string | null>(null);
+  const { data, headers, note, minutesLeft, firstDeparture, departureColumn } =
+    useScheduleData(routeName, weekday);
 
-  const departureColumn = headers.includes("연세대발")
-    ? "연세대발"
-    : headers.includes("회촌발")
-    ? "회촌발"
-    : null;
-
-  useEffect(() => {
-    const loadCSV = async () => {
-      try {
-        const res = await fetch(`/schedules/${routeName}.csv`);
-        const text = await res.text();
-        const lines = text.split("\n").filter((line) => line.trim());
-
-        const noteLine = lines
-          .find((line) => line.startsWith("##"))
-          ?.replace(/^##\s?/, "");
-        setNote(noteLine ?? "");
-
-        const isGeneral = lines.some((line) => line.startsWith("# General"));
-        const isWeekday = lines.some((line) => line.startsWith("# Weekdays"));
-        const isHoliday = lines.some((line) => line.startsWith("# Holidays"));
-
-        setHasGeneral(isGeneral);
-
-        const parseLines = (raw: string[]) => {
-          const csv = Papa.parse(raw.join("\n"), {
-            header: true,
-            skipEmptyLines: true,
-          });
-          setHeaders(csv.meta.fields ?? []);
-
-          return csv.data as ScheduleEntry[];
-        };
-
-        if (isGeneral) {
-          const start = lines.indexOf("# General");
-          const body = lines
-            .slice(start + 1)
-            .filter((l) => !l.startsWith("##"));
-          setData(parseLines(body));
-        } else if (isWeekday && isHoliday) {
-          const startW = lines.indexOf("# Weekdays");
-          const startH = lines.indexOf("# Holidays");
-
-          const weekdayLines = lines.slice(startW + 1, startH);
-          const holidayLines = lines
-            .slice(startH + 1)
-            .filter((l) => !l.startsWith("##"));
-
-          const parsedWeekday = parseLines(weekdayLines);
-          const parsedHoliday = parseLines(holidayLines);
-
-          setData(weekday ? parsedWeekday : parsedHoliday);
-        } else {
-          setData([]);
-          setHeaders([]);
-        }
-      } catch (err) {
-        console.error("❌ 시간표 파싱 오류:", err);
-      }
-    };
-
-    loadCSV();
-  }, [routeName, weekday]);
-
-  useEffect(() => {
-    if (!departureColumn || data.length === 0) {
-      setMinutesLeft(null);
-      setFirstDeparture(null);
-      return;
-    }
-
-    const update = () => {
-      const raw = getMinutesUntilNextDeparture(data, departureColumn);
-      const corrected =
-        raw !== null && departureColumn === "회촌발" ? raw + 7 : raw;
-
-      setMinutesLeft(corrected);
-      setFirstDeparture(getFirstDeparture(data, departureColumn));
-    };
-
-    update(); // 최초 실행
-
-    const timer = setInterval(update, 10000); // 10초마다 재계산
-    return () => clearInterval(timer);
-  }, [departureColumn, data]);
+  const hasGeneral = headers.includes("연세대발") || headers.includes("회촌발");
 
   return (
     <div
@@ -147,7 +53,7 @@ export default function BusSchedule({ routeName }: BusScheduleProps) {
         </div>
       </div>
 
-      {/* 항상 렌더링되며, 상태로 스타일만 변경 */}
+      {/* 본문 */}
       <div
         className={`transition-all duration-300 text-sm bg-white/90 shadow-md ring-1 ring-t-0 ring-gray-300 rounded-b-lg
     ${
@@ -157,47 +63,10 @@ export default function BusSchedule({ routeName }: BusScheduleProps) {
     }
   `}
       >
-        {minutesLeft !== null && minutesLeft < 60 ? (
-          <p className="mt-2 text-s text-gray-700 leading-snug">
-            <span className="font-bold">
-              📌{" "}
-              {departureColumn === "회촌발"
-                ? "학생회관 정류장 도착"
-                : "학생회관 정류장 출발"}{" "}
-              정보
-            </span>
-            <br />
-            {minutesLeft <= 3 ? (
-              <>
-                대기 중인 버스가{" "}
-                <span className="text-red-600 font-semibold">
-                  곧 {departureColumn === "회촌발" ? "도착" : "출발"}
-                </span>
-                해요!
-                <br />
-                <span className="text-xs text-gray-500">
-                  ({minutesLeft}분 이내)
-                </span>
-              </>
-            ) : (
-              <>
-                다음 버스는 약{" "}
-                <span className="text-blue-600">{minutesLeft}분 후</span>{" "}
-                {departureColumn === "회촌발" ? "도착" : "출발"}합니다.
-              </>
-            )}
-          </p>
-        ) : firstDeparture ? (
-          <p className="mt-2 text-sm text-gray-700 leading-snug">
-            <div className="font-bold">
-              🚫 지금은 학생회관 버스 정류장에서 출발 예정인 버스가 없어요.
-            </div>{" "}
-            첫차는
-            <span className="text-blue-700"> {firstDeparture}</span>
-            입니다.
-          </p>
-        ) : (
-          <p className="mt-2 text-sm text-gray-500">시간표 정보가 없습니다.</p>
+        {renderScheduleStatusMessage(
+          minutesLeft,
+          firstDeparture,
+          departureColumn
         )}
 
         <br />

@@ -36,3 +36,10 @@ export const busStopIcon = new L.Icon({
   iconAnchor: [8, 16],
   popupAnchor: [0, -14],
 });
+
+export const busStopIconYonsei = new L.Icon({
+  iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+  iconSize: [32, 32],
+  iconAnchor: [8, 32],
+  popupAnchor: [0, -30],
+});
