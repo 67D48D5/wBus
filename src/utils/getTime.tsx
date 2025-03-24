@@ -108,12 +108,12 @@ export function renderScheduleStatusMessage(
       <div className="font-bold mb-1">📌 {headerText} 정보</div>
 
       {/* 상태 메시지 */}
-      {minutesLeft !== null && minutesLeft < 60 ? (
+      {minutesLeft !== null && minutesLeft <= 60 ? (
         minutesLeft <= 3 ? (
           <div>
             대기 중인 버스가{" "}
             <span className="text-red-600 font-semibold">
-              곧 {departureColumn === "회촌발" ? "도착" : "출발"}
+              곧 {departureColumn?.includes("연세대") ? "출발" : "도착"}
             </span>
             해요!
             <br />
@@ -125,7 +125,7 @@ export function renderScheduleStatusMessage(
           <div>
             다음 버스는 약{" "}
             <span className="text-blue-600">{minutesLeft}분 후</span>{" "}
-            {departureColumn === "회촌발" ? "도착" : "출발"}합니다.
+            {departureColumn?.includes("연세대") ? "출발" : "도착"}합니다.
           </div>
         )
       ) : firstDeparture ? (
@@ -133,7 +133,7 @@ export function renderScheduleStatusMessage(
           <div className="font-bold">
             🚫 지금은 학생회관 버스 정류장에서 출발 예정인 버스가 없어요.
           </div>{" "}
-          첫차는{" "}
+          다음 출발 시간은{" "}
           <span className="text-blue-700 font-semibold">{firstDeparture}</span>
           입니다.
         </div>

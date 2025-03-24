@@ -1,6 +1,7 @@
 // src/hooks/useScheduleData.ts
 
 import { useEffect, useState } from "react";
+
 import { loadCSV } from "@/utils/getCSV";
 import {
   getDepartureColumn,

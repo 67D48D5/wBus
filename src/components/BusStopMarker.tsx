@@ -54,7 +54,7 @@ export default function BusStopMarker({ routeName }: Props) {
                           🎓 연세대학교 교내 정류장입니다.
                           <br />
                           이곳은 <strong>학생회관 버스 정류장</strong>을
-                          기준으로 출발 정보가 표시됩니다.
+                          기준으로 시간표 기반 출발 정보가 표시됩니다.
                         </div>
 
                         <BusSchedule routeName={routeName} />
@@ -87,7 +87,8 @@ export default function BusStopMarker({ routeName }: Props) {
                                 <span className="font-semibold">
                                   {bus.routeno}번
                                 </span>
-                                <span className="text-gray-600">
+                                <span className="text-gray-600 text-[12px]">
+                                  {bus.vehicletp.split("", 2).join("")} /{" "}
                                   {Math.ceil(bus.arrtime / 60)}분 후 (
                                   {bus.arrprevstationcnt} 정류장 전)
                                 </span>
