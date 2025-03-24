@@ -70,7 +70,7 @@ export default function BusStopMarker({ routeName }: Props) {
                           <br />
                           이곳은 <strong>출발 기준 정류장</strong>으로, 시간표
                           출발시간을 기준으로 정보가 표시됩니다. (현재 선택된
-                          노선: {routeName}번)
+                          노선: {routeName}번) [평일 기준]
                         </div>
 
                         {schedule.length > 0 &&
