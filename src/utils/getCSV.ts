@@ -1,6 +1,7 @@
 // src/utils/getCSV.ts
 
 import Papa from "papaparse";
+
 import type { ScheduleEntry } from "@/types/schedule";
 
 export type ParsedCSVResult = {
@@ -31,7 +32,14 @@ export async function loadCSV(
         header: true,
         skipEmptyLines: true,
       });
-      return csv.data as ScheduleEntry[];
+
+      const data = csv.data as ScheduleEntry[];
+      const cleaned = data.map((row) => {
+        const { 장양리발, ...rest } = row;
+        return rest;
+      });
+
+      return cleaned as ScheduleEntry[];
     };
 
     if (isGeneral) {
