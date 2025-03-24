@@ -4,9 +4,9 @@
 
 import { useEffect, useState } from "react";
 import { Marker, Popup } from "react-leaflet";
+import { useIcons } from "@/hooks/useIcons";
 import { useBusData } from "@/hooks/useBusData";
 import { getRouteInfo } from "@/utils/getRouteInfo";
-import { busIconUp, busIconDown } from "@/constants/icons";
 import { useBusDirection } from "@/hooks/useBusDirection";
 
 import type { RouteInfo } from "@/types/data";
@@ -17,6 +17,7 @@ type BusMarkerProps = {
 
 export default function BusMarker({ routeName }: BusMarkerProps) {
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
+  const { busIconUp, busIconDown } = useIcons();
 
   useEffect(() => {
     const load = async () => {

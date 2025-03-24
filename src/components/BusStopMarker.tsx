@@ -2,47 +2,32 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Marker, Popup } from "react-leaflet";
 
+import { useIcons } from "@/hooks/useIcons";
 import { useBusStops } from "@/hooks/useBusStops";
 import { useBusArrivalInfo } from "@/hooks/useBusArrivalInfo";
-import { useScheduleData } from "@/hooks/useScheduleData";
-import { loadCSV } from "@/utils/getCSV";
-import {
-  getMinutesUntilNextDeparture,
-  getFirstDeparture,
-  getCorrectedMinutesLeft,
-  renderScheduleStatusMessage,
-  getDepartureColumn,
-} from "@/utils/getTime";
-import { busStopIcon, busStopIconYonsei } from "@/constants/icons";
 
-import type { ScheduleEntry } from "@/types/schedule";
+import BusSchedule from "./BusSchedule";
 
 type Props = {
   routeName: string;
 };
 
-const TARGET_NODE_ID = "WJB251036041";
+const TARGET_NODE_IDS: Array<string> = ["WJB251036041", "WJB251036043"];
 
 export default function BusStopMarker({ routeName }: Props) {
   const stops = useBusStops(routeName);
   const [activeStopId, setActiveStopId] = useState<string | null>(null);
   const { data: arrivalData, loading, error } = useBusArrivalInfo(activeStopId);
-
-  const {
-    data: schedule,
-    minutesLeft,
-    firstDeparture,
-    departureColumn,
-  } = useScheduleData(routeName, true);
+  const { busStopIcon, busStopIconYonsei } = useIcons();
 
   return (
     <>
       {stops.map((stop) => {
         const isActive = activeStopId === stop.nodeid;
-        const isTargetStop = stop.nodeid === TARGET_NODE_ID;
+        const isTargetStop = TARGET_NODE_IDS.includes(stop.nodeid);
 
         return (
           <Marker
@@ -54,8 +39,8 @@ export default function BusStopMarker({ routeName }: Props) {
               popupclose: () => setActiveStopId(null),
             }}
           >
-            <Popup minWidth={200}>
-              <div>
+            <Popup minWidth={210}>
+              <div className="max-h-[280px] w-[210px] overflow-y-auto">
                 <div className="font-bold mb-1">
                   🚏 {stop.nodenm}{" "}
                   <span className="text-xs text-gray-500">{stop.nodeno}</span>
@@ -66,20 +51,13 @@ export default function BusStopMarker({ routeName }: Props) {
                     {isTargetStop ? (
                       <>
                         <div className="mt-2 p-2 rounded bg-blue-50 text-blue-800 text-xs font-medium">
-                          🎓 연세대학교 학생회관 정류장입니다.
+                          🎓 연세대학교 교내 정류장입니다.
                           <br />
-                          이곳은 <strong>출발 기준 정류장</strong>으로, 시간표
-                          출발시간을 기준으로 정보가 표시됩니다. (현재 선택된
-                          노선: {routeName}번) [평일 기준]
+                          이곳은 <strong>학생회관 버스 정류장</strong>을
+                          기준으로 시간표 기반 정보가 표시됩니다.
                         </div>
 
-                        {schedule.length > 0 &&
-                          departureColumn &&
-                          renderScheduleStatusMessage(
-                            minutesLeft,
-                            firstDeparture,
-                            departureColumn
-                          )}
+                        <BusSchedule routeName={routeName} />
                       </>
                     ) : (
                       <>

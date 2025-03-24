@@ -19,9 +19,14 @@ export function useScheduleData(routeName: string, weekday: boolean = true) {
   const [firstDeparture, setFirstDeparture] = useState<string | null>(null);
   const [departureColumn, setDepartureColumn] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [state, setState] = useState<
+    "general" | "weekday" | "holiday" | "unknown"
+  >("unknown");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let timer: NodeJS.Timeout;
+
     const fetch = async () => {
       if (!routeName) return;
 
@@ -29,7 +34,10 @@ export function useScheduleData(routeName: string, weekday: boolean = true) {
       setError(null);
 
       try {
-        const { headers, data, note } = await loadCSV(routeName, weekday);
+        const { headers, data, note, state } = await loadCSV(
+          routeName,
+          weekday
+        );
         const column = getDepartureColumn(headers);
         setDepartureColumn(column);
 
@@ -42,6 +50,7 @@ export function useScheduleData(routeName: string, weekday: boolean = true) {
         setHeaders(headers);
         setData(data);
         setNote(note);
+        setState(state ?? "unknown");
         setDepartureColumn(column);
 
         const raw = getMinutesUntilNextDeparture(data, column);
@@ -56,6 +65,10 @@ export function useScheduleData(routeName: string, weekday: boolean = true) {
     };
 
     fetch();
+
+    timer = setInterval(fetch, 10000);
+
+    return () => clearInterval(timer);
   }, [routeName, weekday]);
 
   return {
@@ -66,6 +79,7 @@ export function useScheduleData(routeName: string, weekday: boolean = true) {
     firstDeparture,
     departureColumn,
     loading,
+    state,
     error,
   };
 }

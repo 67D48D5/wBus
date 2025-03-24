@@ -2,46 +2,38 @@
 
 "use client";
 
-import { useMapContext } from "@/context/MapContext";
-import { myIcon, findMyLocationIcon } from "@/constants/icons";
+import { useState, useEffect } from "react";
 
-import { useState } from "react";
-import L from "leaflet";
+import { useMapContext } from "@/context/MapContext";
+import { useIcons } from "@/hooks/useIcons";
 
 export default function MyLocation() {
   const { map } = useMapContext();
-  const [marker, setMarker] = useState<L.Marker | null>(null);
+  const { myIcon, findMyLocationIcon } = useIcons();
+  const [marker, setMarker] = useState<any>(null);
+  const [isClient, setIsClient] = useState(false);
 
-  const handleClick = () => {
-    if (!navigator.geolocation) {
-      alert("위치 정보를 지원하지 않는 브라우저입니다.");
-      return;
-    }
+  useEffect(() => {
+    setIsClient(true); // 클라이언트 환경에서만 true
+  }, []);
 
-    if (!map) {
-      alert("지도가 아직 로드되지 않았습니다!");
-      return;
-    }
+  const handleClick = async () => {
+    const L = await import("leaflet");
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
 
-        // Fly to the current location
-        map.flyTo([latitude, longitude], 17, {
+        map?.flyTo([latitude, longitude], 17, {
           animate: true,
           duration: 1.5,
         });
 
-        // Remove existing marker
-        if (marker) {
-          map.removeLayer(marker);
-        }
+        if (marker) map?.removeLayer(marker);
 
-        // Add a new marker
         const newMarker = L.marker([latitude, longitude], { icon: myIcon })
-          .addTo(map)
-          .bindPopup("<b>내 위치</b>")
+          .addTo(map!)
+          .bindPopup(`<b>📍 내 위치</b><br>위도: ${latitude}<br>경도: ${longitude}`)
           .openPopup();
 
         setMarker(newMarker);
@@ -57,7 +49,9 @@ export default function MyLocation() {
       onClick={handleClick}
       className="fixed bottom-4 right-4 z-30 bg-white hover:bg-blue-700 text-black text-xs px-3 py-2 rounded shadow-md"
     >
-      <img src={findMyLocationIcon.options.iconUrl} alt="내 위치 찾기" />
+      {isClient && findMyLocationIcon && (
+        <img src={findMyLocationIcon.options.iconUrl} alt="내 위치 찾기" />
+      )}
     </button>
   );
 }

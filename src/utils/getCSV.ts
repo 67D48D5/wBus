@@ -7,6 +7,7 @@ export type ParsedCSVResult = {
   headers: string[];
   data: ScheduleEntry[];
   note: string;
+  state?: "general" | "weekday" | "holiday" | "unknown";
 };
 
 export async function loadCSV(
@@ -39,7 +40,7 @@ export async function loadCSV(
       const data = parseLines(body);
       const headers = data.length > 0 ? Object.keys(data[0]) : [];
 
-      return { headers, data, note: noteLine };
+      return { headers, data, note: noteLine, state: "general" };
     } else if (isWeekday && isHoliday) {
       const startW = lines.indexOf("# Weekdays");
       const startH = lines.indexOf("# Holidays");
@@ -55,9 +56,14 @@ export async function loadCSV(
       const finalData = weekday ? parsedWeekday : parsedHoliday;
       const headers = finalData.length > 0 ? Object.keys(finalData[0]) : [];
 
-      return { headers, data: finalData, note: noteLine };
+      return {
+        headers,
+        data: finalData,
+        note: noteLine,
+        state: weekday ? "weekday" : "holiday",
+      };
     } else {
-      return { headers: [], data: [], note: noteLine };
+      return { headers: [], data: [], note: noteLine, state: "unknown" };
     }
   } catch (err) {
     console.error("❌ 시간표 파싱 오류:", err);

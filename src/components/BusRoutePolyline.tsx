@@ -4,7 +4,7 @@
 
 import { Polyline } from "react-leaflet";
 import { usePolyline } from "@/hooks/usePolyline";
-import { useBusData } from "@/hooks/useBusData"; // 추가
+import { useBusData } from "@/hooks/useBusData";
 
 type Props = {
   routeName: string;

@@ -2,19 +2,13 @@
 
 "use client";
 
-import NavBar from "@/components/NavBar";
-import MapWrapper from "@/components/MapWrapper";
-import BusSchedule from "@/components/BusSchedule";
-import BusList from "@/components/BusList";
+import { useEffect, useState } from "react";
 import { startBusPolling } from "@/hooks/useBusData";
 
-import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
-
-// Disable SSR for MyLocation component
-const MyLocation = dynamic(() => import("@/components/MyLocation"), {
-  ssr: false,
-});
+import NavBar from "@/components/NavBar";
+import MapWrapper from "@/components/MapWrapper";
+import BusList from "@/components/BusList";
+import MyLocation from "@/components/MyLocation";
 
 export default function Home() {
   const [selectedRouteName, setSelectedRouteName] = useState("30");
@@ -26,9 +20,13 @@ export default function Home() {
 
   return (
     <div className="w-full h-screen relative">
-      <MapWrapper routeName={selectedRouteName} />
+      {/* Navigation Bar */}
       <NavBar onRouteChange={(routeName) => setSelectedRouteName(routeName)} />
-      <BusSchedule routeName={selectedRouteName} />
+
+      {/* Map */}
+      <MapWrapper routeName={selectedRouteName} />
+
+      {/* Overlay Elements */}
       <BusList routeName={selectedRouteName} />
       <MyLocation />
     </div>
