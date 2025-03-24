@@ -3,6 +3,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import { startBusPolling } from "@/hooks/useBusData";
 
 import NavBar from "@/components/NavBar";
@@ -19,16 +20,19 @@ export default function Home() {
   }, [selectedRouteName]);
 
   return (
-    <div className="w-full h-screen relative">
-      {/* Navigation Bar */}
-      <NavBar onRouteChange={(routeName) => setSelectedRouteName(routeName)} />
+    <div className="flex flex-col w-full h-[100dvh]">
+      <NavBar
+        onRouteChange={(route) => {
+          setSelectedRouteName(route);
+        }}
+      />
 
-      {/* Map */}
-      <MapWrapper routeName={selectedRouteName} />
+      <div className="relative flex-1 overflow-hidden">
+        <MapWrapper routeName={selectedRouteName} />
 
-      {/* Overlay Elements */}
-      <BusList routeName={selectedRouteName} />
-      <MyLocation />
+        <BusList routeName={selectedRouteName} />
+        <MyLocation />
+      </div>
     </div>
   );
 }

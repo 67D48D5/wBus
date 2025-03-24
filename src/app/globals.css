@@ -29,5 +29,9 @@ html, body {
 }
 
 .leaflet-container {
-  z-index: 0 !important;
+  z-index: 0;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
