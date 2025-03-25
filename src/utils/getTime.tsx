@@ -88,7 +88,6 @@ export function getCorrectedMinutesLeft(
   column: string | null
 ): number | null {
   if (raw === null) return null;
-  console.log(raw, column);
   if (column === "회촌발") return raw + 7;
   return raw;
 }
