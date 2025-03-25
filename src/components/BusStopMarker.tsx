@@ -115,7 +115,7 @@ function renderPopupContent({
           ) : (
             <>
               연세대학교가 종점이 아닌 노선은 <strong>시간표에 따른</strong>{" "}
-              출발 정보와 <strong>실시간 도착 정보</strong>를 함께 제공합니다.
+              종점에서의 출발 정보와 <strong>실시간 도착 정보</strong>를 함께 제공합니다.
             </>
           )}
         </div>
