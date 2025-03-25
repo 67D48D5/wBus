@@ -77,12 +77,6 @@ export function getFirstDeparture(
   return null;
 }
 
-export function getDepartureColumn(headers: string[]): string | null {
-  if (headers.includes("연세대발")) return "연세대발";
-  if (headers.includes("회촌발")) return "회촌발";
-  return null;
-}
-
 export function renderScheduleStatusMessage(
   minutesLeft: number | null,
   firstDeparture: string | null,
@@ -90,7 +84,7 @@ export function renderScheduleStatusMessage(
 ): JSX.Element {
   const headerText =
     departureColumn !== "연세대발"
-      ? `${departureColumn} 출발`
+      ? `${departureColumn} 버스 출발`
       : "학생회관 정류장 출발";
 
   return (

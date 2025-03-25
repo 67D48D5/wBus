@@ -4,33 +4,57 @@ import { useEffect, useState } from "react";
 
 import { loadCSV } from "@/utils/getCSV";
 import {
-  getDepartureColumn,
   getFirstDeparture,
   getMinutesUntilNextDeparture,
 } from "@/utils/getTime";
 
 import type { ScheduleEntry } from "@/types/schedule";
 
-export function useScheduleData(routeName: string, weekday: boolean = true) {
+interface ScheduleDataHookReturn {
+  data: ScheduleEntry[];
+  headers: string[];
+  note: string;
+  minutesLeft: number | null;
+  firstDeparture: string | null;
+  departureColumn: string | null;
+  isLoading: boolean;
+  state: "general" | "weekday" | "holiday" | "unknown";
+  errorMessage: string | null;
+}
+
+/**
+ * 시간표 CSV를 로드하고, 일정 간격(10초)으로 현재시간 대비
+ * 다음 버스까지 남은 시간(minutesLeft)과 첫 차 시각(firstDeparture)을 업데이트하는 훅
+ */
+export function useScheduleData(
+  routeName: string,
+  weekday: boolean = true
+): ScheduleDataHookReturn {
   const [data, setData] = useState<ScheduleEntry[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
   const [note, setNote] = useState("");
   const [minutesLeft, setMinutesLeft] = useState<number | null>(null);
   const [firstDeparture, setFirstDeparture] = useState<string | null>(null);
   const [departureColumn, setDepartureColumn] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+
+  const [isLoading, setIsLoading] = useState(false);
   const [state, setState] = useState<
     "general" | "weekday" | "holiday" | "unknown"
   >("unknown");
-  const [error, setError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // CSV를 딱 한 번 로드
+  // -------------------------
+  // CSV 최초 로딩 (routeName, weekday 변경 시 재호출)
+  // -------------------------
   useEffect(() => {
-    async function loadSchedule() {
-      if (!routeName) return;
+    // routeName 없으면 아무것도 안 함
+    if (!routeName) return;
 
-      setLoading(true);
-      setError(null);
+    let canceled = false;
+
+    async function loadSchedule() {
+      setIsLoading(true);
+      setErrorMessage(null);
 
       try {
         // CSV 불러오기
@@ -39,51 +63,60 @@ export function useScheduleData(routeName: string, weekday: boolean = true) {
           weekday
         );
 
-        const column = getDepartureColumn(headers);
+        if (canceled) return; // cleanup 후라면 무시
+
+        // @TODO: 제네릭하게 처리하도록 수정, 현재는 두 번째 column을 departureColumn으로 설정
+        const column = headers.length > 1 ? headers[1] : null;
+
+        // 상태 업데이트
         setDepartureColumn(column);
-
-        // 만약 departureColumn이 없는 CSV라면 (실제 출발 시각 정보가 없는 경우 등)
-        if (!column) {
-          setMinutesLeft(null);
-          setFirstDeparture(null);
-          return;
-        }
-
         setHeaders(headers);
         setData(data);
         setNote(note);
         setState(state ?? "unknown");
 
-        // "지금 시점"의 분까지 계산 (최초 1회)
-        setMinutesLeft(getMinutesUntilNextDeparture(data, column));
-        setFirstDeparture(getFirstDeparture(data, column));
+        // departureColumn이 없으면 minutesLeft, firstDeparture 모두 null
+        if (!column) {
+          setMinutesLeft(null);
+          setFirstDeparture(null);
+        } else {
+          // 당장 "다음 버스까지 남은 분" 계산
+          setMinutesLeft(getMinutesUntilNextDeparture(data, column));
+          setFirstDeparture(getFirstDeparture(data, column));
+        }
       } catch (err) {
         console.error(err);
-        setError("시간표 데이터를 불러오는 중 오류가 발생했습니다.");
+        if (!canceled) {
+          setErrorMessage("시간표 데이터를 불러오는 중 오류가 발생했습니다.");
+        }
       } finally {
-        setLoading(false);
+        if (!canceled) {
+          setIsLoading(false);
+        }
       }
     }
 
     loadSchedule();
+
+    // cleanup 함수
+    return () => {
+      canceled = true;
+    };
   }, [routeName, weekday]);
 
-  // CSV 데이터가 로드된 뒤, 10초마다 "남은 시간" 재계산
+  // -------------------------
+  // 10초마다 "남은 시간" 재계산
+  // -------------------------
   useEffect(() => {
-    // 만약 컬럼이 없거나, 데이터를 아직 못 불러온 상태면 스킵
+    // departureColumn 또는 data 없으면 타이머 설정 안 함
     if (!departureColumn || data.length === 0) return;
 
-    // 10초마다 재계산 타이머
     const timer = setInterval(() => {
       setMinutesLeft(getMinutesUntilNextDeparture(data, departureColumn));
       setFirstDeparture(getFirstDeparture(data, departureColumn));
     }, 10_000);
 
-    // 뒷정리
-    return () => {
-      clearInterval(timer);
-    };
-    // data, departureColumn이 바뀌면 새 타이머 세팅
+    return () => clearInterval(timer);
   }, [data, departureColumn]);
 
   return {
@@ -93,8 +126,8 @@ export function useScheduleData(routeName: string, weekday: boolean = true) {
     minutesLeft,
     firstDeparture,
     departureColumn,
-    loading,
+    isLoading,
     state,
-    error,
+    errorMessage,
   };
 }
