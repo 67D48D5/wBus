@@ -109,22 +109,20 @@ function renderPopupContent({
           <br />
           {isYonseiStop ? (
             <>
-              연세대학교가 종점인 노선은 <strong>시간표 기반</strong> 출발
-              정보가 표시됩니다.
+              연세대학교가 종점인 노선은 <strong>시간표에 따른</strong> 출발{""}
+              정보만 제공됩니다.
             </>
           ) : (
             <>
-              연세대학교가 종점이 아닌 노선은 <strong>실시간 도착 정보</strong>
-              가 표시됩니다.
+              연세대학교가 종점이 아닌 노선은 <strong>시간표에 따른</strong> 출발{" "}
+              정보와 <strong>실시간 도착 정보</strong>를 함께 제공합니다.
             </>
           )}
         </div>
 
-        {isYonseiStop ? (
-          // 30·34 => 시간표
-          <BusSchedule routeName={routeName} />
-        ) : (
-          // 교내 정류장이지만 30/34가 아닌 노선 => 실시간 도착
+        {/* 교내 정류장이면서 30/34 노선인 경우 => 시간표만 표시 */}
+        {!isYonseiStop && (
+          // 교내 정류장이지만 30/34가 아닌 노선 => 실시간 도착 정보 표시
           <ArrivalList
             loading={loading}
             error={error}
@@ -132,6 +130,9 @@ function renderPopupContent({
             directionLabel={directionLabel}
           />
         )}
+
+        {/* 시간표 표시 */}
+        <BusSchedule routeName={routeName} />
       </>
     );
   }
@@ -181,10 +182,12 @@ export default function BusStopMarker({ routeName }: Props) {
 
         const directionCode = getDirection(stop.nodeid, stop.nodeord);
 
-        // ② code -> "상행"/"하행" 변환
+        // code -> "상행"/"하행" 변환
         let directionLabel = "";
+
         if (directionCode === 1) directionLabel = "⬆️";
         else if (directionCode === 0) directionLabel = "⬇️";
+        else directionLabel = "❓";
         // 필요 시 else 문으로 "미정" 처리할 수도 있음
 
         return (
@@ -214,7 +217,7 @@ export default function BusStopMarker({ routeName }: Props) {
                   loading,
                   error,
                   routeName,
-                  directionLabel, // 여기서 상/하행 문자열 전달!
+                  directionLabel,
                 })}
               </div>
             </Popup>

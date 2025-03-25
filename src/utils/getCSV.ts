@@ -33,13 +33,7 @@ export async function loadCSV(
         skipEmptyLines: true,
       });
 
-      const data = csv.data as ScheduleEntry[];
-      const cleaned = data.map((row) => {
-        const { 장양리발, ...rest } = row;
-        return rest;
-      });
-
-      return cleaned as ScheduleEntry[];
+      return csv.data as ScheduleEntry[];
     };
 
     if (isGeneral) {
