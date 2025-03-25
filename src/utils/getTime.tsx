@@ -114,11 +114,11 @@ export function renderScheduleStatusMessage(
       ) : firstDeparture ? (
         <div>
           <div className="font-bold">
-            🚫 지금은 학생회관 버스 정류장에서 출발 예정인 버스가 없어요.
-          </div>{" "}
-          다음 출발 시간은{" "}
+            현재 출발 예정인 버스가 없습니다.
+            <br />
+          </div>
+          가장 가까운 출발 시간 | {" "}
           <span className="text-blue-700 font-semibold">{firstDeparture}</span>
-          입니다.
         </div>
       ) : (
         <div>시간표 정보가 없습니다.</div>
