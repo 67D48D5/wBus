@@ -25,23 +25,25 @@ export function useScheduleData(routeName: string, weekday: boolean = true) {
   >("unknown");
   const [error, setError] = useState<string | null>(null);
 
+  // (1) CSV를 딱 한 번 로드
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-
-    const fetch = async () => {
+    async function loadSchedule() {
       if (!routeName) return;
 
       setLoading(true);
       setError(null);
 
       try {
+        // CSV 불러오기
         const { headers, data, note, state } = await loadCSV(
           routeName,
           weekday
         );
+
         const column = getDepartureColumn(headers);
         setDepartureColumn(column);
 
+        // 만약 departureColumn이 없는 CSV라면 (실제 출발 시각 정보가 없는 경우 등)
         if (!column) {
           setMinutesLeft(null);
           setFirstDeparture(null);
@@ -52,8 +54,8 @@ export function useScheduleData(routeName: string, weekday: boolean = true) {
         setData(data);
         setNote(note);
         setState(state ?? "unknown");
-        setDepartureColumn(column);
 
+        // "지금 시점"의 분까지 계산 (최초 1회)
         const raw = getMinutesUntilNextDeparture(data, column);
         setMinutesLeft(getCorrectedMinutesLeft(raw, column));
         setFirstDeparture(getFirstDeparture(data, column));
@@ -63,14 +65,29 @@ export function useScheduleData(routeName: string, weekday: boolean = true) {
       } finally {
         setLoading(false);
       }
-    };
+    }
 
-    fetch();
-
-    timer = setInterval(fetch, 10000);
-
-    return () => clearInterval(timer);
+    loadSchedule();
   }, [routeName, weekday]);
+
+  // CSV 데이터가 로드된 뒤, 10초마다 "남은 시간" 재계산
+  useEffect(() => {
+    // 만약 컬럼이 없거나, 데이터를 아직 못 불러온 상태면 스킵
+    if (!departureColumn || data.length === 0) return;
+
+    // 10초마다 재계산 타이머
+    const timer = setInterval(() => {
+      const raw = getMinutesUntilNextDeparture(data, departureColumn);
+      setMinutesLeft(getCorrectedMinutesLeft(raw, departureColumn));
+      setFirstDeparture(getFirstDeparture(data, departureColumn));
+    }, 10_000);
+
+    // 뒷정리
+    return () => {
+      clearInterval(timer);
+    };
+    // data, departureColumn이 바뀌면 새 타이머 세팅
+  }, [data, departureColumn]);
 
   return {
     data,

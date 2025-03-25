@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { fetchBusLocationData } from "@/utils/fetchData";
-import { getRouteMap } from "@/utils/getRouteMap";
+import { getRouteMap } from "@/utils/getRouteInfo";
 
 import type { BusDataError } from "@/types/error";
 import type { BusItem } from "@/types/data";

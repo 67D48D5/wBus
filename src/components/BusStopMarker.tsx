@@ -1,4 +1,4 @@
-// src/components/B</>usStopMarker.tsx
+// src/components/BusStopMarker.tsx
 
 "use client";
 
@@ -7,6 +7,7 @@ import { Marker, Popup } from "react-leaflet";
 
 import { useIcons } from "@/hooks/useIcons";
 import { useBusStops } from "@/hooks/useBusStops";
+import { useBusDirection } from "@/hooks/useBusDirection";
 import { useBusArrivalInfo } from "@/hooks/useBusArrivalInfo";
 
 import BusSchedule from "./BusSchedule";
@@ -17,18 +18,21 @@ type Props = {
   routeName: string;
 };
 
-// 교내 정류장 ID 목록
+/** 교내 정류장 ID 목록 */
 const TARGET_NODE_IDS: Array<string> = ["WJB251036041", "WJB251036043"];
 
-/* 1) 실시간 도착정보 전용 리스트 컴포넌트 */
+/* 실시간 도착정보 리스트 */
 function ArrivalList({
   loading,
   error,
   arrivalData,
+  directionLabel,
 }: {
   loading: boolean;
   error: string | null;
   arrivalData: ArrivalInfo[];
+  /** 상행/하행 라벨 (예: "상행" / "하행" / "") */
+  directionLabel: string;
 }) {
   if (loading) {
     return (
@@ -46,21 +50,34 @@ function ArrivalList({
 
   return (
     <ul className="text-sm mt-1 divide-y divide-gray-200">
-      {arrivalData.map((bus, idx) => (
-        <li key={idx} className="flex justify-between py-1 px-1">
-          <span className="font-semibold">{bus.routeno}번</span>
-          <span className="text-gray-600 text-[12px]">
-            {/* ex: "저상 / 3분 후 (2 정류장 전)" 형태 */}
-            {bus.vehicletp.slice(0, 2)} / {Math.ceil(bus.arrtime / 60)}분 후 (
-            {bus.arrprevstationcnt} 정류장 전)
-          </span>
-        </li>
-      ))}
+      {arrivalData.map((bus, idx) => {
+        // 남은 도착 시간(분)
+        const minutes = Math.ceil(bus.arrtime / 60);
+        // 예: 120초 -> 2분, 30초 -> 1분, 59초 -> 1분 등
+
+        // 시간 표현식 분기: 3분 이하이면 "곧 도착"
+        let timeString = "";
+        if (minutes <= 3) {
+          timeString = `곧 도착 (${bus.arrprevstationcnt} 정류장 전)`;
+        } else {
+          timeString = `${minutes}분 (${bus.arrprevstationcnt} 정류장 전)`;
+        }
+
+        return (
+          <li key={idx} className="flex justify-between py-1 px-1">
+            <span className="font-semibold">{bus.routeno}번</span>
+            <span className="text-gray-600 text-[11px]">
+              {/* 예: "저상 / 3분 (2 정류장 전) 상행" */}
+              {bus.vehicletp.slice(0, 2)} / {timeString} {directionLabel}
+            </span>
+          </li>
+        );
+      })}
     </ul>
   );
 }
 
-/* 2) 팝업 내용 렌더링을 전담하는 함수 */
+/* 팝업 내용 렌더링 */
 function renderPopupContent({
   isActive,
   isTargetStop,
@@ -69,6 +86,7 @@ function renderPopupContent({
   loading,
   error,
   routeName,
+  directionLabel,
 }: {
   isActive: boolean;
   isTargetStop: boolean;
@@ -77,11 +95,12 @@ function renderPopupContent({
   loading: boolean;
   error: string | null;
   routeName: string;
+  directionLabel: string; // 상행/하행 문자열
 }) {
-  // 팝업이 닫혀 있다면 아무것도 표시하지 않음
+  // 팝업이 닫혀 있다면 표시 X
   if (!isActive) return null;
 
-  // "교내 정류장"인 경우
+  // 교내 정류장인 경우
   if (isTargetStop) {
     return (
       <>
@@ -89,26 +108,28 @@ function renderPopupContent({
           🎓 연세대학교 교내 정류장입니다.
           <br />
           {isYonseiStop ? (
-            /* 30·34번 노선 => 시간표 안내만 표시 */
             <>
-              연세대학교가 종점인 노선은 학생회관 버스 정류장을
-              기준으로 <strong>시간표 기반</strong> 출발 정보가 표시됩니다.
+              연세대학교가 종점인 노선은 <strong>시간표 기반</strong> 출발
+              정보가 표시됩니다.
             </>
           ) : (
-            /* 교내 정류장이지만 이 정료장이 종점인 30,34 외 => 실시간 안내 */
-            <>연세대학교가 종점이 아닌 노선은 <strong>실시간 도착 정보</strong>가 표시됩니다.</>
+            <>
+              연세대학교가 종점이 아닌 노선은 <strong>실시간 도착 정보</strong>
+              가 표시됩니다.
+            </>
           )}
         </div>
 
         {isYonseiStop ? (
-          // 30·34 => BusSchedule
+          // 30·34 => 시간표
           <BusSchedule routeName={routeName} />
         ) : (
-          // 교내 정류장이지만 30/34 외 => 실시간 도착 정보
+          // 교내 정류장이지만 30/34가 아닌 노선 => 실시간 도착
           <ArrivalList
             loading={loading}
             error={error}
             arrivalData={arrivalData}
+            directionLabel={directionLabel}
           />
         )}
       </>
@@ -117,21 +138,29 @@ function renderPopupContent({
 
   // 일반 정류장
   return (
-    <ArrivalList loading={loading} error={error} arrivalData={arrivalData} />
+    <ArrivalList
+      loading={loading}
+      error={error}
+      arrivalData={arrivalData}
+      directionLabel={directionLabel}
+    />
   );
 }
 
 export default function BusStopMarker({ routeName }: Props) {
-  // 1) 해당 노선의 모든 정류장 정보 불러오기
+  // 모든 정류장 불러오기
   const stops = useBusStops(routeName);
 
-  // 2) 현재 "팝업 오픈" 상태인 정류장 ID
+  // 팝업 열림 상태
   const [activeStopId, setActiveStopId] = useState<string | null>(null);
 
-  // 3) 아이콘 불러오기 (일반/연세대 전용)
+  // 아이콘 (교내 vs 일반)
   const { busStopIcon, busStopIconYonsei } = useIcons();
 
-  // 4) 현재 선택된 정류장의 실시간 도착정보 API
+  // 상행/하행 판별 함수
+  const getDirection = useBusDirection(routeName);
+
+  // 선택된 정류장의 실시간 도착정보
   const {
     data: arrivalRawData,
     loading,
@@ -141,43 +170,42 @@ export default function BusStopMarker({ routeName }: Props) {
   return (
     <>
       {stops.map((stop) => {
-        // 팝업 열림 여부
         const isActive = activeStopId === stop.nodeid;
-
-        // 교내 정류장 여부
         const isTargetStop = TARGET_NODE_IDS.includes(stop.nodeid);
-
-        // 30·34번 노선인지 판별
         const isYonseiStop = ["30", "34"].includes(routeName);
 
-        // 실시간 도착 정보를 "정류장 남은 수" 기준으로 정렬
+        // 도착 정보를 정류장까지 남은 수로 정렬
         const arrivalData = [...arrivalRawData].sort(
           (a, b) => a.arrprevstationcnt - b.arrprevstationcnt
         );
+
+        const directionCode = getDirection(stop.nodeid, stop.nodeord);
+
+        // ② code -> "상행"/"하행" 변환
+        let directionLabel = "";
+        if (directionCode === 1) directionLabel = "⬆️";
+        else if (directionCode === 0) directionLabel = "⬇️";
+        // 필요 시 else 문으로 "미정" 처리할 수도 있음
 
         return (
           <Marker
             key={`${stop.nodeid}-${stop.updowncd}`}
             position={[stop.gpslati, stop.gpslong]}
-            // 교내 정류장이면 Yonsei 아이콘, 아니면 일반 아이콘
             icon={isTargetStop ? busStopIconYonsei : busStopIcon}
             eventHandlers={{
-              // 팝업 열릴 때
               popupopen: () => setActiveStopId(stop.nodeid),
-              // 팝업 닫힐 때
               popupclose: () => setActiveStopId(null),
             }}
           >
             <Popup minWidth={210}>
-              {/* 팝업 내부 스크롤 영역 */}
               <div className="max-h-[280px] w-[210px] overflow-y-auto">
-                {/* 정류장 이름 + 노드번호 */}
+                {/* 정류장 이름 + 번호 */}
                 <div className="font-bold mb-1">
                   🚏 {stop.nodenm}{" "}
                   <span className="text-xs text-gray-500">{stop.nodeno}</span>
                 </div>
 
-                {/* 팝업 본문 (조건 분기 함수로 깔끔하게 렌더) */}
+                {/* 팝업 내용 렌더링 */}
                 {renderPopupContent({
                   isActive,
                   isTargetStop,
@@ -186,6 +214,7 @@ export default function BusStopMarker({ routeName }: Props) {
                   loading,
                   error,
                   routeName,
+                  directionLabel, // 여기서 상/하행 문자열 전달!
                 })}
               </div>
             </Popup>

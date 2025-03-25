@@ -7,6 +7,11 @@ export function useBusDirection(routeName: string) {
   const stops = useBusStops(routeName);
 
   return useMemo(() => {
+    /**
+     * @param nodeid   현재 정류장 ID
+     * @param nodeord  해당 정류장의 순번(노선에서의 위치)
+     * @returns updowncd(1 또는 2) | null
+     */
     return function getDirection(
       nodeid: string,
       nodeord: number
@@ -14,9 +19,11 @@ export function useBusDirection(routeName: string) {
       const matches = stops.filter((s) => s.nodeid === nodeid);
       if (matches.length === 0) return null;
 
-      if (matches.length === 1) return matches[0].updowncd;
+      if (matches.length === 1) {
+        return matches[0].updowncd;
+      }
 
-      // 다수 존재 → nodeord가 가장 가까운 걸 기준으로 선택
+      // 만약 동일 nodeid가 상하행 2개 이상 있을 때 → nodeord가 가장 가까운 것 선택
       const closest = matches.reduce((prev, curr) => {
         return Math.abs(curr.nodeord - nodeord) <
           Math.abs(prev.nodeord - nodeord)
