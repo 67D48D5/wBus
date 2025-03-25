@@ -117,7 +117,7 @@ export function renderScheduleStatusMessage(
             현재 출발 예정인 버스가 없습니다.
             <br />
           </div>
-          가장 가까운 출발 시간 | {" "}
+          가장 가까운 출발 시간 |{" "}
           <span className="text-blue-700 font-semibold">{firstDeparture}</span>
         </div>
       ) : (
