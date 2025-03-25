@@ -83,23 +83,14 @@ export function getDepartureColumn(headers: string[]): string | null {
   return null;
 }
 
-export function getCorrectedMinutesLeft(
-  raw: number | null,
-  column: string | null
-): number | null {
-  if (raw === null) return null;
-  if (column === "회촌발") return raw + 7;
-  return raw;
-}
-
 export function renderScheduleStatusMessage(
   minutesLeft: number | null,
   firstDeparture: string | null,
   departureColumn: string | null
 ): JSX.Element {
   const headerText =
-    departureColumn === "회촌발"
-      ? "학생회관 정류장 도착"
+    departureColumn !== "연세대발"
+      ? `${departureColumn} 출발`
       : "학생회관 정류장 출발";
 
   return (
@@ -112,9 +103,7 @@ export function renderScheduleStatusMessage(
         minutesLeft <= 3 ? (
           <div>
             대기 중인 버스가{" "}
-            <span className="text-red-600 font-semibold">
-              곧 {departureColumn?.includes("연세대") ? "출발" : "도착"}
-            </span>
+            <span className="text-red-600 font-semibold">곧 출발</span>
             해요!
             <br />
             <span className="text-xs text-gray-500">
@@ -125,7 +114,7 @@ export function renderScheduleStatusMessage(
           <div>
             다음 버스는 약{" "}
             <span className="text-blue-600">{minutesLeft}분 후</span>{" "}
-            {departureColumn?.includes("연세대") ? "출발" : "도착"}합니다.
+            출발합니다.
           </div>
         )
       ) : firstDeparture ? (

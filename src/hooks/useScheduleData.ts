@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { loadCSV } from "@/utils/getCSV";
 import {
   getDepartureColumn,
-  getCorrectedMinutesLeft,
   getFirstDeparture,
   getMinutesUntilNextDeparture,
 } from "@/utils/getTime";
@@ -25,7 +24,7 @@ export function useScheduleData(routeName: string, weekday: boolean = true) {
   >("unknown");
   const [error, setError] = useState<string | null>(null);
 
-  // (1) CSV를 딱 한 번 로드
+  // CSV를 딱 한 번 로드
   useEffect(() => {
     async function loadSchedule() {
       if (!routeName) return;
@@ -56,8 +55,7 @@ export function useScheduleData(routeName: string, weekday: boolean = true) {
         setState(state ?? "unknown");
 
         // "지금 시점"의 분까지 계산 (최초 1회)
-        const raw = getMinutesUntilNextDeparture(data, column);
-        setMinutesLeft(getCorrectedMinutesLeft(raw, column));
+        setMinutesLeft(getMinutesUntilNextDeparture(data, column));
         setFirstDeparture(getFirstDeparture(data, column));
       } catch (err) {
         console.error(err);
@@ -77,8 +75,7 @@ export function useScheduleData(routeName: string, weekday: boolean = true) {
 
     // 10초마다 재계산 타이머
     const timer = setInterval(() => {
-      const raw = getMinutesUntilNextDeparture(data, departureColumn);
-      setMinutesLeft(getCorrectedMinutesLeft(raw, departureColumn));
+      setMinutesLeft(getMinutesUntilNextDeparture(data, departureColumn));
       setFirstDeparture(getFirstDeparture(data, departureColumn));
     }, 10_000);
 
