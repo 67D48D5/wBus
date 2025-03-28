@@ -33,7 +33,6 @@ vercel deploy
 - [공공데이터포털](https://www.data.go.kr/)
 - [Typescript](https://www.typescriptlang.org/)
 - [React](https://reactjs.org/)
-- [PapaParse](https://www.papaparse.com/)
 
 ## License
 

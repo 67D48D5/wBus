@@ -1,35 +1,47 @@
 // src/utils/getTime.ts
 
 import React, { JSX } from "react";
-import type { ScheduleEntry } from "@/types/schedule";
 
 /**
- * 현재 시각 기준으로, 지정된 출발 컬럼에서 가장 가까운 시간까지 남은 분을 계산합니다.
+ * 현재 시각 기준, 지정된 출발 컬럼(=direction)에서
+ * 가장 가까운 출발 시간까지 남은 분을 계산합니다.
+ *
+ * @param data { "06:00": {"연세대": [{time: "05"}], "장양리": [...]}, ... }
+ * @param column "연세대" | "장양리" 등
+ * @returns 남은 분(정수), 없다면 null
  */
 export function getMinutesUntilNextDeparture(
-  data: ScheduleEntry[],
+  data: Record<string, Record<string, Array<{ time: string; note?: string }>>>,
   column: string
 ): number | null {
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
   let nextDeparture = Infinity;
 
-  for (const row of data) {
-    const hour = parseInt(row["시간대"]);
+  // 시간 정렬 (안전하게 커스텀 정렬 사용)
+  const hourKeys = Object.keys(data).sort((a, b) => {
+    const [ha, ma] = a.split(":").map(Number);
+    const [hb, mb] = b.split(":").map(Number);
+    return ha * 60 + ma - (hb * 60 + mb);
+  });
+
+  for (const hourKey of hourKeys) {
+    if (!data[hourKey][column]) continue;
+    // 해당 시간대에 column(방향) 출발 정보가 있다면 각각 검사
+    const departures = data[hourKey][column];
+
+    // hourKey에서 시 추출
+    const [hourStr] = hourKey.split(":");
+    const hour = parseInt(hourStr, 10);
     if (isNaN(hour)) continue;
 
-    const cell = row[column];
-    if (!cell || cell === "-" || cell.trim() === "") continue;
+    for (const dep of departures) {
+      const minute = parseInt(dep.time, 10);
+      if (isNaN(minute)) continue;
 
-    const minutesArray = cell
-      .split(",")
-      .map((m) => parseInt(m.trim()))
-      .filter((m) => !isNaN(m));
-
-    for (const min of minutesArray) {
-      const timeInMin = hour * 60 + min;
-      if (timeInMin >= nowMinutes && timeInMin < nextDeparture) {
-        nextDeparture = timeInMin;
+      const totalMin = hour * 60 + minute;
+      if (totalMin >= nowMinutes && totalMin < nextDeparture) {
+        nextDeparture = totalMin;
       }
     }
   }
@@ -38,35 +50,43 @@ export function getMinutesUntilNextDeparture(
 }
 
 /**
- * 데이터에서 가장 빠른 출발 시간을 찾아 "HH시 MM분" 형식으로 반환합니다.
+ * 데이터에서 가장 빠른 출발 시간을 찾아 "HH시 MM분" 형식으로 반환.
  */
 export function getFirstDeparture(
-  data: ScheduleEntry[],
+  data: Record<string, Record<string, Array<{ time: string; note?: string }>>>,
   column: string
 ): string | null {
   let earliest = Infinity;
 
-  for (const row of data) {
-    const hour = parseInt(row["시간대"]);
+  // 안전하게 커스텀 정렬
+  const hourKeys = Object.keys(data).sort((a, b) => {
+    const [ha, ma] = a.split(":").map(Number);
+    const [hb, mb] = b.split(":").map(Number);
+    return ha * 60 + ma - (hb * 60 + mb);
+  });
+
+  for (const hourKey of hourKeys) {
+    if (!data[hourKey][column]) continue;
+    const departures = data[hourKey][column];
+
+    const [hourStr] = hourKey.split(":");
+    const hour = parseInt(hourStr, 10);
     if (isNaN(hour)) continue;
 
-    const cell = row[column];
-    if (!cell || cell === "-" || cell.trim() === "") continue;
+    for (const dep of departures) {
+      const minute = parseInt(dep.time, 10);
+      if (isNaN(minute)) continue;
 
-    const minutesArray = cell
-      .split(",")
-      .map((m) => parseInt(m.trim()))
-      .filter((m) => !isNaN(m));
-
-    for (const min of minutesArray) {
-      const totalMinutes = hour * 60 + min;
-      if (totalMinutes < earliest) {
-        earliest = totalMinutes;
+      const totalMin = hour * 60 + minute;
+      if (totalMin < earliest) {
+        earliest = totalMin;
       }
     }
   }
 
-  if (earliest === Infinity) return null;
+  if (earliest === Infinity) {
+    return null;
+  }
 
   const hours = Math.floor(earliest / 60);
   const minutes = earliest % 60;
@@ -77,11 +97,9 @@ export function getFirstDeparture(
 
 /**
  * 현재 출발 정보에 따라 상태 메시지를 렌더링합니다.
- *
- * @param minutesLeft 남은 분 (없으면 null)
- * @param firstDeparture 첫 출발 시각 (없으면 null)
- * @param departureColumn 출발 컬럼명 (없으면 null)
- * @returns 출발 상태 메시지를 포함한 JSX.Element
+ * @param minutesLeft 남은 분
+ * @param firstDeparture 첫 출발 시각
+ * @param departureColumn 어떤 방향의 정보인지 (ex. "연세대", "장양리")
  */
 export function renderScheduleStatusMessage(
   minutesLeft: number | null,
@@ -89,9 +107,9 @@ export function renderScheduleStatusMessage(
   departureColumn: string | null
 ): JSX.Element {
   const headerText =
-    departureColumn !== "연세대발"
-      ? `${departureColumn} 버스 출발`
-      : "학생회관 정류장 출발";
+    departureColumn === "연세대"
+      ? "학생회관 정류장 출발" // 예시: 연세대가 학생회관이라 가정
+      : `${departureColumn} 버스 출발`;
 
   let content: JSX.Element;
 
@@ -109,7 +127,10 @@ export function renderScheduleStatusMessage(
       content = (
         <div>
           다음 버스는 약{" "}
-          <span className="text-blue-600">{minutesLeft}분 후</span> 출발합니다.
+          <span className="text-blue-600 font-semibold">
+            {minutesLeft}분 후
+          </span>{" "}
+          출발합니다.
         </div>
       );
     }
