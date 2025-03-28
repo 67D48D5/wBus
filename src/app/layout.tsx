@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "ymccb",
+  title: "YMCCB",
   description: "연세대 미래캠퍼스 버스 실시간 위치 및 시간표 시스템",
   icons: {
     icon: "/favicon.ico",
