@@ -44,7 +44,7 @@ export default function BusRoutePolyline({ routeName }: Props) {
             key={`up-${idx}`}
             positions={coords}
             pathOptions={{
-              color: "red",
+              color: "blue",
               weight: 4,
               dashArray: isInactive ? "4" : undefined,
               opacity,
@@ -60,7 +60,7 @@ export default function BusRoutePolyline({ routeName }: Props) {
             key={`down-${idx}`}
             positions={coords}
             pathOptions={{
-              color: "blue",
+              color: "red",
               weight: 4,
               dashArray: isInactive ? "4" : undefined,
               opacity,
