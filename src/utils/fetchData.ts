@@ -1,23 +1,38 @@
-// src/utils/fetchBusData.ts
-
 const API_URL = "https://gl87xfcx95.execute-api.ap-northeast-2.amazonaws.com";
 
 /**
- * 공통 API 호출 함수
- * @param endpoint - API 엔드포인트 (예: /getBusLocation/routeId)
+ * 재시도 가능한 공통 API 호출 함수
+ * @param endpoint API 엔드포인트 (예: /getBusLocation/routeId)
+ * @param retries 재시도 횟수 (기본값: 3)
+ * @param retryDelay 재시도 간격 (밀리초, 기본값: 1000)
  * @returns JSON 파싱 결과
  */
-async function fetchData(endpoint: string) {
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-  });
+async function fetchData(endpoint: string, retries = 3, retryDelay = 1000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(`${API_URL}${endpoint}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
 
-  if (!response.ok) {
-    throw new Error(`HTTP error! Status: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      // 마지막 재시도까지 실패하면 에러를 throw 합니다.
+      if (i === retries - 1) {
+        console.error("최종 네트워크 에러:", error);
+        throw error;
+      }
+      console.warn(`네트워크 에러 발생, ${i + 1}번째 재시도 진행 중...`, error);
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
+    }
   }
-
-  return response.json();
+  
+  // Generic Error
+  throw new Error("알 수 없는 네트워크 에러");
 }
 
 export async function fetchBusLocationData(routeId: string) {
@@ -38,6 +53,5 @@ export async function fetchBusArrivalInfoData(busStopId: string) {
   if (!rawItem) {
     return [];
   }
-  // 단일 객체와 배열 둘 다 처리
   return Array.isArray(rawItem) ? rawItem : [rawItem];
 }
