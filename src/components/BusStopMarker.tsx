@@ -19,7 +19,22 @@ type Props = {
 };
 
 /** 교내 정류장 ID 목록 */
-const TARGET_NODE_IDS: string[] = ["WJB251036041", "WJB251036043"];
+const TARGET_NODE_IDS: string[] = process.env.NEXT_PUBLIC_TARGET_NODE_IDS
+  ? process.env.NEXT_PUBLIC_TARGET_NODE_IDS.split(",")
+  : [];
+
+if (TARGET_NODE_IDS.length === 0) {
+  throw new Error("TARGET_NODE_IDS 환경 변수가 설정되지 않았습니다.");
+}
+
+/** 교내 종점 버스 노선 목록 */
+const YONSEI_END_ROUTES: string[] = process.env.NEXT_PUBLIC_YONSEI_END_ROUTES
+  ? process.env.NEXT_PUBLIC_YONSEI_END_ROUTES.split(",")
+  : [];
+
+if (YONSEI_END_ROUTES.length === 0) {
+  throw new Error("YONSEI_END_ROUTES 환경 변수가 설정되지 않았습니다.");
+}
 
 /* 실시간 도착정보 리스트 */
 function ArrivalList({
@@ -167,7 +182,7 @@ export default function BusStopMarker({ routeName }: Props) {
       {stops.map((stop) => {
         const isActive = activeStopId === stop.nodeid;
         const isTargetStop = TARGET_NODE_IDS.includes(stop.nodeid);
-        const isYonseiStop = ["30", "34"].includes(routeName);
+        const isYonseiStop = YONSEI_END_ROUTES.includes(routeName);
 
         const directionCode = getDirection(stop.nodeid, stop.nodeord);
         const directionLabel =
