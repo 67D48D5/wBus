@@ -2,29 +2,27 @@
 
 "use client";
 
-import { createContext, useContext, useState } from "react";
-
+import React, { createContext, useContext, useState, useMemo } from "react";
 import type { Map } from "leaflet";
 
 type MapContextType = {
   map: Map | null;
-  setMap: (map: Map) => void;
+  setMap: (map: Map | null) => void;
 };
 
-export const MapContext = createContext<MapContextType | undefined>(undefined);
+const MapContext = createContext<MapContextType | undefined>(undefined);
 
-export function useMapContext() {
-  const ctx = useContext(MapContext);
-  if (!ctx) throw new Error("useMapContext must be used within MapProvider");
-  return ctx;
+export function useMapContext(): MapContextType {
+  const context = useContext(MapContext);
+  if (!context) {
+    throw new Error("useMapContext must be used within MapProvider");
+  }
+  return context;
 }
 
 export function MapProvider({ children }: { children: React.ReactNode }) {
   const [map, setMap] = useState<Map | null>(null);
-
-  return (
-    <MapContext.Provider value={{ map, setMap }}>
-      {children}
-    </MapContext.Provider>
-  );
+  // context value를 memoization하여 불필요한 리렌더링을 방지합니다.
+  const value = useMemo(() => ({ map, setMap }), [map]);
+  return <MapContext.Provider value={value}>{children}</MapContext.Provider>;
 }

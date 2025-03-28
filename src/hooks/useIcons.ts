@@ -4,8 +4,11 @@
 
 import { useMemo } from "react";
 
-// 서버 환경에서는 leaflet 불러오지 않음
+// 서버 환경 여부를 미리 판단
 const isClient = typeof window !== "undefined";
+
+// 아이콘을 전역으로 캐싱 (한번 생성된 이후 재사용)
+let globalIcons: Partial<IconMap> | null = null;
 
 type IconMap = {
   busIconUp: L.Icon;
@@ -18,9 +21,19 @@ type IconMap = {
 
 export function useIcons(): Partial<IconMap> {
   return useMemo(() => {
-    if (typeof window === "undefined") return {};
+    if (!isClient) return {};
 
-    const L = require("leaflet");
+    // 전역 캐시가 이미 존재하면 재사용
+    if (globalIcons) return globalIcons;
+
+    let L;
+    try {
+      L = require("leaflet");
+    } catch (error) {
+      console.error("Leaflet 로드 실패:", error);
+      return {};
+    }
+
     const createIcon = (
       url: string,
       size: [number, number],
@@ -34,7 +47,7 @@ export function useIcons(): Partial<IconMap> {
         popupAnchor: popup,
       });
 
-    return {
+    globalIcons = {
       busIconUp: createIcon(
         "/images/bus-icon-up.png",
         [64, 64],
@@ -72,5 +85,7 @@ export function useIcons(): Partial<IconMap> {
         [0, -30]
       ),
     };
+
+    return globalIcons;
   }, []);
 }

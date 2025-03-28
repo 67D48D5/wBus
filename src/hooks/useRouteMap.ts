@@ -9,15 +9,18 @@ export function useRouteMap(): Record<string, string[]> | null {
   useEffect(() => {
     let isMounted = true;
 
-    getRouteMap()
-      .then((map) => {
+    const fetchRouteMap = async () => {
+      try {
+        const map = await getRouteMap();
         if (isMounted) {
           setData(map);
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("❌ useRouteMap fetch error:", err);
-      });
+      }
+    };
+
+    fetchRouteMap();
 
     return () => {
       isMounted = false;

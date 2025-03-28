@@ -65,7 +65,6 @@ export function useScheduleData(
 
         if (canceled) return; // cleanup 후라면 무시
 
-        // @TODO: 제네릭하게 처리하도록 수정, 현재는 두 번째 column을 departureColumn으로 설정
         const column = headers.length > 1 ? headers[1] : null;
 
         // 상태 업데이트

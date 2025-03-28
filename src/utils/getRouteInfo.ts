@@ -6,16 +6,16 @@ let cache: Record<string, string[]> | null = null;
 let pending: Promise<Record<string, string[]>> | null = null;
 
 /**
- * /public/routeMap.json을 가져오고 메모리에 캐싱
+ * /public/routeMap.json을 가져와 메모리에 캐싱합니다.
  */
 export async function getRouteMap(): Promise<Record<string, string[]>> {
-  // 이미 캐시가 있으면 즉시 반환
+  // 캐시가 존재하면 즉시 반환
   if (cache) return cache;
 
-  // 요청 중이라면 해당 프로미스를 그대로 반환
+  // 요청 중인 경우, 해당 프로미스를 반환
   if (pending) return pending;
 
-  // fetch 요청(프로미스)을 만들어 pending에 할당
+  // fetch 요청을 pending에 할당
   pending = fetch("/routeMap.json")
     .then((res) => {
       if (!res.ok) {
@@ -24,7 +24,7 @@ export async function getRouteMap(): Promise<Record<string, string[]>> {
       return res.json();
     })
     .then((json: Record<string, string[]>) => {
-      cache = json; // 캐싱
+      cache = json; // 성공 시 캐싱
       return json;
     })
     .catch((err) => {
@@ -32,14 +32,14 @@ export async function getRouteMap(): Promise<Record<string, string[]>> {
       throw err; // 에러 재발행
     })
     .finally(() => {
-      pending = null; // 요청 완료 후, 대기중 상태 해제
+      pending = null; // 요청 완료 후 pending 상태 해제
     });
 
   return pending;
 }
 
 /**
- * routeName을 기반으로 RouteInfo 객체 반환
+ * 주어진 routeName에 대한 RouteInfo 객체를 반환합니다.
  */
 export async function getRouteInfo(
   routeName: string

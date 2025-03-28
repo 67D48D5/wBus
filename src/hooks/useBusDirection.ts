@@ -6,32 +6,29 @@ import { useBusStops } from "@/hooks/useBusStops";
 export function useBusDirection(routeName: string) {
   const stops = useBusStops(routeName);
 
-  return useMemo(() => {
+  const getDirection = useMemo(() => {
     /**
+     * 주어진 정류장 ID와 노선상의 위치(nodeord)를 기준으로
+     * 상행/하행 코드를 반환합니다.
+     *
      * @param nodeid   현재 정류장 ID
-     * @param nodeord  해당 정류장의 순번(노선에서의 위치)
-     * @returns updowncd(1 또는 2) | null
+     * @param nodeord  정류장의 노선상 순서
+     * @returns 상행/하행 코드(예: 1 또는 2) 또는 해당 정류장이 없으면 null
      */
-    return function getDirection(
-      nodeid: string,
-      nodeord: number
-    ): number | null {
-      const matches = stops.filter((s) => s.nodeid === nodeid);
-      if (matches.length === 0) return null;
+    return (nodeid: string, nodeord: number): number | null => {
+      const matchingStops = stops.filter((stop) => stop.nodeid === nodeid);
+      if (matchingStops.length === 0) return null;
+      if (matchingStops.length === 1) return matchingStops[0].updowncd;
 
-      if (matches.length === 1) {
-        return matches[0].updowncd;
-      }
-
-      // 만약 동일 nodeid가 상하행 2개 이상 있을 때 → nodeord가 가장 가까운 것 선택
-      const closest = matches.reduce((prev, curr) => {
-        return Math.abs(curr.nodeord - nodeord) <
-          Math.abs(prev.nodeord - nodeord)
+      // 동일한 nodeid가 여러 개일 경우, nodeord와의 차이가 가장 적은 정류장을 선택
+      const closestStop = matchingStops.reduce((prev, curr) =>
+        Math.abs(curr.nodeord - nodeord) < Math.abs(prev.nodeord - nodeord)
           ? curr
-          : prev;
-      });
-
-      return closest.updowncd;
+          : prev
+      );
+      return closestStop.updowncd;
     };
   }, [stops]);
+
+  return getDirection;
 }

@@ -1,4 +1,10 @@
-const API_URL = "https://gl87xfcx95.execute-api.ap-northeast-2.amazonaws.com";
+// src/utils/fetchData.ts
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+if (!API_URL) {
+  throw new Error("NEXT_PUBLIC_API_URL 환경 변수가 설정되지 않았습니다.");
+}
 
 /**
  * 재시도 가능한 공통 API 호출 함수
@@ -30,7 +36,7 @@ async function fetchData(endpoint: string, retries = 3, retryDelay = 1000) {
       await new Promise((resolve) => setTimeout(resolve, retryDelay));
     }
   }
-  
+
   // Generic Error
   throw new Error("알 수 없는 네트워크 에러");
 }

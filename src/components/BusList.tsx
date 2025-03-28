@@ -20,24 +20,25 @@ export default function BusList({ routeName }: BusListProps) {
   const { map } = useMapContext();
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
 
+  // 비동기적으로 routeInfo를 불러와 상태에 저장합니다.
   useEffect(() => {
-    const load = async () => {
+    const loadRouteInfo = async () => {
       const info = await getRouteInfo(routeName);
       setRouteInfo(info);
     };
-    load();
+    loadRouteInfo();
   }, [routeName]);
 
+  // 버스 데이터와 관련 훅들을 불러옵니다.
   const { data: busList, error } = useBusData(routeName);
   const getDirection = useBusDirection(routeName);
-
   const stops = useBusStops(routeName);
   const closestOrd = useClosestStopOrd(routeName);
 
+  // 가장 가까운 정류장 순번을 기준으로 버스 목록을 정렬합니다.
   const sortedBusList = useMemo(() => {
     if (!closestOrd) return busList;
     const stopMap = new Map(stops.map((s) => [s.nodeid, s.nodeord]));
-
     return [...busList].sort((a, b) => {
       const ordA = stopMap.get(a.nodeid) ?? Infinity;
       const ordB = stopMap.get(b.nodeid) ?? Infinity;
@@ -54,7 +55,7 @@ export default function BusList({ routeName }: BusListProps) {
         </h2>
       </div>
 
-      {/* 스크롤 영역은 padding 없이 분리 */}
+      {/* 버스 데이터가 없거나 에러 발생 시 메시지 렌더링 */}
       <ul className="text-sm text-gray-800 h-[90px] overflow-y-auto divide-y divide-gray-200 px-4 pb-3">
         {busList.length === 0 && (
           <li
@@ -76,9 +77,9 @@ export default function BusList({ routeName }: BusListProps) {
           </li>
         )}
 
+        {/* 정렬된 버스 목록 렌더링 */}
         {sortedBusList.map((bus) => {
-          const updown = getDirection(bus.nodeid, bus.nodeord);
-
+          const direction = getDirection(bus.nodeid, bus.nodeord);
           return (
             <li
               key={`${bus.vehicleno}-${bus.gpslati}-${bus.gpslong}`}
@@ -94,7 +95,8 @@ export default function BusList({ routeName }: BusListProps) {
             >
               <span className="font-bold">{bus.vehicleno}</span>
               <span className="text-gray-500 text-[10px] text-left">
-                {bus.nodenm} {updown === 1 ? "⬆️" : updown === 0 ? "⬇️" : "❓"}
+                {bus.nodenm}{" "}
+                {direction === 1 ? "⬆️" : direction === 0 ? "⬇️" : "❓"}
               </span>
             </li>
           );

@@ -6,8 +6,13 @@ import { fetchBusArrivalInfoData } from "@/utils/fetchData";
 
 import type { ArrivalInfo } from "@/types/data";
 
-// @TODO: Make this a configurable value
-const REFRESH_INTERVAL = 10000; // 10초
+const REFRESH_INTERVAL = Number(process.env.NEXT_PUBLIC_REFRESH_INTERVAL);
+
+if (!REFRESH_INTERVAL) {
+  throw new Error(
+    "NEXT_PUBLIC_REFRESH_INTERVAL 환경 변수가 설정되지 않았습니다."
+  );
+}
 
 export function useBusArrivalInfo(busStopId: string | null) {
   const [data, setData] = useState<ArrivalInfo[]>([]);

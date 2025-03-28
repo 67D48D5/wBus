@@ -3,7 +3,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
 import { useRouteMap } from "@/hooks/useRouteMap";
 
 type NavBarProps = {
@@ -11,10 +10,12 @@ type NavBarProps = {
 };
 
 export default function NavBar({ onRouteChange }: NavBarProps) {
-  const [selectedRouteName, setselectedRouteName] = useState<string>("30");
-  const routeName = useRouteMap();
-  const routes = routeName ? Object.keys(routeName) : [];
+  // 변수명 camelCase로 통일 (setSelectedRouteName)
+  const [selectedRouteName, setSelectedRouteName] = useState<string>("30");
+  const routeMap = useRouteMap();
+  const routes = routeMap ? Object.keys(routeMap) : [];
 
+  // 컴포넌트 마운트 시와 선택값 변경 시 부모 콜백 호출
   useEffect(() => {
     if (onRouteChange) {
       onRouteChange(selectedRouteName);
@@ -31,14 +32,13 @@ export default function NavBar({ onRouteChange }: NavBarProps) {
           className="px-3 py-1 rounded text-sm text-[#003876] bg-white shadow-sm"
           value={selectedRouteName}
           onChange={(e) => {
-            const value = e.target.value;
-            setselectedRouteName(value); // 내부 상태 업데이트
-            onRouteChange?.(value); // 부모에게 콜백 (있으면)
+            // 상태 업데이트만 수행합니다.
+            setSelectedRouteName(e.target.value);
           }}
         >
-          {routes.map((routeName) => (
-            <option key={routeName} value={routeName}>
-              {routeName}번
+          {routes.map((route) => (
+            <option key={route} value={route}>
+              {route}번
             </option>
           ))}
         </select>

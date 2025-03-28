@@ -10,19 +10,35 @@ type Props = {
   routeName: string;
 };
 
+/**
+ * 주어진 인덱스와 총 개수를 기반으로 동적 투명도를 계산합니다.
+ * 운행 차량이 없으면(비활성 상태) 고정 투명도 0.3을 반환합니다.
+ *
+ * @param idx 현재 polyline의 인덱스
+ * @param total 전체 polyline 개수
+ * @param isInactive 운행 차량이 없는 경우 true
+ * @returns 계산된 투명도 값
+ */
+function computeOpacity(
+  idx: number,
+  total: number,
+  isInactive: boolean
+): number {
+  const dynamicOpacity = Math.max(1 - idx / total, 0.2);
+  return isInactive ? 0.3 : dynamicOpacity;
+}
+
 export default function BusRoutePolyline({ routeName }: Props) {
   const { upPolyline, downPolyline } = usePolyline(routeName);
-  const { data: busList } = useBusData(routeName); // 현재 운행 차량 확인
+  const { data: busList } = useBusData(routeName);
 
-  const isInactive = busList.length === 0; // 운행 차량 없으면 흐리게
+  // 운행 차량이 없으면 전체 경로를 흐리게 표시
+  const isInactive = busList.length === 0;
 
   return (
     <>
       {upPolyline.map((coords, idx) => {
-        // 가까운 구간은 선명하게, 멀어질수록 흐리게 (최소값 보장)
-        const dynamicOpacity = Math.max(1 - idx / upPolyline.length, 0.2);
-        const finalOpacity = isInactive ? 0.3 : dynamicOpacity;
-
+        const opacity = computeOpacity(idx, upPolyline.length, isInactive);
         return (
           <Polyline
             key={`up-${idx}`}
@@ -31,16 +47,14 @@ export default function BusRoutePolyline({ routeName }: Props) {
               color: "red",
               weight: 4,
               dashArray: isInactive ? "4" : undefined,
-              opacity: finalOpacity,
+              opacity,
             }}
           />
         );
       })}
 
       {downPolyline.map((coords, idx) => {
-        const dynamicOpacity = Math.max(1 - idx / downPolyline.length, 0.2);
-        const finalOpacity = isInactive ? 0.3 : dynamicOpacity;
-
+        const opacity = computeOpacity(idx, downPolyline.length, isInactive);
         return (
           <Polyline
             key={`down-${idx}`}
@@ -49,7 +63,7 @@ export default function BusRoutePolyline({ routeName }: Props) {
               color: "blue",
               weight: 4,
               dashArray: isInactive ? "4" : undefined,
-              opacity: finalOpacity,
+              opacity,
             }}
           />
         );
