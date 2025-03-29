@@ -3,13 +3,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { loadSchedule } from "@/utils/getSchedule"; // 실제 구현 필요
+import { loadSchedule } from "@/utils/getSchedule";
 import {
   getFirstDeparture,
   getMinutesUntilNextDeparture,
 } from "@/utils/getTime";
 
-// getSchedule.ts에서 가져올 때, 이런 형태로 리턴한다고 가정
+const REFRESH_INTERVAL = Number(process.env.NEXT_PUBLIC_REFRESH_INTERVAL);
+
+if (!REFRESH_INTERVAL) {
+  throw new Error(
+    "NEXT_PUBLIC_REFRESH_INTERVAL 환경 변수가 설정되지 않았습니다."
+  );
+}
+
 export interface ParsedScheduleResult {
   data: Record<string, Record<string, Array<{ time: string; note?: string }>>>;
   note: Record<string, string>;
@@ -34,17 +41,17 @@ interface ScheduleDataHookReturn {
 }
 
 /**
- * JSON 시간표를 로드하고, 일정 간격(10초)으로
- * '특정 방향'의 다음 버스 정보를 갱신해 주는 훅.
+ * JSON 시간표 데이터를 로드하고, 일정 간격(10초)마다
+ * '특정 방향'의 다음 버스 정보를 갱신하는 훅.
  *
- * @param routeName 노선명 (URL 등으로부터)
+ * @param routeName 노선명
  * @param weekday true=평일, false=공휴일
- * @param direction "연세대" 등, minutesLeft/firstDeparture 계산용
+ * @param direction 계산 기준 방향 (예: "연세대")
  */
 export function useScheduleData(
   routeName: string,
   weekday: boolean = true,
-  direction: string = "연세대" // 기본값
+  direction: string = "연세대"
 ): ScheduleDataHookReturn {
   const [data, setData] = useState<
     Record<string, Record<string, Array<{ time: string; note?: string }>>>
@@ -52,7 +59,6 @@ export function useScheduleData(
   const [note, setNote] = useState<Record<string, string>>({});
   const [minutesLeft, setMinutesLeft] = useState<number | null>(null);
   const [firstDeparture, setFirstDeparture] = useState<string | null>(null);
-
   const [isLoading, setIsLoading] = useState(false);
   const [state, setState] = useState<
     "general" | "weekday" | "holiday" | "unknown"
@@ -60,18 +66,16 @@ export function useScheduleData(
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // --------------------------------
-  // JSON 최초 로드
+  // 최초 시간표 데이터 로드
   // --------------------------------
   useEffect(() => {
     if (!routeName) return;
-
     let canceled = false;
     setIsLoading(true);
     setErrorMessage(null);
 
-    (async () => {
+    async function loadScheduleData() {
       try {
-        // JSON 노선 데이터를 불러오기
         const { data, note, state } = await loadSchedule(routeName, weekday);
         if (canceled) return;
 
@@ -79,7 +83,6 @@ export function useScheduleData(
         setNote(note);
         setState(state ?? "unknown");
 
-        // 'direction' 기준 남은 시간 계산
         if (Object.keys(data).length > 0 && direction) {
           setMinutesLeft(getMinutesUntilNextDeparture(data, direction));
           setFirstDeparture(getFirstDeparture(data, direction));
@@ -97,34 +100,34 @@ export function useScheduleData(
           setIsLoading(false);
         }
       }
-    })();
+    }
 
-    // cleanup
+    loadScheduleData();
+
     return () => {
       canceled = true;
     };
   }, [routeName, weekday, direction]);
 
   // --------------------------------
-  // 10초마다 '남은 시간' 갱신
+  // REFRESH_INTERVAL초마다 '남은 시간'과 '첫 차' 정보 갱신
   // --------------------------------
   useEffect(() => {
-    // data가 없거나, direction이 없으면 타이머 불필요
+    // data가 없으면 업데이트할 필요 없음
     if (!direction || Object.keys(data).length === 0) {
       setMinutesLeft(null);
       setFirstDeparture(null);
       return;
     }
 
-    // 최초 1회 업데이트
-    setMinutesLeft(getMinutesUntilNextDeparture(data, direction));
-    setFirstDeparture(getFirstDeparture(data, direction));
-
-    const timer = setInterval(() => {
+    const updateScheduleTimes = () => {
       setMinutesLeft(getMinutesUntilNextDeparture(data, direction));
       setFirstDeparture(getFirstDeparture(data, direction));
-    }, 10_000);
+    };
 
+    // 최초 업데이트
+    updateScheduleTimes();
+    const timer = setInterval(updateScheduleTimes, REFRESH_INTERVAL);
     return () => clearInterval(timer);
   }, [data, direction]);
 

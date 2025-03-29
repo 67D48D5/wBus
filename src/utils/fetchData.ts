@@ -29,10 +29,10 @@ async function fetchData(endpoint: string, retries = 3, retryDelay = 1000) {
     } catch (error) {
       // 마지막 재시도까지 실패하면 에러를 throw 합니다.
       if (i === retries - 1) {
-        console.error("최종 네트워크 에러:", error);
+        // console.error("최종 네트워크 에러:", error);
         throw error;
       }
-      console.warn(`네트워크 에러 발생, ${i + 1}번째 재시도 진행 중...`, error);
+      // console.warn(`네트워크 에러 발생, ${i + 1}번째 재시도 진행 중...`, error);
       await new Promise((resolve) => setTimeout(resolve, retryDelay));
     }
   }

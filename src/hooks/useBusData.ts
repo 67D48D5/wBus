@@ -11,6 +11,14 @@ const cache: Record<string, BusItem[]> = {};
 const dataListeners: Record<string, ((data: BusItem[]) => void)[]> = {};
 const errorListeners: Record<string, ((errMsg: BusDataError) => void)[]> = {};
 
+const REFRESH_INTERVAL = Number(process.env.NEXT_PUBLIC_REFRESH_INTERVAL);
+
+if (!REFRESH_INTERVAL) {
+  throw new Error(
+    "NEXT_PUBLIC_REFRESH_INTERVAL 환경 변수가 설정되지 않았습니다."
+  );
+}
+
 /**
  * 현재 라우트 외의 캐시 데이터를 제거합니다.
  * 필요시 listeners도 같이 정리할 수 있습니다.
@@ -136,7 +144,7 @@ export function startBusPolling(routeName: string) {
   // 최초 데이터 요청
   fetchAndUpdate();
 
-  const interval = setInterval(fetchAndUpdate, 10000);
+  const interval = setInterval(fetchAndUpdate, REFRESH_INTERVAL);
 
   // 페이지 포커스가 돌아오면 즉시 데이터 요청
   const handleVisibility = () => {
