@@ -1,4 +1,4 @@
-// src/hooks/useBusLocationData.ts
+// src/features/bus/hooks/useBusLocation.ts
 
 import { useEffect, useState } from "react";
 import { getBusLocationData } from "@bus/utils/getRealtimeData";
