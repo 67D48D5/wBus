@@ -17,6 +17,7 @@ export type BusStop = {
 };
 
 export type BusItem = {
+  routenm: string;
   gpslati: number;
   gpslong: number;
   vehicleno: string;
