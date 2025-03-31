@@ -12,7 +12,7 @@ import { Marker, Popup } from "react-leaflet";
 
 import { useIcons } from "@/hooks/useIcons";
 import { useBusData } from "@/hooks/useBusData";
-import { getRouteInfo } from "@/utils/getRouteInfo";
+import { getRouteInfo } from "@/utils/getRouteMap";
 import { useBusDirection } from "@/hooks/useBusDirection";
 
 import type { RouteInfo } from "@/types/data";

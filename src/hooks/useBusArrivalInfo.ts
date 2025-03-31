@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { fetchBusArrivalInfoData } from "@/utils/fetchData";
+import { getBusArrivalInfoData } from "@/utils/getRealtimeData";
 
 import type { ArrivalInfo } from "@/types/data";
 
@@ -31,7 +31,7 @@ export function useBusArrivalInfo(busStopId: string | null) {
       setError(null);
 
       try {
-        const result = await fetchBusArrivalInfoData(busStopId!);
+        const result = await getBusArrivalInfoData(busStopId!);
         setData(result);
       } catch (e) {
         console.error(e);

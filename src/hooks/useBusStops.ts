@@ -1,8 +1,8 @@
 // src/hooks/useBusStops.ts
 
 import { useEffect, useState } from "react";
-import { fetchBusStopLocationData } from "@/utils/fetchData";
-import { getRouteInfo } from "@/utils/getRouteInfo";
+import { getBusStopLocationData } from "@/utils/getRealtimeData";
+import { getRouteInfo } from "@/utils/getRouteMap";
 
 import type { BusStop } from "@/types/data";
 
@@ -35,7 +35,7 @@ export function useBusStops(routeName: string) {
         // 진행 중인 요청이 없다면 새로운 요청 생성
         if (!stopPromises[repRouteId]) {
           stopPromises[repRouteId] = (async () => {
-            const data = await fetchBusStopLocationData(repRouteId);
+            const data = await getBusStopLocationData(repRouteId);
             const sorted = data.sort(
               (a: BusStop, b: BusStop) => a.nodeord - b.nodeord
             );

@@ -1,4 +1,4 @@
-// src/utils/fetchData.ts
+// src/utils/fetchAPI.ts
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -13,12 +13,16 @@ if (!API_URL) {
  * @param retryDelay 재시도 간격 (밀리초, 기본값: 1000)
  * @returns JSON 파싱 결과
  */
-async function fetchData(endpoint: string, retries = 3, retryDelay = 1000) {
+export async function fetchAPI(
+  endpoint: string,
+  retries = 3,
+  retryDelay = 1000
+) {
   for (let i = 0; i < retries; i++) {
     try {
       const response = await fetch(`${API_URL}${endpoint}`, {
         method: "GET",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Client: "YMove" },
       });
 
       if (!response.ok) {
@@ -39,25 +43,4 @@ async function fetchData(endpoint: string, retries = 3, retryDelay = 1000) {
 
   // Generic Error
   throw new Error("알 수 없는 네트워크 에러");
-}
-
-export async function fetchBusLocationData(routeId: string) {
-  const data = await fetchData(`/getBusLocation/${routeId}`);
-  const items = data.response?.body?.items?.item;
-  return items ?? [];
-}
-
-export async function fetchBusStopLocationData(routeId: string) {
-  const data = await fetchData(`/getBusStopLocation/${routeId}`);
-  const items = data.response?.body?.items?.item;
-  return items ?? [];
-}
-
-export async function fetchBusArrivalInfoData(busStopId: string) {
-  const data = await fetchData(`/getBusArrivalInfo/${busStopId}`);
-  const rawItem = data.response?.body?.items?.item;
-  if (!rawItem) {
-    return [];
-  }
-  return Array.isArray(rawItem) ? rawItem : [rawItem];
 }

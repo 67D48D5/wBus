@@ -1,8 +1,8 @@
 // src/hooks/useBusData.ts
 
 import { useEffect, useState } from "react";
-import { fetchBusLocationData } from "@/utils/fetchData";
-import { getRouteMap } from "@/utils/getRouteInfo";
+import { getBusLocationData } from "@/utils/getRealtimeData";
+import { getRouteMap } from "@/utils/getRouteMap";
 
 import type { BusDataError } from "@/types/error";
 import type { BusItem } from "@/types/data";
@@ -103,7 +103,7 @@ export function startBusPolling(routeName: string) {
       }
 
       const results = await Promise.allSettled(
-        vehicleIds.map((id) => fetchBusLocationData(id))
+        vehicleIds.map((id) => getBusLocationData(id))
       );
 
       const fulfilledResults = results.filter(

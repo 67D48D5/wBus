@@ -1,4 +1,4 @@
-// src/utils/getRouteInfo.ts
+// src/utils/getRouteMap.ts
 
 import type { RouteInfo } from "@/types/data";
 

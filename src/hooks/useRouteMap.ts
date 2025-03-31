@@ -1,7 +1,7 @@
 // src/hooks/useRouteMap.ts
 
 import { useEffect, useState } from "react";
-import { getRouteMap } from "@/utils/getRouteInfo";
+import { getRouteMap } from "@/utils/getRouteMap";
 
 export function useRouteMap(): Record<string, string[]> | null {
   const [data, setData] = useState<Record<string, string[]> | null>(null);

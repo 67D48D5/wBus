@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMapContext } from "@/context/MapContext";
 import { useBusStops } from "@/hooks/useBusStops";
 import { useBusData } from "@/hooks/useBusData";
-import { getRouteInfo } from "@/utils/getRouteInfo";
+import { getRouteInfo } from "@/utils/getRouteMap";
 import { useBusDirection } from "@/hooks/useBusDirection";
 import { useClosestStopOrd } from "@/hooks/useClosestStop";
 
