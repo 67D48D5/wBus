@@ -3,8 +3,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useMapContext } from "@/context/MapContext";
-import { useIcons } from "@/hooks/useIcons";
+import { useMapContext } from "@map/context/MapContext";
+import { useIcons } from "@map/hooks/useIcons";
 
 export default function MyLocation() {
   const { map } = useMapContext();

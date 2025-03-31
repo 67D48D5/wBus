@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 
-import { getBusArrivalInfoData } from "@/utils/getRealtimeData";
+import { getBusArrivalInfoData } from "@bus/utils/getRealtimeData";
 
-import type { ArrivalInfo } from "@/types/data";
+import type { ArrivalInfo } from "@bus/types/data";
 
 const REFRESH_INTERVAL = Number(process.env.NEXT_PUBLIC_REFRESH_INTERVAL);
 

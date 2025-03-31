@@ -1,6 +1,6 @@
 // src/utils/getRouteMap.ts
 
-import type { RouteInfo } from "@/types/data";
+import type { RouteInfo } from "@bus/types/data";
 
 let cache: Record<string, string[]> | null = null;
 let pending: Promise<Record<string, string[]>> | null = null;

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { getRouteMap } from "@/utils/getRouteMap";
+import { getRouteMap } from "@bus/utils/getRouteMap";
 
 export function useRouteMap(): Record<string, string[]> | null {
   const [data, setData] = useState<Record<string, string[]> | null>(null);

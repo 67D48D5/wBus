@@ -4,12 +4,12 @@
 
 import { useEffect, useState, useCallback } from "react";
 
-import { startBusPolling } from "@/hooks/useBusLocation";
+import { startBusPolling } from "@bus/hooks/useBusLocation";
 
-import NavBar from "@/components/NavBar";
-import MapWrapper from "@/components/MapWrapper";
-import BusList from "@/components/BusList";
-import MyLocation from "@/components/MyLocation";
+import NavBar from "@ui/components/NavBar";
+import MapWrapper from "@map/components/MapWrapper";
+import BusList from "@bus/components/BusList";
+import MyLocation from "@bus/components/MyLocation";
 
 export default function Home() {
   const [selectedRouteName, setSelectedRouteName] = useState("30");

@@ -1,6 +1,6 @@
 // src/utils/getRealtimeData.ts
 
-import { fetchAPI } from "@/utils/fetchAPI";
+import { fetchAPI } from "@bus/utils/fetchAPI";
 
 export async function getBusLocationData(routeId: string) {
   const data = await fetchAPI(`/getBusLocation/${routeId}`);

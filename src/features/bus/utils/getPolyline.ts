@@ -1,6 +1,6 @@
 // src/utils/getPolyline.ts
 
-import { GeoPolylineData } from "@/types/data";
+import { GeoPolylineData } from "@bus/types/data";
 
 // 캐시용 객체
 const cache: Record<string, GeoPolylineData> = {};

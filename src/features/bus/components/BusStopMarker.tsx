@@ -5,14 +5,14 @@
 import { useState, useMemo } from "react";
 import { Marker, Popup } from "react-leaflet";
 
-import { useIcons } from "@/hooks/useIcons";
-import { useBusStop } from "@/hooks/useBusStop";
-import { useBusDirection } from "@/hooks/useBusDirection";
-import { useBusArrivalInfo } from "@/hooks/useBusArrivalInfo";
+import { useIcons } from "@map/hooks/useIcons";
+import { useBusStop } from "@bus/hooks/useBusStop";
+import { useBusDirection } from "@bus/hooks/useBusDirection";
+import { useBusArrivalInfo } from "@bus/hooks/useBusArrivalInfo";
 
 import BusSchedule from "./BusSchedule";
 
-import type { ArrivalInfo } from "@/types/data";
+import type { ArrivalInfo } from "@bus/types/data";
 
 type Props = {
   routeName: string;

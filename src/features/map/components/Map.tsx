@@ -4,10 +4,11 @@
 
 import { MapContainer, TileLayer } from "react-leaflet";
 
-import BusMarker from "./BusMarker";
 import MapProvider from "./MapWithProvider";
-import BusStopMarker from "./BusStopMarker";
-import BusRoutePolyline from "./BusRoutePolyline";
+
+import BusMarker from "@bus/components/BusMarker";
+import BusStopMarker from "@bus/components/BusStopMarker";
+import BusRoutePolyline from "@bus/components/BusRoutePolyline";
 
 type MapProps = {
   routeName: string;

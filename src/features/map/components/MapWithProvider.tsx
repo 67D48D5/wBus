@@ -4,7 +4,8 @@
 
 import { useEffect } from "react";
 import { useMap } from "react-leaflet";
-import { useMapContext } from "@/context/MapContext";
+
+import { useMapContext } from "@map/context/MapContext";
 
 interface MapWithProviderProps {
   children: React.ReactNode;

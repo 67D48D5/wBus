@@ -1,6 +1,6 @@
 // src/hooks/useBusDirection.ts
 
-import { useBusStop } from "@/hooks/useBusStop";
+import { useBusStop } from "./useBusStop";
 
 export function useBusDirection(routeName: string) {
   const stops = useBusStop(routeName);

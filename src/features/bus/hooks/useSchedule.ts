@@ -3,11 +3,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { loadSchedule } from "@/utils/getSchedule";
+import { loadSchedule } from "@bus/utils/getSchedule";
 import {
   getFirstDeparture,
   getMinutesUntilNextDeparture,
-} from "@/utils/getTime";
+} from "@bus/utils/getTime";
 
 const REFRESH_INTERVAL = Number(process.env.NEXT_PUBLIC_REFRESH_INTERVAL);
 

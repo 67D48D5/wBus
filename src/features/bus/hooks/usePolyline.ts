@@ -1,9 +1,9 @@
 // src/hooks/usePolyline.ts
 
 import { useEffect, useState, useMemo } from "react";
-import { getPolyline, transformPolyline } from "@/utils/getPolyline";
+import { getPolyline, transformPolyline } from "@bus/utils/getPolyline";
 
-import type { GeoPolylineData } from "@/types/data";
+import type { GeoPolylineData } from "@bus/types/data";
 
 export function usePolyline(routeName: string) {
   const [data, setData] = useState<GeoPolylineData | null>(null);

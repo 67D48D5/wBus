@@ -3,8 +3,8 @@
 "use client";
 
 import { Polyline } from "react-leaflet";
-import { usePolyline } from "@/hooks/usePolyline";
-import { useBusLocationData } from "@/hooks/useBusLocation";
+import { usePolyline } from "@bus/hooks/usePolyline";
+import { useBusLocationData } from "@bus/hooks/useBusLocation";
 
 type Props = {
   routeName: string;

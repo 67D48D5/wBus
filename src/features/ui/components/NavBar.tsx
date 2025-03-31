@@ -3,7 +3,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouteMap } from "@/hooks/useRouteMap";
+
+import { useRouteMap } from "@bus/hooks/useRouteMap";
 
 type NavBarProps = {
   onRouteChange?: (routeName: string) => void;

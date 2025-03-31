@@ -5,7 +5,7 @@ import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
-import { MapProvider } from "@/context/MapContext";
+import { MapProvider } from "@map/context/MapContext";
 import { Geist, Geist_Mono } from "next/font/google";
 
 // Google Fonts 설정 (Geist Sans, Geist Mono)

@@ -19,14 +19,14 @@ import React, {
 } from "react";
 import { Marker, MarkerProps, Popup, Tooltip } from "react-leaflet";
 
-import { useIcons } from "@/hooks/useIcons";
-import { getRouteInfo } from "@/utils/getRouteMap";
-import { usePolyline } from "@/hooks/usePolyline";
-import { useBusDirection } from "@/hooks/useBusDirection";
-import { useBusLocationData } from "@/hooks/useBusLocation";
-import { mergePolylines, snapToPolyline } from "@/utils/getPolyline";
+import { useIcons } from "@map/hooks/useIcons";
+import { getRouteInfo } from "@bus/utils/getRouteMap";
+import { usePolyline } from "@bus/hooks/usePolyline";
+import { useBusDirection } from "@bus/hooks/useBusDirection";
+import { useBusLocationData } from "@bus/hooks/useBusLocation";
+import { mergePolylines, snapToPolyline } from "@bus/utils/getPolyline";
 
-import type { RouteInfo } from "@/types/data";
+import type { RouteInfo } from "@bus/types/data";
 
 const RotatedMarker = forwardRef<
   L.Marker,

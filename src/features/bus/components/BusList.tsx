@@ -4,14 +4,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { useMapContext } from "@/context/MapContext";
-import { useBusStop } from "@/hooks/useBusStop";
-import { useBusLocationData } from "@/hooks/useBusLocation";
-import { useBusDirection } from "@/hooks/useBusDirection";
-import { useClosestStopOrd } from "@/hooks/useBusStop";
-import { getRouteInfo } from "@/utils/getRouteMap";
+import { useMapContext } from "@map/context/MapContext";
+import { useBusStop } from "@bus/hooks/useBusStop";
+import { useBusLocationData } from "@bus/hooks/useBusLocation";
+import { useBusDirection } from "@bus/hooks/useBusDirection";
+import { useClosestStopOrd } from "@bus/hooks/useBusStop";
+import { getRouteInfo } from "@bus/utils/getRouteMap";
 
-import type { RouteInfo } from "@/types/data";
+import type { RouteInfo } from "@bus/types/data";
 
 type BusListProps = {
   routeName: string;

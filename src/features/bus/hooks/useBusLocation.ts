@@ -1,11 +1,11 @@
 // src/hooks/useBusLocationData.ts
 
 import { useEffect, useState } from "react";
-import { getBusLocationData } from "@/utils/getRealtimeData";
-import { getRouteMap } from "@/utils/getRouteMap";
+import { getBusLocationData } from "@bus/utils/getRealtimeData";
+import { getRouteMap } from "@bus/utils/getRouteMap";
 
-import type { BusDataError } from "@/types/error";
-import type { BusItem } from "@/types/data";
+import type { BusItem } from "@bus/types/data";
+import type { BusDataError } from "@shared/types/error";
 
 const cache: Record<string, BusItem[]> = {};
 const dataListeners: Record<string, ((data: BusItem[]) => void)[]> = {};

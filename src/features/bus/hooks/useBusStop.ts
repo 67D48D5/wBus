@@ -1,11 +1,11 @@
 // src/hooks/useBusStop.ts
 
 import { useEffect, useState } from "react";
-import { getBusStopLocationData } from "@/utils/getRealtimeData";
-import { getRouteInfo } from "@/utils/getRouteMap";
+import { getBusStopLocationData } from "@bus/utils/getRealtimeData";
+import { getRouteInfo } from "@bus/utils/getRouteMap";
 
-import type { BusStop } from "@/types/data";
-import { useMapContext } from "@/context/MapContext";
+import type { BusStop } from "@bus/types/data";
+import { useMapContext } from "@map/context/MapContext";
 
 const stopCache: Record<string, BusStop[]> = {};
 const stopPromises: Record<string, Promise<BusStop[]>> = {};
