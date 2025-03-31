@@ -3,12 +3,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+
 import { useMapContext } from "@/context/MapContext";
 import { useBusStop } from "@/hooks/useBusStop";
 import { useBusLocationData } from "@/hooks/useBusLocation";
-import { getRouteInfo } from "@/utils/getRouteMap";
 import { useBusDirection } from "@/hooks/useBusDirection";
 import { useClosestStopOrd } from "@/hooks/useBusStop";
+import { getRouteInfo } from "@/utils/getRouteMap";
 
 import type { RouteInfo } from "@/types/data";
 

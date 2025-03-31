@@ -13,6 +13,7 @@
     "@vercel/speed-insights": "^1.2.0",
     "leaflet": "^1.9.4",
     "leaflet-defaulticon-compatibility": "^0.1.2",
+    "leaflet-rotatedmarker": "^0.2.0",
     "leaflet.marker.slideto": "^0.3.0",
     "next": "^15.2.3",
     "react": "^19.0.0",

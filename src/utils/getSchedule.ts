@@ -23,7 +23,7 @@ export async function loadSchedule(
   isWeekday: boolean
 ): Promise<ParsedScheduleResult> {
   try {
-    const res = await fetch(`/schedules/${routeName}.json`);
+    const res = await fetch(`/data/schedules/${routeName}.json`);
     if (!res.ok) throw new Error("JSON 파일 로드 실패");
 
     const jsonData = await res.json();

@@ -8,7 +8,7 @@ import { useIcons } from "@/hooks/useIcons";
 
 export default function MyLocation() {
   const { map } = useMapContext();
-  const { myIcon, findMyLocationIcon } = useIcons();
+  const { myLocationIcon, findMyLocationIcon } = useIcons();
   // marker의 타입을 구체화할 수 있으나, 동적 import로 인해 any로 유지
   const [marker, setMarker] = useState<any>(null);
   // 클라이언트 환경임을 추적 (초기 렌더링 시 window 접근 방지)
@@ -40,7 +40,7 @@ export default function MyLocation() {
             }
 
             // 새로운 마커 생성 후 지도에 추가, 팝업 바인딩 및 열기
-            const newMarker = L.marker([latitude, longitude], { icon: myIcon })
+            const newMarker = L.marker([latitude, longitude], { icon: myLocationIcon })
               .addTo(map)
               .bindPopup(
                 `<b>📍 내 위치</b><br>위도: ${latitude}<br>경도: ${longitude}`

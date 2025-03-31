@@ -6,7 +6,7 @@ let cache: Record<string, string[]> | null = null;
 let pending: Promise<Record<string, string[]>> | null = null;
 
 /**
- * /public/routeMap.json을 가져와 메모리에 캐싱합니다.
+ * routeMap.json을 가져와 메모리에 캐싱합니다.
  *
  * @returns {Promise<Record<string, string[]>>} - routeMap 데이터
  * @throws {Error} - 요청 실패 시 에러 발생
@@ -19,7 +19,7 @@ export async function getRouteMap(): Promise<Record<string, string[]>> {
   if (pending) return pending;
 
   // fetch 요청을 pending에 할당
-  pending = fetch("/routeMap.json")
+  pending = fetch("/data/routeMap.json")
     .then((res) => {
       if (!res.ok) {
         throw new Error("🚫 routeMap.json 요청 실패");

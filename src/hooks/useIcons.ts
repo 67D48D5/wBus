@@ -29,7 +29,7 @@ export function useIcons(): Partial<IconMap> {
     try {
       L = require("leaflet");
     } catch (error) {
-      console.error("Leaflet 로드 실패:", error);
+      console.error("Leaflet import error:", error);
       return {};
     }
 
@@ -47,7 +47,12 @@ export function useIcons(): Partial<IconMap> {
       });
 
     globalIcons = {
-      busIcon: createIcon("/images/bus-icon.png", [64, 64], [32, 32], [0, -20]),
+      busIcon: createIcon(
+        "/assets/icons/bus-icon.svg",
+        [64, 64],
+        [32, 32],
+        [0, -20]
+      ),
       busStopIcon: createIcon(
         "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
         [16, 16],
@@ -67,7 +72,7 @@ export function useIcons(): Partial<IconMap> {
         [0, -30]
       ),
       findMyLocationIcon: createIcon(
-        "/images/find-my-location.svg",
+        "/assets/icons/find-my-location.svg",
         [32, 32],
         [16, 32],
         [0, -30]
