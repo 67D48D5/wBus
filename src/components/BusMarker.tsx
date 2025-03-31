@@ -83,7 +83,7 @@ export default function BusMarker({ routeName }: { routeName: string }) {
               }
             }}
           >
-            <Popup>
+            <Popup autoPan={false}>
               <div className="font-bold mb-1">
                 {direction === 1 ? "⬆️" : "⬇️"} {bus.routenm}번
               </div>

@@ -198,7 +198,7 @@ export default function BusStopMarker({ routeName }: Props) {
               popupclose: () => setActiveStopId(null),
             }}
           >
-            <Popup minWidth={210}>
+            <Popup autoPan={false} minWidth={210}>
               <div className="max-h-[280px] w-[210px] overflow-y-auto">
                 {/* 정류장 이름 및 번호 */}
                 <div className="font-bold mb-1">
