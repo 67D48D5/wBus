@@ -1,4 +1,4 @@
-// src/hooks/useBusData.ts
+// src/hooks/useBusLocationData.ts
 
 import { useEffect, useState } from "react";
 import { getBusLocationData } from "@/utils/getRealtimeData";
@@ -31,7 +31,7 @@ function clearOtherCaches(current: string) {
   });
 }
 
-export function useBusData(routeName: string): {
+export function useBusLocationData(routeName: string): {
   data: BusItem[];
   error: BusDataError;
 } {

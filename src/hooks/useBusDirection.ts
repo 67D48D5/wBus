@@ -1,10 +1,10 @@
 // src/hooks/useBusDirection.ts
 
 import { useMemo } from "react";
-import { useBusStops } from "@/hooks/useBusStops";
+import { useBusStop } from "@/hooks/useBusStop";
 
 export function useBusDirection(routeName: string) {
-  const stops = useBusStops(routeName);
+  const stops = useBusStop(routeName);
 
   const getDirection = useMemo(() => {
     /**

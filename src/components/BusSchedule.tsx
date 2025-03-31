@@ -3,7 +3,7 @@
 "use client";
 
 import { useState } from "react";
-import { useScheduleData } from "@/hooks/useScheduleData";
+import { useScheduleData } from "@/hooks/useSchedule";
 import { renderScheduleStatusMessage } from "@/utils/getTime";
 
 type Props = {

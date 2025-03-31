@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import { Marker, Popup } from "react-leaflet";
 
 import { useIcons } from "@/hooks/useIcons";
-import { useBusData } from "@/hooks/useBusData";
+import { useBusLocationData } from "@/hooks/useBusLocation";
 import { getRouteInfo } from "@/utils/getRouteMap";
 import { useBusDirection } from "@/hooks/useBusDirection";
 
@@ -38,7 +38,7 @@ export default function BusMarker({ routeName }: { routeName: string }) {
   }, [routeName]);
 
   // 현재 운행중인 버스 목록과 방향 정보를 가져옵니다.
-  const { data: busList } = useBusData(routeName);
+  const { data: busList } = useBusLocationData(routeName);
   const getDirection = useBusDirection(routeName);
 
   // 각 버스에 해당하는 마커 인스턴스를 저장할 레퍼런스

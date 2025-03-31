@@ -4,7 +4,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 
-import { startBusPolling } from "@/hooks/useBusData";
+import { startBusPolling } from "@/hooks/useBusLocation";
 
 import NavBar from "@/components/NavBar";
 import MapWrapper from "@/components/MapWrapper";

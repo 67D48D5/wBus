@@ -6,7 +6,7 @@ import { useState, useMemo } from "react";
 import { Marker, Popup } from "react-leaflet";
 
 import { useIcons } from "@/hooks/useIcons";
-import { useBusStops } from "@/hooks/useBusStops";
+import { useBusStop } from "@/hooks/useBusStop";
 import { useBusDirection } from "@/hooks/useBusDirection";
 import { useBusArrivalInfo } from "@/hooks/useBusArrivalInfo";
 
@@ -154,7 +154,7 @@ function renderPopupContent({
 
 export default function BusStopMarker({ routeName }: Props) {
   // 모든 정류장 데이터를 불러옴
-  const stops = useBusStops(routeName);
+  const stops = useBusStop(routeName);
   // 팝업 열림 상태를 추적하는 상태
   const [activeStopId, setActiveStopId] = useState<string | null>(null);
   // 아이콘 정보

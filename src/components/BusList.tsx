@@ -4,11 +4,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useMapContext } from "@/context/MapContext";
-import { useBusStops } from "@/hooks/useBusStops";
-import { useBusData } from "@/hooks/useBusData";
+import { useBusStop } from "@/hooks/useBusStop";
+import { useBusLocationData } from "@/hooks/useBusLocation";
 import { getRouteInfo } from "@/utils/getRouteMap";
 import { useBusDirection } from "@/hooks/useBusDirection";
-import { useClosestStopOrd } from "@/hooks/useClosestStop";
+import { useClosestStopOrd } from "@/hooks/useBusStop";
 
 import type { RouteInfo } from "@/types/data";
 
@@ -30,9 +30,9 @@ export default function BusList({ routeName }: BusListProps) {
   }, [routeName]);
 
   // 버스 데이터와 관련 훅들을 불러옵니다.
-  const { data: busList, error } = useBusData(routeName);
+  const { data: busList, error } = useBusLocationData(routeName);
   const getDirection = useBusDirection(routeName);
-  const stops = useBusStops(routeName);
+  const stops = useBusStop(routeName);
   const closestOrd = useClosestStopOrd(routeName);
 
   // 가장 가까운 정류장 순번을 기준으로 버스 목록을 정렬합니다.

@@ -4,7 +4,7 @@
 
 import { Polyline } from "react-leaflet";
 import { usePolyline } from "@/hooks/usePolyline";
-import { useBusData } from "@/hooks/useBusData";
+import { useBusLocationData } from "@/hooks/useBusLocation";
 
 type Props = {
   routeName: string;
@@ -30,7 +30,7 @@ function computeOpacity(
 
 export default function BusRoutePolyline({ routeName }: Props) {
   const { upPolyline, downPolyline } = usePolyline(routeName);
-  const { data: busList } = useBusData(routeName);
+  const { data: busList } = useBusLocationData(routeName);
 
   // 운행 차량이 없으면 전체 경로를 흐리게 표시
   const isInactive = busList.length === 0;
