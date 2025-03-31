@@ -11,12 +11,11 @@ const isClient = typeof window !== "undefined";
 let globalIcons: Partial<IconMap> | null = null;
 
 type IconMap = {
-  busIconUp: L.Icon;
-  busIconDown: L.Icon;
-  findMyLocationIcon: L.Icon;
-  myIcon: L.Icon;
+  busIcon: L.Icon;
   busStopIcon: L.Icon;
   busStopIconYonsei: L.Icon;
+  myLocationIcon: L.Icon;
+  findMyLocationIcon: L.Icon;
 };
 
 export function useIcons(): Partial<IconMap> {
@@ -48,30 +47,7 @@ export function useIcons(): Partial<IconMap> {
       });
 
     globalIcons = {
-      busIconUp: createIcon(
-        "/images/bus-icon-up.png",
-        [64, 64],
-        [32, 32],
-        [0, -20]
-      ),
-      busIconDown: createIcon(
-        "/images/bus-icon-down.png",
-        [64, 64],
-        [32, 32],
-        [0, -20]
-      ),
-      findMyLocationIcon: createIcon(
-        "/images/find-my-location.svg",
-        [32, 32],
-        [16, 32],
-        [0, -30]
-      ),
-      myIcon: createIcon(
-        "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
-        [32, 32],
-        [16, 32],
-        [0, -30]
-      ),
+      busIcon: createIcon("/images/bus-icon.png", [64, 64], [32, 32], [0, -20]),
       busStopIcon: createIcon(
         "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
         [16, 16],
@@ -82,6 +58,18 @@ export function useIcons(): Partial<IconMap> {
         "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
         [32, 32],
         [8, 32],
+        [0, -30]
+      ),
+      myLocationIcon: createIcon(
+        "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
+        [32, 32],
+        [16, 32],
+        [0, -30]
+      ),
+      findMyLocationIcon: createIcon(
+        "/images/find-my-location.svg",
+        [32, 32],
+        [16, 32],
         [0, -30]
       ),
     };

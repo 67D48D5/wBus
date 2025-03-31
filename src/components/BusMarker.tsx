@@ -26,7 +26,7 @@ declare module "leaflet" {
 
 export default function BusMarker({ routeName }: { routeName: string }) {
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
-  const { busIconUp, busIconDown } = useIcons();
+  const { busIcon } = useIcons();
 
   // routeInfo 비동기 로드
   useEffect(() => {
@@ -70,7 +70,7 @@ export default function BusMarker({ routeName }: { routeName: string }) {
     <>
       {busList.map((bus) => {
         const direction = getDirection(bus.nodeid, bus.nodeord);
-        const icon = direction === 1 ? busIconDown : busIconUp;
+        const icon = busIcon;
         const key = `${bus.vehicleno}`;
         return (
           <Marker
@@ -85,7 +85,7 @@ export default function BusMarker({ routeName }: { routeName: string }) {
           >
             <Popup>
               <div className="font-bold mb-1">
-                {direction === 1 ? "⬆️" : "⬇️"} {routeName}번
+                {direction === 1 ? "⬆️" : "⬇️"} {bus.routenm}번
               </div>
               {bus.vehicleno}, {bus.nodenm}
             </Popup>
