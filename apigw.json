@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.1",
   "info": {
-    "title": "ymccb",
-    "description": "API Proxy for \"ymccb\" Project",
+    "title": "ymove",
+    "description": "API Gateway for YMove Project",
     "version": "2025-03-24 03:57:59UTC"
   },
   "servers": [
@@ -138,7 +138,7 @@
     "allowHeaders": ["*"],
     "maxAge": 0,
     "allowCredentials": false,
-    "allowOrigins": ["http://localhost:3000", "https://ymccb.vercel.app"]
+    "allowOrigins": ["http://localhost:3000", "https://ymove.vercel.app"]
   },
   "x-amazon-apigateway-importexport-version": "1.0"
 }
