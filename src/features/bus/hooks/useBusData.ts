@@ -21,8 +21,8 @@ export interface UseBusData {
 export function useBusData(routeName: string): UseBusData {
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
   const { data: busList } = useBusLocationData(routeName);
-  const directionFn = useBusDirection(routeName);
   const { upPolyline, downPolyline } = usePolyline(routeName);
+  const directionFn = useBusDirection(routeName);
 
   useEffect(() => {
     getRouteInfo(routeName).then(setRouteInfo);

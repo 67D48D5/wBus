@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback } from "react";
 
 import { startBusPolling } from "@bus/hooks/useBusLocation";
 
+import Splash from "@ui/components/Splash";
 import NavBar from "@ui/components/NavBar";
 import MapWrapper from "@map/components/MapWrapper";
 import BusList from "@bus/components/BusList";
@@ -13,6 +14,7 @@ import MyLocation from "@bus/components/MyLocation";
 
 export default function Home() {
   const [selectedRouteName, setSelectedRouteName] = useState("30");
+  const [showSplash, setShowSplash] = useState(true);
 
   // Memoize the route change callback to prevent unnecessary re-renders.
   const handleRouteChange = useCallback((route: string) => {
@@ -25,15 +27,24 @@ export default function Home() {
     return cleanupPolling;
   }, [selectedRouteName]);
 
-  return (
-    <div className="flex flex-col w-full h-[100dvh]">
-      <NavBar onRouteChange={handleRouteChange} />
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSplash(false), 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
-      <div className="relative flex-1 overflow-hidden">
-        <MapWrapper routeName={selectedRouteName} />
-        <BusList routeName={selectedRouteName} />
-        <MyLocation />
+  return (
+    <>
+      <Splash visible={showSplash} />
+
+      <div className="flex flex-col w-full h-[100dvh]">
+        <NavBar onRouteChange={handleRouteChange} />
+
+        <div className="relative flex-1 overflow-hidden">
+          <MapWrapper routeName={selectedRouteName} />
+          <BusList routeName={selectedRouteName} />
+          <MyLocation />
+        </div>
       </div>
-    </div>
+    </>
   );
 }
