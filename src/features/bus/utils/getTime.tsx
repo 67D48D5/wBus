@@ -14,7 +14,7 @@ function parseTimeString(timeStr: string): number {
 /**
  * 데이터 객체의 시간 키들을 분 단위로 정렬하여 반환합니다.
  */
-function getSortedHourKeys(data: Record<string, any>): string[] {
+export function getSortedHourKeys(data: Record<string, any>): string[] {
   return Object.keys(data).sort(
     (a, b) => parseTimeString(a) - parseTimeString(b)
   );

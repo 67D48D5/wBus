@@ -3,6 +3,7 @@
 "use client";
 
 import { useState } from "react";
+
 import { useScheduleData } from "@bus/hooks/useSchedule";
 import { renderScheduleStatusMessage } from "@bus/utils/getTime";
 
@@ -14,7 +15,7 @@ export default function BusSchedule({ routeName }: Props) {
   // 평일(true)/공휴일(false) 구분
   const [weekday, setWeekday] = useState(true);
 
-  // useScheduleData 훅 사용 (direction은 기본값 "연세대" 사용)
+  // useScheduleData 훅 사용
   const {
     data, // 전체 시간표 데이터
     note, // 비고 정보

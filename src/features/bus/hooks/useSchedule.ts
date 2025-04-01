@@ -1,4 +1,4 @@
-// src/hooks/useScheduleData.ts
+// src/hooks/useSchedule.ts
 
 "use client";
 
@@ -7,6 +7,7 @@ import { loadSchedule } from "@bus/utils/getSchedule";
 import {
   getFirstDeparture,
   getMinutesUntilNextDeparture,
+  getSortedHourKeys,
 } from "@bus/utils/getTime";
 
 const REFRESH_INTERVAL = Number(process.env.NEXT_PUBLIC_REFRESH_INTERVAL);
@@ -46,12 +47,10 @@ interface ScheduleDataHookReturn {
  *
  * @param routeName 노선명
  * @param weekday true=평일, false=공휴일
- * @param direction 계산 기준 방향 (예: "연세대")
  */
 export function useScheduleData(
   routeName: string,
-  weekday: boolean = true,
-  direction: string = "연세대"
+  weekday: boolean = true
 ): ScheduleDataHookReturn {
   const [data, setData] = useState<
     Record<string, Record<string, Array<{ time: string; note?: string }>>>
@@ -64,6 +63,7 @@ export function useScheduleData(
     "general" | "weekday" | "holiday" | "unknown"
   >("unknown");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const direction = getDefaultDirectionFromData(data);
 
   // --------------------------------
   // 최초 시간표 데이터 로드
@@ -140,4 +140,22 @@ export function useScheduleData(
     state,
     errorMessage,
   };
+}
+
+/**
+ * JSON의 시간대의 첫 번째 요소의 이름을 기본값으로 사용
+ * @param data
+ * @returns string | null
+ */
+function getDefaultDirectionFromData(
+  data: Record<string, Record<string, any>>
+): string | null {
+  const hourKeys = getSortedHourKeys(data);
+  for (const hourKey of hourKeys) {
+    const directions = Object.keys(data[hourKey]);
+    if (directions.length > 0) {
+      return directions[0]; // 가장 먼저 등장한 방향을 기본값으로 사용
+    }
+  }
+  return null;
 }
