@@ -72,7 +72,7 @@ export default function BusSchedule({ routeName }: Props) {
             {d.time}
             {d.note && (
               <sup
-                className="text-[0.6em] align-top text-gray-500 cursor-help"
+                className="text-[0.6em] text-gray-500 cursor-help"
                 title={note[d.note]}
               >
                 {d.note}
