@@ -54,7 +54,7 @@ export function useIcons(): Partial<IconMap> {
         [0, -20]
       ),
       busStopIcon: createIcon(
-        "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+        "/assets/icons/bus-stop-icon.png",
         [16, 16],
         [8, 16],
         [0, -14]

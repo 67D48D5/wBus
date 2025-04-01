@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Marker, Popup } from "react-leaflet";
+import { Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 
 import { useIcons } from "@map/hooks/useIcons";
 import { useBusStop } from "@bus/hooks/useBusStop";
@@ -58,7 +58,7 @@ function ArrivalList({
     <div className="relative mt-1 text-sm">
       {!hasData && loading && (
         <p className="text-sm text-gray-500">
-          ⏳ 버스 도착 데이터를 불러오는 중...
+          버스 도착 데이터를 불러오는 중...
         </p>
       )}
 
@@ -186,9 +186,26 @@ export default function BusStopMarker({ routeName }: Props) {
       : [];
   }, [arrivalRawData]);
 
+  // 지도 줌 레벨 상태 관리
+  const map = useMap();
+  const [zoom, setZoom] = useState(map.getZoom());
+
+  // zoom 이벤트를 구독해서 상태 업데이트
+  useMapEvents({
+    zoomend: () => {
+      setZoom(map.getZoom());
+    },
+  });
+
+  // 줌 레벨에 따라 마커를 표시할지 결정
+  // @TODO: MARKER_ZOOM_LEVEL 상수로 대체
+  const minZoomToShowMarker = 15;
+
   return (
     <>
       {stops.map((stop) => {
+        if (zoom < minZoomToShowMarker) return null;
+
         const isActive = activeStopId === stop.nodeid;
         const isTargetStop = TARGET_NODE_IDS.includes(stop.nodeid);
         const isYonseiStop = YONSEI_END_ROUTES.includes(routeName);
