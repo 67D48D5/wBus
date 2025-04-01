@@ -46,38 +46,47 @@ function ArrivalList({
   loading: boolean;
   error: string | null;
   arrivalData: ArrivalInfo[];
-  /** 상행/하행 라벨 (예: "⬆️", "⬇️", "❓") */
   directionLabel: string;
 }) {
-  if (loading) {
-    return (
-      <p className="text-sm text-gray-500">버스 도착 데이터를 불러오는 중...</p>
-    );
-  }
+  const hasData = arrivalData.length > 0;
+
   if (error) {
     return <p className="text-sm text-red-400">⚠️ {error}</p>;
   }
-  if (arrivalData.length === 0) {
-    return <p className="text-sm text-gray-400">예정된 버스가 없습니다.</p>;
-  }
+
   return (
-    <ul className="text-sm mt-1 divide-y divide-gray-200">
-      {arrivalData.map((bus, idx) => {
-        const minutes = Math.ceil(bus.arrtime / 60);
-        const timeString =
-          minutes <= 3
-            ? `곧 도착 (${bus.arrprevstationcnt} 정류장 전)`
-            : `${minutes}분 (${bus.arrprevstationcnt} 정류장 전)`;
-        return (
-          <li key={idx} className="flex justify-between py-1 px-1">
-            <span className="font-semibold">{bus.routeno}번</span>
-            <span className="text-gray-600 text-[11px]">
-              {bus.vehicletp.slice(0, 2)} / {timeString} {directionLabel}
-            </span>
-          </li>
-        );
-      })}
-    </ul>
+    <div className="relative mt-1 text-sm">
+      {!hasData && loading && (
+        <p className="text-sm text-gray-500">
+          ⏳ 버스 도착 데이터를 불러오는 중...
+        </p>
+      )}
+
+      {!hasData && !loading && (
+        <p className="text-sm text-gray-400">예정된 버스가 없습니다.</p>
+      )}
+
+      {hasData && (
+        <ul className="divide-y divide-gray-200">
+          {arrivalData.map((bus, idx) => {
+            const minutes = Math.ceil(bus.arrtime / 60);
+            const timeString =
+              minutes <= 3
+                ? `곧 도착 (${bus.arrprevstationcnt} 정류장 전)`
+                : `${minutes}분 (${bus.arrprevstationcnt} 정류장 전)`;
+
+            return (
+              <li key={idx} className="flex justify-between py-1 px-1">
+                <span className="font-semibold">{bus.routeno}번</span>
+                <span className="text-gray-600 text-[11px]">
+                  {bus.vehicletp.slice(0, 2)} / {timeString} {directionLabel}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }
 
