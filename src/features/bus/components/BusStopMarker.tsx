@@ -36,6 +36,17 @@ if (YONSEI_END_ROUTES.length === 0) {
   throw new Error("YONSEI_END_ROUTES 환경 변수가 설정되지 않았습니다.");
 }
 
+/** 마커 줌 레벨 */
+const MARKER_ZOOM_LEVEL = Number(
+  process.env.NEXT_PUBLIC_BUSSTOP_MARKER_MIN_ZOOM
+);
+
+if (!MARKER_ZOOM_LEVEL) {
+  throw new Error(
+    "NEXT_PUBLIC_BUSSTOP_MARKER_MIN_ZOOM 환경 변수가 설정되지 않았습니다."
+  );
+}
+
 /* 실시간 도착정보 리스트 */
 function ArrivalList({
   loading,
@@ -197,14 +208,11 @@ export default function BusStopMarker({ routeName }: Props) {
     },
   });
 
-  // 줌 레벨에 따라 마커를 표시할지 결정
-  // @TODO: MARKER_ZOOM_LEVEL 상수로 대체
-  const minZoomToShowMarker = 16;
-
   return (
     <>
       {stops.map((stop) => {
-        if (zoom < minZoomToShowMarker) return null;
+        // 줌 레벨에 따라 마커를 표시할지 결정
+        if (zoom < MARKER_ZOOM_LEVEL) return null;
 
         const isActive = activeStopId === stop.nodeid;
         const isTargetStop = TARGET_NODE_IDS.includes(stop.nodeid);
