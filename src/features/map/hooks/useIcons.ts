@@ -48,10 +48,10 @@ export function useIcons(): Partial<IconMap> {
 
     globalIcons = {
       busIcon: createIcon(
-        "/assets/icons/bus-icon.svg",
-        [64, 64],
-        [32, 32],
-        [0, -20]
+        "/assets/icons/bus-icon.png",
+        [29, 43],
+        [14, 21],
+        [0, -21]
       ),
       busStopIcon: createIcon(
         "/assets/icons/bus-stop-icon.png",

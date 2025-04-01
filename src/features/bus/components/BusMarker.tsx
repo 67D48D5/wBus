@@ -6,7 +6,7 @@ import L from "leaflet";
 import RotatedMarker from "@map/components/RotatedMarker";
 
 import { useRef, useEffect } from "react";
-import { Popup, Tooltip } from "react-leaflet";
+import { Popup } from "react-leaflet";
 
 import { useIcons } from "@map/hooks/useIcons";
 import { useBusData } from "@bus/hooks/useBusData";
@@ -65,9 +65,6 @@ export default function BusMarker({ routeName }: { routeName: string }) {
               }
             }}
           >
-            <Tooltip permanent offset={[0, 0]} className="bus-route-label">
-              {bus.routenm}
-            </Tooltip>
             <Popup autoPan={false}>
               <div className="font-bold mb-1">
                 {direction === 1 ? "⬆️" : "⬇️"} {bus.routenm}번

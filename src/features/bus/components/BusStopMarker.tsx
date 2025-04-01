@@ -199,7 +199,7 @@ export default function BusStopMarker({ routeName }: Props) {
 
   // 줌 레벨에 따라 마커를 표시할지 결정
   // @TODO: MARKER_ZOOM_LEVEL 상수로 대체
-  const minZoomToShowMarker = 15;
+  const minZoomToShowMarker = 16;
 
   return (
     <>
