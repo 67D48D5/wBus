@@ -60,10 +60,10 @@ export function useIcons(): Partial<IconMap> {
         [0, -14]
       ),
       busStopIconYonsei: createIcon(
-        "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
-        [32, 32],
-        [8, 32],
-        [0, -30]
+        "/assets/icons/bus-stop-icon-yonsei.png",
+        [64, 64],
+        [30, 62],
+        [0, -62]
       ),
       myLocationIcon: createIcon(
         "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
