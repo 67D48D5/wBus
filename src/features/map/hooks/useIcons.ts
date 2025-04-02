@@ -66,7 +66,7 @@ export function useIcons(): Partial<IconMap> {
         [0, -62]
       ),
       myLocationIcon: createIcon(
-        "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
+        "/assets/icons/my-location.svg",
         [32, 32],
         [16, 32],
         [0, -30]
