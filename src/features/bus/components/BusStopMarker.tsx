@@ -43,7 +43,7 @@ const MARKER_ZOOM_LEVEL = Number(
 
 if (!MARKER_ZOOM_LEVEL) {
   throw new Error(
-    "NEXT_PUBLIC_BUSSTOP_MARKER_MIN_ZOOM 환경 변수가 설정되지 않았습니다."
+    "BUSSTOP_MARKER_MIN_ZOOM 환경 변수가 설정되지 않았습니다."
   );
 }
 
