@@ -60,10 +60,10 @@ export function useIcons(): Partial<IconMap> {
         [0, -14]
       ),
       busStopIconYonsei: createIcon(
-        "/assets/icons/bus-stop-icon-yonsei.png",
-        [64, 64],
-        [30, 62],
-        [0, -62]
+        "/assets/icons/bus-stop-icon.png",
+        [32, 32],
+        [16, 32],
+        [0, -30]
       ),
       myLocationIcon: createIcon(
         "/assets/icons/my-location.svg",
