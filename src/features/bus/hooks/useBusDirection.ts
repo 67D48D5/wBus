@@ -2,6 +2,8 @@
 
 import { useBusStop } from "./useBusStop";
 
+const ALWAYS_UPWARD_NODEIDS = ["WJB251036041"];
+
 export function useBusDirection(routeName: string) {
   const stops = useBusStop(routeName);
 
@@ -13,6 +15,11 @@ export function useBusDirection(routeName: string) {
    * @returns 상행/하행 코드(예: 1 또는 2) 또는 해당 정류장이 없으면 null
    */
   function getDirection(nodeid: string, nodeord: number): number | null {
+    // 항상 상행인 정류장 ID 목록에 포함된 경우
+    if (ALWAYS_UPWARD_NODEIDS.includes(nodeid)) {
+      return 1; // 상행
+    }
+
     // 해당 nodeid를 가진 정류장을 필터링
     const matchingStops = stops.filter((stop) => stop.nodeid === nodeid);
     if (matchingStops.length === 0) {

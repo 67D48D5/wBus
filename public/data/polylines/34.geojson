@@ -1676,7 +1676,7 @@
     },
     {
       "type": "Feature",
-      "properties": { "updnDir": "0", "linkOrd": 142, "linkId": 2519622691 },
+      "properties": { "updnDir": "1", "linkOrd": 142, "linkId": 2519622691 },
       "geometry": {
         "type": "LineString",
         "coordinates": [
@@ -1688,7 +1688,7 @@
     },
     {
       "type": "Feature",
-      "properties": { "updnDir": "0", "linkOrd": 143, "linkId": 2519622689 },
+      "properties": { "updnDir": "1", "linkOrd": 143, "linkId": 2519622689 },
       "geometry": {
         "type": "LineString",
         "coordinates": [
