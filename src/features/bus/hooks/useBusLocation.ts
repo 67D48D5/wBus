@@ -115,10 +115,9 @@ export function startBusPolling(routeName: string) {
         throw new Error("ERR:NETWORK");
       }
 
-      const buses = fulfilledResults
-        .flatMap((r) => r.value)
-        .filter((bus) => bus.nodeid && bus.nodeord);
-        
+      // .filter((bus) => bus.nodeid && bus.nodeord);
+      const buses = fulfilledResults.flatMap((r) => r.value);
+
       cache[routeName] = buses;
       dataListeners[routeName]?.forEach((cb) => cb(buses));
 
