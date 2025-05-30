@@ -1,6 +1,6 @@
 // src/app/layout.tsx
 
-import "./globals.css";
+import "@styles/globals.css";
 
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";

@@ -6,8 +6,8 @@ import { useEffect, useState, useCallback } from "react";
 
 import { startBusPolling } from "@bus/hooks/useBusLocation";
 
-import Splash from "@ui/components/Splash";
-import NavBar from "@ui/components/NavBar";
+import Splash from "@app/views/SplashView";
+import NavBar from "@app/views/NavBarView";
 import MapWrapper from "@map/components/MapWrapper";
 import BusList from "@bus/components/BusList";
 import MyLocation from "@bus/components/MyLocation";
