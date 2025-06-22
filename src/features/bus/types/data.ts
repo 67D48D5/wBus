@@ -1,4 +1,4 @@
-// src/types/data.ts
+// src/features/bus/types/data.ts
 
 // Route Map
 export type RouteInfo = {

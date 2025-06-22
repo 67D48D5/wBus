@@ -1,17 +1,14 @@
-// src/components/BusList.tsx
+// src/features/bus/components/BusList.tsx
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { useMapContext } from "@map/context/MapContext";
 import { useBusStop } from "@bus/hooks/useBusStop";
 import { useBusLocationData } from "@bus/hooks/useBusLocation";
 import { useBusDirection } from "@bus/hooks/useBusDirection";
 import { useClosestStopOrd } from "@bus/hooks/useBusStop";
-import { getRouteInfo } from "@bus/utils/getRouteMap";
-
-import type { RouteInfo } from "@bus/types/data";
 
 type BusListProps = {
   routeName: string;
@@ -19,33 +16,40 @@ type BusListProps = {
 
 export default function BusList({ routeName }: BusListProps) {
   const { map } = useMapContext();
-  const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
 
-  // 비동기적으로 routeInfo를 불러와 상태에 저장합니다.
-  useEffect(() => {
-    const loadRouteInfo = async () => {
-      const info = await getRouteInfo(routeName);
-      setRouteInfo(info);
-    };
-    loadRouteInfo();
-  }, [routeName]);
+  // @TODO: Remove hardcoded strings
+  const errorMessageMap: Record<string, string> = {
+    "ERR:NONE_RUNNING": "운행이 종료되었습니다.",
+    "ERR:NETWORK": "⚠️ 네트워크 오류가 발생했습니다.",
+    "ERR:INVALID_ROUTE": "⚠️ 유효하지 않은 노선입니다.",
+  };
 
-  // 버스 데이터와 관련 훅들을 불러옵니다.
+  // Get bus location data for the specified route
   const { data: busList, error } = useBusLocationData(routeName);
   const getDirection = useBusDirection(routeName);
   const stops = useBusStop(routeName);
   const closestOrd = useClosestStopOrd(routeName);
 
-  // 가장 가까운 정류장 순번을 기준으로 버스 목록을 정렬합니다.
+  // Sort bus list based on proximity to the closest stop
+  // If no closest stop is found, return the original bus list
+  const stopMap = useMemo(
+    () => new Map(stops.map((s) => [s.nodeid, s.nodeord])),
+    [stops]
+  );
+
   const sortedBusList = useMemo(() => {
     if (!closestOrd) return busList;
-    const stopMap = new Map(stops.map((s) => [s.nodeid, s.nodeord]));
     return [...busList].sort((a, b) => {
       const ordA = stopMap.get(a.nodeid) ?? Infinity;
       const ordB = stopMap.get(b.nodeid) ?? Infinity;
       return Math.abs(ordA - closestOrd) - Math.abs(ordB - closestOrd);
     });
-  }, [busList, stops, closestOrd]);
+  }, [busList, stopMap, closestOrd]);
+
+  // If no bus data is available, show a loading message or error
+  const message = error
+    ? errorMessageMap[error] ?? "⚠️ 알 수 없는 오류가 발생했습니다."
+    : "버스 데이터를 불러오는 중...";
 
   return (
     <div className="fixed bottom-4 left-4 bg-white/90 rounded-lg shadow-md w-60 z-20">
@@ -56,7 +60,7 @@ export default function BusList({ routeName }: BusListProps) {
         </h2>
       </div>
 
-      {/* 버스 데이터가 없거나 에러 발생 시 메시지 렌더링 */}
+      {/* When no data recevied */}
       <ul className="text-sm text-gray-800 h-[90px] overflow-y-auto divide-y divide-gray-200 px-4 pb-3">
         {busList.length === 0 && (
           <li
@@ -66,19 +70,11 @@ export default function BusList({ routeName }: BusListProps) {
                 : "text-gray-500"
             }`}
           >
-            {error === "ERR:NONE_RUNNING"
-              ? "운행이 종료되었습니다."
-              : error === "ERR:NETWORK"
-              ? "⚠️ 네트워크 오류가 발생했습니다."
-              : error === "ERR:INVALID_ROUTE"
-              ? "⚠️ 유효하지 않은 노선입니다."
-              : !error
-              ? "버스 데이터를 불러오는 중..."
-              : "⚠️ 알 수 없는 오류가 발생했습니다."}
+            {message}
           </li>
         )}
 
-        {/* 정렬된 버스 목록 렌더링 */}
+        {/* Render sorted bus list */}
         {sortedBusList.map((bus) => {
           const direction = getDirection(bus.nodeid, bus.nodeord);
           return (

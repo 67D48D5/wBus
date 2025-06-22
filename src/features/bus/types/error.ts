@@ -1,7 +1,8 @@
-// src/types/error.ts
+// src/features/bus/types/error.ts
 
+/** Error types for bus location polling */
 export type BusDataError =
-  | "ERR:NONE_RUNNING" // 운행 종료
-  | "ERR:NETWORK" // 네트워크 문제
-  | "ERR:INVALID_ROUTE" // routeId 없음
-  | null; // 정상
+  | "ERR:NONE_RUNNING" // No buses are currently running
+  | "ERR:NETWORK" // Network failure
+  | "ERR:INVALID_ROUTE" // Invalid or unknown routeId
+  | null; // No error

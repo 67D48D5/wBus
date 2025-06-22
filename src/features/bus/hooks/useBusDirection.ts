@@ -1,7 +1,8 @@
-// src/hooks/useBusDirection.ts
+// src/features/bus/hooks/useBusDirection.ts
 
 import { useBusStop } from "./useBusStop";
 
+// @TODO: Move this to a config file or constants module
 const ALWAYS_UPWARD_NODEIDS = ["WJB251036041"];
 
 export function useBusDirection(routeName: string) {

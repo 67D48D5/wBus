@@ -1,4 +1,4 @@
-// src/utils/getTime.ts
+// src/features/bus/utils/getTime.ts
 
 import React, { JSX } from "react";
 

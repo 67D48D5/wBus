@@ -5,14 +5,13 @@
 import L from "leaflet";
 import { forwardRef, useEffect, useRef } from "react";
 import { Marker, MarkerProps } from "react-leaflet";
+import "leaflet.marker.slideto";
 
-// 동적 import for browser only
 if (typeof window !== "undefined") {
   require("leaflet.marker.slideto");
   require("leaflet-rotatedmarker");
 }
 
-// 타입 확장
 declare module "leaflet" {
   interface Marker {
     slideTo?: (latlng: L.LatLngExpression, options?: any) => this;
@@ -21,7 +20,6 @@ declare module "leaflet" {
   }
 }
 
-// 회전 마커 컴포넌트
 const RotatedMarker = forwardRef<
   L.Marker,
   MarkerProps & { rotationAngle?: number; rotationOrigin?: string }

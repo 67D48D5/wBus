@@ -6,26 +6,28 @@ import { useEffect, useState, useCallback } from "react";
 
 import { startBusPolling } from "@bus/hooks/useBusLocation";
 
-import Splash from "@app/views/SplashView";
-import NavBar from "@app/views/NavBarView";
+import Splash from "@shared/components/Splash";
+import NavBar from "@shared/components/NavBar";
+
 import MapWrapper from "@map/components/MapWrapper";
-import BusList from "@bus/components/BusList";
+
 import MyLocation from "@bus/components/MyLocation";
+import BusList from "@bus/components/BusList";
 
 export default function Home() {
-  const [selectedRouteName, setSelectedRouteName] = useState("30");
+  const [selectedRouteNames, setSelectedRouteNames] = useState<string[]>([
+    "30",
+  ]);
   const [showSplash, setShowSplash] = useState(true);
 
-  // Memoize the route change callback to prevent unnecessary re-renders.
   const handleRouteChange = useCallback((route: string) => {
-    setSelectedRouteName(route);
+    setSelectedRouteNames([route]); // 앞으로 다중 선택 허용할 예정
   }, []);
 
   useEffect(() => {
-    // Start bus polling for the selected route and clean up on unmount or when route changes.
-    const cleanupPolling = startBusPolling(selectedRouteName);
+    const cleanupPolling = startBusPolling(selectedRouteNames);
     return cleanupPolling;
-  }, [selectedRouteName]);
+  }, [selectedRouteNames]);
 
   useEffect(() => {
     const timer = setTimeout(() => setShowSplash(false), 1000);
@@ -40,8 +42,13 @@ export default function Home() {
         <NavBar onRouteChange={handleRouteChange} />
 
         <div className="relative flex-1 overflow-hidden">
-          <MapWrapper routeName={selectedRouteName} />
-          <BusList routeName={selectedRouteName} />
+          {/* 여러 노선의 폴리라인과 마커 렌더링 */}
+          {selectedRouteNames.map((routeName) => (
+            <MapWrapper key={routeName} routeName={routeName} />
+          ))}
+          {selectedRouteNames.map((routeName) => (
+            <BusList key={routeName} routeName={routeName} />
+          ))}
           <MyLocation />
         </div>
       </div>

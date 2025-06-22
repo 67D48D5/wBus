@@ -21,9 +21,11 @@
     "paths": {
       "@/*": ["./src/*"],
       "@app/*": ["./src/app/*"],
+      "@core/*": ["./src/core/*"],
+      "@shared/*": ["./src/shared/*"],
+      "@styles/*": ["./src/shared/styles/*"],
       "@bus/*": ["./src/features/bus/*"],
-      "@map/*": ["./src/features/map/*"],
-      "@styles/*": ["./src/styles/*"]
+      "@map/*": ["./src/features/map/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

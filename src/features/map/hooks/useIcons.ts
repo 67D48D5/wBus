@@ -1,13 +1,13 @@
-// src/hooks/useIcons.ts
+// src/features/map/hooks/useIcons.ts
 
 "use client";
 
 import { useMemo } from "react";
 
-// 서버 환경 여부를 미리 판단
+// Check if we are in a client environment
 const isClient = typeof window !== "undefined";
 
-// 아이콘을 전역으로 캐싱 (한번 생성된 이후 재사용)
+// Create a global variable to store icons
 let globalIcons: Partial<IconMap> | null = null;
 
 type IconMap = {
@@ -21,8 +21,6 @@ type IconMap = {
 export function useIcons(): Partial<IconMap> {
   return useMemo(() => {
     if (!isClient) return {};
-
-    // 전역 캐시가 이미 존재하면 재사용
     if (globalIcons) return globalIcons;
 
     let L;
@@ -47,32 +45,27 @@ export function useIcons(): Partial<IconMap> {
       });
 
     globalIcons = {
-      busIcon: createIcon(
-        "/assets/icons/bus-icon.png",
-        [29, 43],
-        [14, 21],
-        [0, -21]
-      ),
+      busIcon: createIcon("/icons/bus-icon.png", [29, 43], [14, 21], [0, -21]),
       busStopIcon: createIcon(
-        "/assets/icons/bus-stop-icon.png",
+        "/icons/bus-stop-icon.png",
         [16, 16],
         [8, 16],
         [0, -14]
       ),
       busStopIconYonsei: createIcon(
-        "/assets/icons/bus-stop-icon.png",
+        "/icons/bus-stop-icon.png",
         [32, 32],
         [16, 32],
         [0, -30]
       ),
       myLocationIcon: createIcon(
-        "/assets/icons/my-location.svg",
+        "/icons/my-location.svg",
         [32, 32],
         [16, 32],
         [0, -30]
       ),
       findMyLocationIcon: createIcon(
-        "/assets/icons/find-my-location.svg",
+        "/icons/find-my-location.svg",
         [32, 32],
         [16, 32],
         [0, -30]

@@ -1,18 +1,12 @@
-// src/hooks/useBusArrivalInfo.ts
+// src/features/bus/hooks/useBusArrivalInfo.ts
 
 import { useEffect, useState } from "react";
 
-import { getBusArrivalInfoData } from "@bus/utils/getRealtimeData";
+import { API_REFRESH_INTERVAL } from "@core/constants/env";
+
+import { getBusArrivalInfoData } from "@bus/api/getRealtimeData";
 
 import type { ArrivalInfo } from "@bus/types/data";
-
-const REFRESH_INTERVAL = Number(process.env.NEXT_PUBLIC_REFRESH_INTERVAL);
-
-if (!REFRESH_INTERVAL) {
-  throw new Error(
-    "NEXT_PUBLIC_REFRESH_INTERVAL 환경 변수가 설정되지 않았습니다."
-  );
-}
 
 export function useBusArrivalInfo(busStopId: string | null) {
   const [data, setData] = useState<ArrivalInfo[]>([]);
@@ -45,7 +39,7 @@ export function useBusArrivalInfo(busStopId: string | null) {
     fetchData();
 
     // 이후 10초마다 재호출
-    timer = setInterval(fetchData, REFRESH_INTERVAL);
+    timer = setInterval(fetchData, API_REFRESH_INTERVAL);
 
     // 언마운트(또는 busStopId 변경) 시 타이머 정리
     return () => {

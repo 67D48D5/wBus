@@ -1,6 +1,15 @@
-// src/components/Map.tsx
+// src/features/map/components/Map.tsx
 
 "use client";
+
+import {
+  MAP_URL,
+  MAP_ATTRIBUTION,
+  MAP_DEFAULT_ZOOM,
+  MAP_DEFAULT_POSITION,
+  MAP_MIN_ZOOM,
+  MAP_MAX_ZOOM,
+} from "@core/constants/env";
 
 import { MapContainer, TileLayer } from "react-leaflet";
 
@@ -14,23 +23,17 @@ type MapProps = {
   routeName: string;
 };
 
-// 환경 변수에서 기본 위치(위도, 경도)를 문자열로 가져옵니다.
-const defaultPositionString = process.env.NEXT_PUBLIC_DEFAULT_POSITION;
-if (!defaultPositionString) {
-  throw new Error(
-    "NEXT_PUBLIC_DEFAULT_POSITION 환경 변수가 설정되지 않았습니다."
-  );
-}
+const defaultPosition: [number, number] = (() => {
+  const position = String(MAP_DEFAULT_POSITION).split(",").map(Number);
+  return position.length === 2 ? [position[0], position[1]] : [0, 0];
+})();
 
-// 문자열을 쉼표로 분리하여 숫자 배열로 변환 후, [lat, lng] 튜플로 지정합니다.
-const [lat, lng] = defaultPositionString.split(",").map(Number);
-const defaultPosition: [number, number] = [lat, lng];
-
+// @TODO: Move to constants file (max bounds, etc.)
 export default function Map({ routeName }: MapProps) {
   return (
     <MapContainer
       center={defaultPosition}
-      zoom={17}
+      zoom={MAP_DEFAULT_ZOOM}
       scrollWheelZoom={true}
       className="w-full h-full"
       maxBounds={[
@@ -38,15 +41,11 @@ export default function Map({ routeName }: MapProps) {
         [37.52, 128.05],
       ]}
       maxBoundsViscosity={1.0}
-      minZoom={12}
-      maxZoom={19}
+      minZoom={MAP_MIN_ZOOM}
+      maxZoom={MAP_MAX_ZOOM}
     >
       <MapProvider>
-        <TileLayer
-          attribution="&copy; OpenStreetMap contributors"
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          maxZoom={19}
-        />
+        <TileLayer attribution={MAP_ATTRIBUTION} url={MAP_URL} maxZoom={19} />
         <BusMarker routeName={routeName} />
         <BusStopMarker routeName={routeName} />
         <BusRoutePolyline routeName={routeName} />

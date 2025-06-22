@@ -8,7 +8,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { MapProvider } from "@map/context/MapContext";
 import { Geist, Geist_Mono } from "next/font/google";
 
-// Google Fonts 설정 (Geist Sans, Geist Mono)
+// Google Fonts (Geist Safns, Geist Mono)
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -19,17 +19,17 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// 페이지 메타데이터
+// Page Metadata
 export const metadata = {
-  title: "YMove",
-  description: "연세대 미래캠퍼스 버스 실시간 위치 및 시간표 시스템",
+  title: "vBusy",
+  description: "실시간 시내버스 시각화 서비스",
   icons: {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
 };
 
-// 뷰포트 및 기타 메타 정보 설정
+// Set viewport properties
 export const viewport = {
   width: "device-width",
   initialScale: 1,
@@ -39,14 +39,15 @@ export const viewport = {
   colorScheme: "light",
 };
 
-// RootLayout 컴포넌트: 전역 스타일, MapProvider, SpeedInsights, Analytics 등을 포함합니다.
+// RootLayout is the main layout component that wraps around all pages.
+// It includes global styles, the MapProvider for map context, and analytics components.
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="ko">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

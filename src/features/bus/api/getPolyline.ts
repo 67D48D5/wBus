@@ -1,30 +1,32 @@
-// src/utils/getPolyline.ts
+// src/features/bus/api/getPolyline.ts
 
 import { GeoPolylineData } from "@bus/types/data";
 
-// 캐시용 객체
+// For caching GeoJSON data
+// Key: routeName, Value: GeoJSON data
+// Example: { "30": { type: "FeatureCollection", features: [...] } }
 const cache: Record<string, GeoPolylineData> = {};
 const pending: Record<string, Promise<GeoPolylineData>> = {};
 
 /**
- * {routeName}.geojson 파일을 fetch하여 캐싱합니다.
+ * Fetch {routeName}.geojson file and cache the result.
  *
- * @param routeName - 경로 이름
- * @returns {Promise<GeoPolylineData>} - GeoJSON 데이터
- * @throws {Error} - 요청 실패 시 에러 발생
+ * @param routeName - routeName (ex: "30", "100", "200")
+ * @returns {Promise<GeoPolylineData>} - GeoJSON Data
+ * @throws {Error} - If the fetch fails or the response is not ok
  */
 export async function getPolyline(routeName: string): Promise<GeoPolylineData> {
-  // 캐시된 데이터가 있으면 바로 반환
+  // If already cached, return cached data
   if (cache[routeName]) return cache[routeName];
 
-  // 진행 중인 요청이 있으면 해당 프로미스 반환
+  // If a request is already pending, return the pending promise
   if (await pending[routeName]) return pending[routeName];
 
-  // 새 요청 시작
+  // Start a new fetch request
   pending[routeName] = fetch(`/data/polylines/${routeName}.geojson`)
     .then((res) => {
       if (!res.ok) {
-        throw new Error(`🚫 Polyline 요청 실패: ${routeName}`);
+        throw new Error(`🚫 Polyline request failed: ${routeName}`);
       }
       return res.json();
     })
@@ -40,9 +42,9 @@ export async function getPolyline(routeName: string): Promise<GeoPolylineData> {
 }
 
 /**
- * GeoJSON 데이터를 좌표 변환 후 상행과 하행 폴리라인으로 분리합니다.
+ * Transform GeoJSON data into separate polylines for up and down directions.
  *
- * @param data - GeoJSON 데이터
+ * @param data - GeoJSON data containing features with coordinates and properties
  * @returns {{ upPolyline: [number, number][][], downPolyline: [number, number][][] }}
  */
 export function transformPolyline(data: GeoPolylineData) {
@@ -61,10 +63,11 @@ export function transformPolyline(data: GeoPolylineData) {
 }
 
 /**
- * 두 폴리라인을 병합합니다.
+ * Merge multiple polylines into a single polyline.
  *
- * @param polylines - 병합할 폴리라인 배열
- * @returns - 병합된 폴리라인
+ * @param polylines - Target polylines to merge
+ *                    (each polyline is an array of [lat, lng] pairs)
+ * @returns - Merged polyline as an array of [lat, lng] pairs
  */
 export function mergePolylines(
   polylines: [number, number][][]
@@ -84,7 +87,8 @@ export function mergePolylines(
 }
 
 /**
- * 방위각(Bearing)을 계산한다 (북 = 0도, 시계방향 증가)
+ * Calculate the bearing (direction) between two points A and B.
+ * (Coordinates are in [lat, lng] format)
  */
 export function calculateBearing(
   A: [number, number],
@@ -104,13 +108,14 @@ export function calculateBearing(
 }
 
 /**
- * 주어진 점 P를 선분 AB에 수직으로 투영하여
- * 선분 AB 위의 점을 반환합니다.
+ * When given a point P and a line segment AB,
+ * this function projects point P onto the line segment AB.
  *
- * @param P - 투영할 점
- * @param A - 선분의 시작점
- * @param B - 선분의 끝점
- * @returns - 선분 AB 위의 점
+ * @param P - The point to project
+ * @param A - The start point of the line segment
+ * @param B - The end point of the line segment
+ * @returns - The projected point on the line segment AB
+ *            (returns the closest point on the segment to P)
  */
 function projectPointOnSegment(
   P: [number, number],
@@ -128,12 +133,13 @@ function projectPointOnSegment(
 }
 
 /**
- * 두 점 P와 Q 사이의 유클리드 거리를 계산합니다.
- * (좌표 순서는 [lat, lng])
+ * Calculate the distance between two points P and Q.
+ * Coordinates are in [lat, lng] format.
  *
- * @param P - 첫 번째 점
- * @param Q - 두 번째 점
- * @returns - 두 점 사이의 거리
+ * @param P - The first point
+ * @param Q - The second point
+ * @returns - The Euclidean distance between P and Q
+ *            (not considering the curvature of the Earth)
  */
 function distance(P: [number, number], Q: [number, number]): number {
   const dx = P[0] - Q[0];
@@ -142,8 +148,8 @@ function distance(P: [number, number], Q: [number, number]): number {
 }
 
 /**
- * 두 좌표 A와 B 사이의 방향(회전각)을 계산합니다.
- * (좌표 순서는 [lat, lng])
+ * Calculate the angle (rotation) between two coordinates A and B.
+ * Coordinates are in [lat, lng] format.
  */
 export function calculateAngle(
   A: [number, number],
@@ -155,7 +161,9 @@ export function calculateAngle(
 }
 
 /**
- * 버스 GPS 좌표를 폴리라인 선분에 스냅하고 방향 각도를 계산
+ * Snap a point P to the nearest segment of a polyline.
+ * Returns the closest point on the polyline, the angle of the segment,
+ * and the segment itself.
  */
 export function snapToPolyline(
   P: [number, number],

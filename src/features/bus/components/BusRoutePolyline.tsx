@@ -1,8 +1,9 @@
-// src/components/BusRoutePolyline.tsx
+// src/features/bus/components/BusRoutePolyline.tsx
 
 "use client";
 
 import { Polyline } from "react-leaflet";
+
 import { usePolyline } from "@bus/hooks/usePolyline";
 import { useBusLocationData } from "@bus/hooks/useBusLocation";
 
@@ -11,13 +12,13 @@ type Props = {
 };
 
 /**
- * 주어진 인덱스와 총 개수를 기반으로 동적 투명도를 계산합니다.
- * 운행 차량이 없으면(비활성 상태) 고정 투명도 0.3을 반환합니다.
+ * Calculate the opacity for each polyline segment based on its index.
+ * If no buses are running, it returns a lower opacity.
  *
- * @param idx 현재 polyline의 인덱스
- * @param total 전체 polyline 개수
- * @param isInactive 운행 차량이 없는 경우 true
- * @returns 계산된 투명도 값
+ * @param idx Current polyline index
+ * @param total Total number of polylines
+ * @param isInactive No buses are running
+ * @returns Computed opacity value
  */
 function computeOpacity(
   idx: number,
@@ -32,7 +33,7 @@ export default function BusRoutePolyline({ routeName }: Props) {
   const { upPolyline, downPolyline } = usePolyline(routeName);
   const { data: busList } = useBusLocationData(routeName);
 
-  // 운행 차량이 없으면 전체 경로를 흐리게 표시
+  // If there are no buses running, set inactive state
   const isInactive = busList.length === 0;
 
   return (

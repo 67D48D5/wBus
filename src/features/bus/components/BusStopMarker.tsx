@@ -1,11 +1,18 @@
-// src/components/BusStopMarker.tsx
+// src/features/bus/components/BusStopMarker.tsx
 
 "use client";
 
 import { useState, useMemo } from "react";
 import { Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 
+import {
+  BUSSTOP_TARGET_NODE_IDS,
+  BUSSTOP_YONSEI_END_ROUTES,
+  BUSSTOP_MARKER_MIN_ZOOM,
+} from "@core/constants/env";
+
 import { useIcons } from "@map/hooks/useIcons";
+
 import { useBusStop } from "@bus/hooks/useBusStop";
 import { useBusDirection } from "@bus/hooks/useBusDirection";
 import { useBusArrivalInfo } from "@bus/hooks/useBusArrivalInfo";
@@ -18,36 +25,7 @@ type Props = {
   routeName: string;
 };
 
-/** 교내 정류장 ID 목록 */
-const TARGET_NODE_IDS: string[] = process.env.NEXT_PUBLIC_TARGET_NODE_IDS
-  ? process.env.NEXT_PUBLIC_TARGET_NODE_IDS.split(",")
-  : [];
-
-if (TARGET_NODE_IDS.length === 0) {
-  throw new Error("TARGET_NODE_IDS 환경 변수가 설정되지 않았습니다.");
-}
-
-/** 교내 종점 버스 노선 목록 */
-const YONSEI_END_ROUTES: string[] = process.env.NEXT_PUBLIC_YONSEI_END_ROUTES
-  ? process.env.NEXT_PUBLIC_YONSEI_END_ROUTES.split(",")
-  : [];
-
-if (YONSEI_END_ROUTES.length === 0) {
-  throw new Error("YONSEI_END_ROUTES 환경 변수가 설정되지 않았습니다.");
-}
-
-/** 마커 줌 레벨 */
-const MARKER_ZOOM_LEVEL = Number(
-  process.env.NEXT_PUBLIC_BUSSTOP_MARKER_MIN_ZOOM
-);
-
-if (!MARKER_ZOOM_LEVEL) {
-  throw new Error(
-    "BUSSTOP_MARKER_MIN_ZOOM 환경 변수가 설정되지 않았습니다."
-  );
-}
-
-/* 실시간 도착정보 리스트 */
+// Realtime Arrival List Component
 function ArrivalList({
   loading,
   error,
@@ -101,7 +79,7 @@ function ArrivalList({
   );
 }
 
-/* 팝업 내용 렌더링 */
+// Render the popup content based on the stop type
 function renderPopupContent({
   isActive,
   isTargetStop,
@@ -121,10 +99,10 @@ function renderPopupContent({
   routeName: string;
   directionLabel: string;
 }) {
-  // 팝업이 닫혀 있다면 아무것도 렌더링하지 않음
+  // If the popup is not active, return null
   if (!isActive) return null;
 
-  // 교내 정류장인 경우
+  // If the stop is a target stop (Yonsei University stop)
   if (isTargetStop) {
     return (
       <>
@@ -145,7 +123,6 @@ function renderPopupContent({
           )}
         </div>
 
-        {/* 교내 정류장이면서 30/34 노선이 아닌 경우에만 실시간 도착 정보 표시 */}
         {!isYonseiStop && (
           <ArrivalList
             loading={loading}
@@ -155,13 +132,13 @@ function renderPopupContent({
           />
         )}
 
-        {/* 시간표 정보 표시 */}
+        {/* Display bus schedules */}
         <BusSchedule routeName={routeName} />
       </>
     );
   }
 
-  // 일반 정류장의 경우 실시간 도착 정보만 표시
+  // If the stop is not a target stop, show only the arrival list
   return (
     <ArrivalList
       loading={loading}
@@ -173,22 +150,17 @@ function renderPopupContent({
 }
 
 export default function BusStopMarker({ routeName }: Props) {
-  // 모든 정류장 데이터를 불러옴
   const stops = useBusStop(routeName);
-  // 팝업 열림 상태를 추적하는 상태
   const [activeStopId, setActiveStopId] = useState<string | null>(null);
-  // 아이콘 정보
   const { busStopIcon, busStopIconYonsei } = useIcons();
-  // 상행/하행 판별 함수
   const getDirection = useBusDirection(routeName);
-  // 선택된 정류장에 대한 실시간 도착정보
   const {
     data: arrivalRawData,
     loading,
     error,
   } = useBusArrivalInfo(activeStopId);
 
-  // arrivalRawData를 정렬한 결과를 메모이제이션하여 불필요한 재계산을 방지합니다.
+  // Prepare the arrival data for rendering
   const sortedArrivalData = useMemo(() => {
     return arrivalRawData
       ? [...arrivalRawData].sort(
@@ -197,11 +169,11 @@ export default function BusStopMarker({ routeName }: Props) {
       : [];
   }, [arrivalRawData]);
 
-  // 지도 줌 레벨 상태 관리
+  // Get the current map instance and zoom level
   const map = useMap();
   const [zoom, setZoom] = useState(map.getZoom());
 
-  // zoom 이벤트를 구독해서 상태 업데이트
+  // Subscribe to zoom events to update the zoom level
   useMapEvents({
     zoomend: () => {
       setZoom(map.getZoom());
@@ -211,12 +183,12 @@ export default function BusStopMarker({ routeName }: Props) {
   return (
     <>
       {stops.map((stop) => {
-        // 줌 레벨에 따라 마커를 표시할지 결정
-        if (zoom < MARKER_ZOOM_LEVEL) return null;
+        // If the zoom level is below the threshold, do not render the marker
+        if (zoom < BUSSTOP_MARKER_MIN_ZOOM) return null;
 
         const isActive = activeStopId === stop.nodeid;
-        const isTargetStop = TARGET_NODE_IDS.includes(stop.nodeid);
-        const isYonseiStop = YONSEI_END_ROUTES.includes(routeName);
+        const isTargetStop = BUSSTOP_TARGET_NODE_IDS.includes(stop.nodeid);
+        const isYonseiStop = BUSSTOP_YONSEI_END_ROUTES.includes(routeName);
 
         const directionCode = getDirection(stop.nodeid, stop.nodeord);
         const directionLabel =
@@ -234,12 +206,10 @@ export default function BusStopMarker({ routeName }: Props) {
           >
             <Popup autoPan={false} minWidth={210}>
               <div className="max-h-[280px] w-[210px] overflow-y-auto">
-                {/* 정류장 이름 및 번호 */}
                 <div className="font-bold mb-1">
                   🚏 {stop.nodenm}{" "}
                   <span className="text-xs text-gray-500">{stop.nodeno}</span>
                 </div>
-                {/* 팝업 내용 렌더링 */}
                 {renderPopupContent({
                   isActive,
                   isTargetStop,

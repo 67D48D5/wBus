@@ -1,91 +1,73 @@
-// src/hooks/useSchedule.ts
+// src/features/bus/hooks/useSchedule.ts
 
 "use client";
 
-import { useEffect, useState } from "react";
-import { loadSchedule } from "@bus/utils/getSchedule";
+import { useEffect, useMemo, useState } from "react";
+
+import { API_REFRESH_INTERVAL } from "@core/constants/env";
+
+import { loadSchedule } from "@bus/api/getSchedule";
 import {
   getFirstDeparture,
   getMinutesUntilNextDeparture,
   getSortedHourKeys,
 } from "@bus/utils/getTime";
 
-const REFRESH_INTERVAL = Number(process.env.NEXT_PUBLIC_REFRESH_INTERVAL);
+export type TimeTableData = Record<
+  string, // hour
+  Record<
+    string, // direction
+    Array<{ time: string; note?: string }>
+  >
+>;
 
-if (!REFRESH_INTERVAL) {
-  throw new Error(
-    "NEXT_PUBLIC_REFRESH_INTERVAL 환경 변수가 설정되지 않았습니다."
-  );
-}
+export type NoteMap = Record<string, string>;
+export type ScheduleState = "general" | "weekday" | "holiday" | "unknown";
 
-export interface ParsedScheduleResult {
-  data: Record<string, Record<string, Array<{ time: string; note?: string }>>>;
-  note: Record<string, string>;
-  state: "general" | "weekday" | "holiday" | "unknown";
-}
-
-interface ScheduleDataHookReturn {
-  /** 시간표 전체 데이터(JSON) */
-  data: Record<string, Record<string, Array<{ time: string; note?: string }>>>;
-  /** 노트 정보 */
-  note: Record<string, string>;
-  /** 다음 버스까지 남은 분 (특정 방향 기준) */
+export interface ScheduleDataHookReturn {
+  data: TimeTableData;
+  note: NoteMap;
   minutesLeft: number | null;
-  /** 첫 차 시각 (특정 방향 기준) */
   firstDeparture: string | null;
-  /** 현재 로딩 중인지 */
   isLoading: boolean;
-  /** 일반 / 평일 / 공휴일 / 미확인 */
-  state: "general" | "weekday" | "holiday" | "unknown";
-  /** 로딩/파싱 중 오류 메시지 */
+  state: ScheduleState;
   errorMessage: string | null;
 }
 
-/**
- * JSON 시간표 데이터를 로드하고, 일정 간격(10초)마다
- * '특정 방향'의 다음 버스 정보를 갱신하는 훅.
- *
- * @param routeName 노선명
- * @param weekday true=평일, false=공휴일
- */
 export function useScheduleData(
   routeName: string,
   weekday: boolean = true
 ): ScheduleDataHookReturn {
-  const [data, setData] = useState<
-    Record<string, Record<string, Array<{ time: string; note?: string }>>>
-  >({});
-  const [note, setNote] = useState<Record<string, string>>({});
+  const [data, setData] = useState<TimeTableData>({});
+  const [note, setNote] = useState<NoteMap>({});
   const [minutesLeft, setMinutesLeft] = useState<number | null>(null);
   const [firstDeparture, setFirstDeparture] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [state, setState] = useState<
-    "general" | "weekday" | "holiday" | "unknown"
-  >("unknown");
+  const [state, setState] = useState<ScheduleState>("unknown");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const direction = getDefaultDirectionFromData(data);
 
-  // --------------------------------
-  // 최초 시간표 데이터 로드
-  // --------------------------------
+  const direction = useMemo(() => getDefaultDirectionFromData(data), [data]);
+
+  // Load data once the routeName or weekday changes
   useEffect(() => {
     if (!routeName) return;
     let canceled = false;
-    setIsLoading(true);
-    setErrorMessage(null);
 
-    async function loadScheduleData() {
+    const fetchData = async () => {
+      setIsLoading(true);
+      setErrorMessage(null);
+
       try {
-        const { data, note, state } = await loadSchedule(routeName, weekday);
+        const result = await loadSchedule(routeName, weekday);
         if (canceled) return;
 
-        setData(data);
-        setNote(note);
-        setState(state ?? "unknown");
+        setData(result.data);
+        setNote(result.note);
+        setState(result.state ?? "unknown");
 
-        if (Object.keys(data).length > 0 && direction) {
-          setMinutesLeft(getMinutesUntilNextDeparture(data, direction));
-          setFirstDeparture(getFirstDeparture(data, direction));
+        if (Object.keys(result.data).length > 0 && direction) {
+          setMinutesLeft(getMinutesUntilNextDeparture(result.data, direction));
+          setFirstDeparture(getFirstDeparture(result.data, direction));
         } else {
           setMinutesLeft(null);
           setFirstDeparture(null);
@@ -93,41 +75,41 @@ export function useScheduleData(
       } catch (err) {
         console.error(err);
         if (!canceled) {
-          setErrorMessage("시간표 데이터를 불러오는 중 오류가 발생했습니다.");
+          setErrorMessage("Error loading schedule data.");
+          setData({});
+          setNote({});
+          setState("unknown");
+          setMinutesLeft(null);
+          setFirstDeparture(null);
         }
       } finally {
         if (!canceled) {
           setIsLoading(false);
         }
       }
-    }
+    };
 
-    loadScheduleData();
-
+    fetchData();
     return () => {
       canceled = true;
     };
-  }, [routeName, weekday, direction]);
+  }, [routeName, weekday]);
 
-  // --------------------------------
-  // REFRESH_INTERVAL초마다 '남은 시간'과 '첫 차' 정보 갱신
-  // --------------------------------
+  // Refresh interval
   useEffect(() => {
-    // data가 없으면 업데이트할 필요 없음
     if (!direction || Object.keys(data).length === 0) {
       setMinutesLeft(null);
       setFirstDeparture(null);
       return;
     }
 
-    const updateScheduleTimes = () => {
+    const update = () => {
       setMinutesLeft(getMinutesUntilNextDeparture(data, direction));
       setFirstDeparture(getFirstDeparture(data, direction));
     };
 
-    // 최초 업데이트
-    updateScheduleTimes();
-    const timer = setInterval(updateScheduleTimes, REFRESH_INTERVAL);
+    update();
+    const timer = setInterval(update, API_REFRESH_INTERVAL);
     return () => clearInterval(timer);
   }, [data, direction]);
 
@@ -142,19 +124,13 @@ export function useScheduleData(
   };
 }
 
-/**
- * JSON의 시간대의 첫 번째 요소의 이름을 기본값으로 사용
- * @param data
- * @returns string | null
- */
-function getDefaultDirectionFromData(
-  data: Record<string, Record<string, any>>
-): string | null {
+// Utility function to get the default direction from the timetable data
+function getDefaultDirectionFromData(data: TimeTableData): string | null {
   const hourKeys = getSortedHourKeys(data);
-  for (const hourKey of hourKeys) {
-    const directions = Object.keys(data[hourKey]);
+  for (const hour of hourKeys) {
+    const directions = Object.keys(data[hour]);
     if (directions.length > 0) {
-      return directions[0]; // 가장 먼저 등장한 방향을 기본값으로 사용
+      return directions[0];
     }
   }
   return null;

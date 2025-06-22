@@ -1,8 +1,9 @@
-// src/context/MapContext.tsx
+// src/features/map/context/MapContext.tsx
 
 "use client";
 
 import React, { createContext, useContext, useState, useMemo } from "react";
+
 import type { Map } from "leaflet";
 
 type MapContextType = {
@@ -22,7 +23,6 @@ export function useMapContext(): MapContextType {
 
 export function MapProvider({ children }: { children: React.ReactNode }) {
   const [map, setMap] = useState<Map | null>(null);
-  // context value를 memoization하여 불필요한 리렌더링을 방지합니다.
   const value = useMemo(() => ({ map, setMap }), [map]);
   return <MapContext.Provider value={value}>{children}</MapContext.Provider>;
 }
