@@ -1,8 +1,19 @@
 # wBus
 
-Visualized Bus Information Service for Yonsei University Mirae Campus
+Visualized Bus Information Service for Wonju, South Korea.
 
-## Used Technologies
+## Architecture
+
+```txt
++-----------+       HTTP        +-----------+        React UI        +----------+
+| Public API| <---------------> | Telemetry | <--------------------> |  Vista   |
+|  (공공버스) |   (poll/caching)  |  (Rust)   |      (REST/GraphQL)    | (Next.js)|
++-----------+                   +-----------+                        +----------+
+```
+
+## Stacks
+
+### Vista
 
 - [공공데이터포털](https://www.data.go.kr/)
 - [AWS API Gateway](https://aws.amazon.com/ko/api-gateway/)
@@ -13,6 +24,11 @@ Visualized Bus Information Service for Yonsei University Mirae Campus
 - [OpenStreetMap](https://www.openstreetmap.org/)
 - [Typescript](https://www.typescriptlang.org/)
 - [React](https://reactjs.org/)
+
+### Telemetry
+
+- [Rust](https://www.rust-lang.org/)
+- [Actix](https://actix.rs/)
 
 ## License
 
