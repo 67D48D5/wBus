@@ -1,6 +1,6 @@
 // src/core/constants/env.ts
 
-export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "vBusy";
+export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "wBus";
 export const APP_SPLASH_MESSAGE =
   process.env.NEXT_PUBLIC_APP_SPLASH_MESSAGE ||
   "실시간 버스 정보를 불러오는 중...";

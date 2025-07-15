@@ -12,7 +12,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
-});
+}); 
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -21,7 +21,7 @@ const geistMono = Geist_Mono({
 
 // Page Metadata
 export const metadata = {
-  title: "vBusy",
+  title: "wBus",
   description: "실시간 시내버스 시각화 서비스",
   icons: {
     icon: "/favicon.ico",
