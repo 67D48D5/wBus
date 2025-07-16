@@ -1,134 +1,101 @@
 // crates/application/src/lib.rs
 
 use anyhow::Result;
-use domain::{BusArrivalInfo, BusInformationRepository, BusLocation, BusStopLocation, Polyline};
+use domain::{
+    Bus, BusArrival, BusRepository, BusRoute, BusStop, BusStopId, CityId, Polyline, RouteId,
+};
 use std::sync::Arc;
 
-//----------------------------------------------------------------
-// Use Cases for Fetching Data
-//----------------------------------------------------------------
+// Use Cases (Application Services)
 
-/// Use Case: Gets all bus stop locations for a given city.
+/// A use case for fetching all bus routes in a given city.
+pub struct GetRoutesByCity {
+    repo: Arc<dyn BusRepository>,
+}
+
+impl GetRoutesByCity {
+    pub fn new(repo: Arc<dyn BusRepository>) -> Self {
+        Self { repo }
+    }
+
+    pub async fn execute(&self, city_id: CityId) -> Result<Vec<BusRoute>> {
+        self.repo.find_all_route_by_city(city_id).await
+    }
+}
+
+/// A use case for fetching all bus stops in a given city.
 pub struct GetBusStopLocationByCity {
-    repository: Arc<dyn BusInformationRepository>,
+    repo: Arc<dyn BusRepository>,
 }
 
 impl GetBusStopLocationByCity {
-    pub fn new(repository: Arc<dyn BusInformationRepository>) -> Self {
-        Self { repository }
+    pub fn new(repo: Arc<dyn BusRepository>) -> Self {
+        Self { repo }
     }
 
-    /// Executes the use case.
-    ///
-    /// # Arguments
-    /// * `city_id` - The unique identifier for the city.
-    pub async fn execute(&self, city_id: u8) -> Result<Vec<BusStopLocation>> {
-        self.repository.find_stops_by_city(city_id).await
+    pub async fn execute(&self, city_id: CityId) -> Result<Vec<BusStop>> {
+        self.repo.find_all_stop_by_city(city_id).await
     }
 }
 
-/// Use Case: Gets arrival information for a specific bus stop.
-pub struct GetBusStopArrivalByCity {
-    repository: Arc<dyn BusInformationRepository>,
+/// A use case for fetching the polyline for a specific route.
+pub struct GetPolylineByRoute {
+    repo: Arc<dyn BusRepository>,
 }
 
-impl GetBusStopArrivalByCity {
-    pub fn new(repository: Arc<dyn BusInformationRepository>) -> Self {
-        Self { repository }
+impl GetPolylineByRoute {
+    pub fn new(repo: Arc<dyn BusRepository>) -> Self {
+        Self { repo }
     }
 
-    /// Executes the use case.
-    ///
-    /// # Arguments
-    /// * `city_id` - The unique identifier for the city.
-    /// * `bus_stop_id` - The unique identifier for the bus stop.
-    pub async fn execute(&self, city_id: u8, bus_stop_id: u16) -> Result<Vec<BusArrivalInfo>> {
-        self.repository
-            .find_arrival_info_by_stop(city_id, bus_stop_id)
-            .await
+    pub async fn execute(&self, route_id: &RouteId) -> Result<Option<Polyline>> {
+        // This logic lives in the application layer: find the route, then extract the polyline.
+        let route = self.repo.find_route_by_bus(route_id).await?;
+        Ok(route.map(|r| r.polyline))
     }
 }
 
-/// Use Case: Gets the real-time location of all buses in a city.
+/// A use case for fetching real-time bus locations for a whole city.
 pub struct GetBusLocationByCity {
-    repository: Arc<dyn BusInformationRepository>,
+    repo: Arc<dyn BusRepository>,
 }
 
 impl GetBusLocationByCity {
-    pub fn new(repository: Arc<dyn BusInformationRepository>) -> Self {
-        Self { repository }
+    pub fn new(repo: Arc<dyn BusRepository>) -> Self {
+        Self { repo }
     }
 
-    /// Executes the use case.
-    ///
-    /// # Arguments
-    /// * `city_id` - The unique identifier for the city.
-    pub async fn execute(&self, city_id: u8) -> Result<Vec<BusLocation>> {
-        self.repository.find_buses_by_city(city_id).await
+    pub async fn execute(&self, city_id: CityId) -> Result<Vec<Bus>> {
+        self.repo.find_all_bus_by_city(city_id).await
     }
 }
 
-/// Use Case: Gets the real-time location of all buses for a specific route.
+/// A use case for fetching real-time bus locations for a specific route.
 pub struct GetBusLocationByRoute {
-    repository: Arc<dyn BusInformationRepository>,
+    repo: Arc<dyn BusRepository>,
 }
 
 impl GetBusLocationByRoute {
-    pub fn new(repository: Arc<dyn BusInformationRepository>) -> Self {
-        Self { repository }
+    pub fn new(repo: Arc<dyn BusRepository>) -> Self {
+        Self { repo }
     }
 
-    /// Executes the use case.
-    ///
-    /// # Arguments
-    /// * `city_id` - The unique identifier for the city.
-    /// * `route_id` - The unique identifier for the bus route.
-    pub async fn execute(&self, city_id: u8, route_id: u16) -> Result<Vec<BusLocation>> {
-        self.repository.find_buses_by_route(city_id, route_id).await
+    pub async fn execute(&self, city_id: CityId, route_id: &RouteId) -> Result<Vec<Bus>> {
+        self.repo.find_all_bus_by_route(city_id, route_id).await
     }
 }
 
-/// Use Case: Gets the geographical path (polyline) for a specific bus route.
-pub struct GetBusPolylineByRoute {
-    repository: Arc<dyn BusInformationRepository>,
+/// A use case for fetching arrival predictions for a specific bus stop.
+pub struct GetArrivalByBusStop {
+    repo: Arc<dyn BusRepository>,
 }
 
-impl GetBusPolylineByRoute {
-    pub fn new(repository: Arc<dyn BusInformationRepository>) -> Self {
-        Self { repository }
+impl GetArrivalByBusStop {
+    pub fn new(repo: Arc<dyn BusRepository>) -> Self {
+        Self { repo }
     }
 
-    /// Executes the use case.
-    ///
-    /// # Arguments
-    /// * `city_id` - The unique identifier for the city.
-    /// * `route_id` - The unique identifier for the bus route.
-    pub async fn execute(&self, city_id: u8, route_id: u16) -> Result<Polyline> {
-        self.repository
-            .find_polyline_by_route(city_id, route_id)
-            .await
-    }
-}
-
-//----------------------------------------------------------------
-// Use Case for Updating Data
-//----------------------------------------------------------------
-
-/// Use Case: Triggers a full refresh of all data from the source.
-pub struct UpdateData {
-    repository: Arc<dyn BusInformationRepository>,
-}
-
-impl UpdateData {
-    pub fn new(repository: Arc<dyn BusInformationRepository>) -> Self {
-        Self { repository }
-    }
-
-    /// Executes the use case.
-    pub async fn execute(&self) -> Result<()> {
-        // This method would contain the logic for fetching fresh data
-        // and saving it to the repository.
-        // For now, it just calls a method on the repository.
-        self.repository.refresh_all_data().await
+    pub async fn execute(&self, city_id: CityId, stop_id: &BusStopId) -> Result<Vec<BusArrival>> {
+        self.repo.find_arrival_by_stop(city_id, stop_id).await
     }
 }

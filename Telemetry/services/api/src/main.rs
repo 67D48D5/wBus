@@ -3,8 +3,12 @@
 pub mod handlers;
 
 use application::{
-    GetBusLocationByCity, GetBusLocationByRoute, GetBusStopArrivalByBusStop,
-    GetBusStopLocationByCity, GetRoutePolylineByRoute, UpdateData,
+    GetArrivalByBusStop,
+    GetBusLocationByCity,
+    GetBusLocationByRoute,
+    GetBusStopLocationByCity,
+    GetPolylineByRoute,
+    // PostUpdateData,
 };
 use infrastructure::InMemoryCache;
 
@@ -70,14 +74,14 @@ async fn main() -> std::io::Result<()> {
     let get_bus_stop_location_use_case =
         web::Data::new(GetBusStopLocationByCity::new(repository.clone()));
     let get_bus_stop_arrival_use_case =
-        web::Data::new(GetBusStopArrivalByBusStop::new(repository.clone()));
+        web::Data::new(GetArrivalByBusStop::new(repository.clone()));
     let get_bus_location_by_city_use_case =
         web::Data::new(GetBusLocationByCity::new(repository.clone()));
     let get_bus_location_by_route_use_case =
         web::Data::new(GetBusLocationByRoute::new(repository.clone()));
     let get_route_polyline_by_route_use_case =
-        web::Data::new(GetRoutePolylineByRoute::new(repository.clone()));
-    let update_data_use_case = web::Data::new(UpdateData::new(repository.clone()));
+        web::Data::new(GetPolylineByRoute::new(repository.clone()));
+    // let update_data_use_case = web::Data::new(PostUpdateData::new(repository.clone()));
 
     // Configure and start the HTTP server.
     HttpServer::new(move || {
@@ -87,7 +91,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(get_bus_location_by_city_use_case.clone())
             .app_data(get_bus_location_by_route_use_case.clone())
             .app_data(get_route_polyline_by_route_use_case.clone())
-            .app_data(update_data_use_case.clone())
+            // .app_data(update_data_use_case.clone())
             .configure(configure_routes)
     })
     .bind(&server_address)?
@@ -109,7 +113,7 @@ fn configure_routes(cfg: &mut web::ServiceConfig) {
             )
             .route(
                 "/getBusLocation/{city}",
-                web::get().to(handlers::get_buses_location_by_city),
+                web::get().to(handlers::get_bus_location_by_city),
             )
             .route(
                 "/getBusLocation/{city}/{routeId}",
@@ -117,8 +121,7 @@ fn configure_routes(cfg: &mut web::ServiceConfig) {
             )
             .route(
                 "/getRoutePolyline/{city}/{routeId}",
-                web::get().to(handlers::get_bus_polyline_by_routeid),
-            )
-            .route("/update", web::post().to(handlers::post_update)),
+                web::get().to(handlers::get_route_polyline_by_routeid),
+            ), // .route("/update", web::post().to(handlers::post_update)),
     );
 }

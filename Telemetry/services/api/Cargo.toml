@@ -5,8 +5,24 @@ edition = "2024"
 
 [dependencies]
 # Local dependencies
+domain = { path = "../../crates/domain" }
 application = { path = "../../crates/application" }
+infrastructure = { path = "../../crates/infrastructure" }
 
 # Actix for asynchronous programming
 actix-web = "4.0"
+
+# Environment variable management
 dotenv = "0.15.0"
+
+# Serde for serialization and deserialization
+serde = { version = "1.0", features = ["derive"] }
+
+# Anyhow for error handling
+anyhow = "1.0"
+
+# Config management
+config = "0.15"
+
+# Log for logging
+log = "0.4.27"
