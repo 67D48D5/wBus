@@ -4,3 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# Local dependencies
+application = { path = "../../crates/application" }
+
+# Actix for asynchronous programming
+actix-web = "4.0"
+dotenv = "0.15.0"
