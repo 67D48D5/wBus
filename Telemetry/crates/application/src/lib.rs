@@ -1,29 +1,12 @@
 // crates/application/src/lib.rs
 
 use anyhow::Result;
-use domain::{
-    Bus, BusArrival, BusRepository, BusRoute, BusStop, BusStopId, CityId, Polyline, RouteId,
-};
+use domain::{Bus, BusArrival, BusRepository, BusStop, BusStopId, CityId, Polyline, RouteId};
 use std::sync::Arc;
 
-// Use Cases (Application Services)
+// --- Use Cases (Application Services) ---
 
-/// A use case for fetching all bus routes in a given city.
-pub struct GetRoutesByCity {
-    repo: Arc<dyn BusRepository>,
-}
-
-impl GetRoutesByCity {
-    pub fn new(repo: Arc<dyn BusRepository>) -> Self {
-        Self { repo }
-    }
-
-    pub async fn execute(&self, city_id: CityId) -> Result<Vec<BusRoute>> {
-        self.repo.find_all_route_by_city(city_id).await
-    }
-}
-
-/// A use case for fetching all bus stops in a given city.
+/// Use Case: Gets all bus stop locations for a given city.
 pub struct GetBusStopLocationByCity {
     repo: Arc<dyn BusRepository>,
 }
@@ -34,28 +17,26 @@ impl GetBusStopLocationByCity {
     }
 
     pub async fn execute(&self, city_id: CityId) -> Result<Vec<BusStop>> {
-        self.repo.find_all_stop_by_city(city_id).await
+        self.repo.find_all_bus_stop_by_city(city_id).await
     }
 }
 
-/// A use case for fetching the polyline for a specific route.
-pub struct GetPolylineByRoute {
+/// Use Case: Gets arrival information for a specific bus stop.
+pub struct GetArrivalByBusStop {
     repo: Arc<dyn BusRepository>,
 }
 
-impl GetPolylineByRoute {
+impl GetArrivalByBusStop {
     pub fn new(repo: Arc<dyn BusRepository>) -> Self {
         Self { repo }
     }
 
-    pub async fn execute(&self, route_id: &RouteId) -> Result<Option<Polyline>> {
-        // This logic lives in the application layer: find the route, then extract the polyline.
-        let route = self.repo.find_route_by_bus(route_id).await?;
-        Ok(route.map(|r| r.polyline))
+    pub async fn execute(&self, city_id: CityId, stop_id: &BusStopId) -> Result<Vec<BusArrival>> {
+        self.repo.find_arrival_by_bus_stop(city_id, stop_id).await
     }
 }
 
-/// A use case for fetching real-time bus locations for a whole city.
+/// Use Case: Gets the real-time location of all buses in a city.
 pub struct GetBusLocationByCity {
     repo: Arc<dyn BusRepository>,
 }
@@ -70,7 +51,7 @@ impl GetBusLocationByCity {
     }
 }
 
-/// A use case for fetching real-time bus locations for a specific route.
+/// Use Case: Gets the real-time location of all buses for a specific route.
 pub struct GetBusLocationByRoute {
     repo: Arc<dyn BusRepository>,
 }
@@ -85,17 +66,18 @@ impl GetBusLocationByRoute {
     }
 }
 
-/// A use case for fetching arrival predictions for a specific bus stop.
-pub struct GetArrivalByBusStop {
+/// Use Case: Gets the geographical path (polyline) for a specific bus route.
+pub struct GetPolylineByRoute {
     repo: Arc<dyn BusRepository>,
 }
 
-impl GetArrivalByBusStop {
+impl GetPolylineByRoute {
     pub fn new(repo: Arc<dyn BusRepository>) -> Self {
         Self { repo }
     }
 
-    pub async fn execute(&self, city_id: CityId, stop_id: &BusStopId) -> Result<Vec<BusArrival>> {
-        self.repo.find_arrival_by_stop(city_id, stop_id).await
+    pub async fn execute(&self, route_id: &RouteId) -> Result<Option<Polyline>> {
+        let route = self.repo.find_route_by_bus(route_id).await?;
+        Ok(route.map(|r| r.polyline))
     }
 }

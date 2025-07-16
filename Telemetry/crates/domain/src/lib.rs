@@ -71,12 +71,12 @@ pub trait BusRepository: Send + Sync {
     // Methods for static data
     async fn find_route_by_bus(&self, route_id: &RouteId) -> Result<Option<BusRoute>>;
     async fn find_all_route_by_city(&self, city_id: CityId) -> Result<Vec<BusRoute>>;
-    async fn find_all_stop_by_city(&self, city_id: CityId) -> Result<Vec<BusStop>>;
+    async fn find_all_bus_stop_by_city(&self, city_id: CityId) -> Result<Vec<BusStop>>;
 
     // Methods for real-time data
     async fn find_all_bus_by_city(&self, city_id: CityId) -> Result<Vec<Bus>>;
     async fn find_all_bus_by_route(&self, city_id: CityId, route_id: &RouteId) -> Result<Vec<Bus>>;
-    async fn find_arrival_by_stop(
+    async fn find_arrival_by_bus_stop(
         &self,
         city_id: CityId,
         stop_id: &BusStopId,

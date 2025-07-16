@@ -60,7 +60,7 @@ impl BusRepository for InMemoryCache {
         Ok(filtered)
     }
 
-    async fn find_all_stop_by_city(&self, city_id: CityId) -> Result<Vec<BusStop>> {
+    async fn find_all_bus_stop_by_city(&self, city_id: CityId) -> Result<Vec<BusStop>> {
         let filtered = self
             .stops
             .iter()
@@ -92,7 +92,7 @@ impl BusRepository for InMemoryCache {
         Ok(filtered)
     }
 
-    async fn find_arrival_by_stop(
+    async fn find_arrival_by_bus_stop(
         &self,
         _city_id: CityId, // This parameter is unused in the current logic but kept for trait conformity.
         stop_id: &BusStopId,

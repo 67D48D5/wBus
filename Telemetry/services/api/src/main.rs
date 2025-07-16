@@ -1,6 +1,7 @@
 // service/api/src/main.rs
 
-pub mod handlers;
+pub mod handler;
+pub mod poller;
 
 use application::{
     GetArrivalByBusStop,
@@ -10,88 +11,83 @@ use application::{
     GetPolylineByRoute,
     // PostUpdateData,
 };
+use domain::BusRepository;
 use infrastructure::InMemoryCache;
 
 use actix_web::{App, HttpServer, web};
+use log::{info, warn};
 use serde::Deserialize;
 use std::sync::Arc;
 
-/// Defines the application's configuration structure, mapping to .env variables.
-#[derive(Deserialize)]
+/// Defines the application's configuration structure.
+#[derive(Deserialize, Clone)]
 struct Config {
-    // source_url: String,
     server_addr: String,
     server_port: u16,
 }
 
-/// Define fallback constants for the server address and port
-const DEFAULT_ADDR: &str = "127.0.0.1";
-const DEFAULT_PORT: u16 = 8080;
+/// A struct to hold all shared application state, including use cases.
+/// This makes dependency injection much cleaner.
+pub struct AppState {
+    get_all_bus_stop_location_by_city: GetBusStopLocationByCity,
+    get_arrival_by_bus_stop: GetArrivalByBusStop,
+    get_all_bus_location_by_city: GetBusLocationByCity,
+    get_all_bus_location_by_route: GetBusLocationByRoute,
+    get_polyline_by_route: GetPolylineByRoute,
+    // post_update_data: PostUpdateData,
+}
+
+impl AppState {
+    /// Creates a new instance of the application state.
+    fn new(repo: Arc<dyn BusRepository>) -> Self {
+        Self {
+            get_all_bus_stop_location_by_city: GetBusStopLocationByCity::new(repo.clone()),
+            get_arrival_by_bus_stop: GetArrivalByBusStop::new(repo.clone()),
+            get_all_bus_location_by_city: GetBusLocationByCity::new(repo.clone()),
+            get_all_bus_location_by_route: GetBusLocationByRoute::new(repo.clone()),
+            get_polyline_by_route: GetPolylineByRoute::new(repo.clone()),
+            // post_update_data: PostUpdateData::new(repo),
+        }
+    }
+}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // Load environment variables from the .env file in the workspace root.
-    // Fails silently if .env is not found, allowing for production env vars.
-    if let Err(err) = dotenv::dotenv() {
-        eprintln!(
-            "⚠️ Failed to load .env file: {}. Using system environment variables.",
-            err
-        );
-    }
+    // Environment and Logging Setup
+    dotenv::dotenv().ok();
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
-    // Initialize configuration from environment variables.
-    let config = match config::Config::builder()
+    // Simplified Configuration Loading
+    let config = config::Config::builder()
         .add_source(config::Environment::default().separator("__"))
         .build()
-    {
-        Ok(builder) => match builder.try_deserialize::<Config>() {
-            Ok(cfg) => cfg,
-            Err(e) => {
-                eprintln!("Failed to deserialize config: {}", e);
-                // Provide default values on failure
-                Config {
-                    server_addr: DEFAULT_ADDR.to_string(),
-                    server_port: DEFAULT_PORT,
-                }
-            }
-        },
-        Err(e) => {
-            eprintln!("Failed to build config: {}", e);
+        .and_then(|builder| builder.try_deserialize::<Config>())
+        .unwrap_or_else(|e| {
+            warn!(
+                "Failed to load config from environment: {}. Using defaults.",
+                e
+            );
             Config {
-                server_addr: DEFAULT_ADDR.to_string(),
-                server_port: DEFAULT_PORT,
+                server_addr: "127.0.0.1".to_string(),
+                server_port: 8080,
             }
-        }
-    };
+        });
 
     let server_address = format!("{}:{}", config.server_addr, config.server_port);
-    println!("🚀 Starting API server at http://{}", server_address);
+    info!("Starting API at http://{}", server_address);
 
-    // Initialize the concrete repository implementation.
-    let repository = Arc::new(InMemoryCache::new());
+    // State Initialization
+    let repository: Arc<dyn BusRepository> = Arc::new(InMemoryCache::new());
 
-    // Create and wrap all application use cases for Actix.
-    let get_bus_stop_location_use_case =
-        web::Data::new(GetBusStopLocationByCity::new(repository.clone()));
-    let get_bus_stop_arrival_use_case =
-        web::Data::new(GetArrivalByBusStop::new(repository.clone()));
-    let get_bus_location_by_city_use_case =
-        web::Data::new(GetBusLocationByCity::new(repository.clone()));
-    let get_bus_location_by_route_use_case =
-        web::Data::new(GetBusLocationByRoute::new(repository.clone()));
-    let get_route_polyline_by_route_use_case =
-        web::Data::new(GetPolylineByRoute::new(repository.clone()));
-    // let update_data_use_case = web::Data::new(PostUpdateData::new(repository.clone()));
+    // Start the poller in a separate thread
+    poller::spawn_poller(repository.clone());
 
-    // Configure and start the HTTP server.
+    let app_state = web::Data::new(AppState::new(repository));
+
+    // Server Startup
     HttpServer::new(move || {
         App::new()
-            .app_data(get_bus_stop_location_use_case.clone())
-            .app_data(get_bus_stop_arrival_use_case.clone())
-            .app_data(get_bus_location_by_city_use_case.clone())
-            .app_data(get_bus_location_by_route_use_case.clone())
-            .app_data(get_route_polyline_by_route_use_case.clone())
-            // .app_data(update_data_use_case.clone())
+            .app_data(app_state.clone()) // Register the entire AppState
             .configure(configure_routes)
     })
     .bind(&server_address)?
@@ -101,27 +97,24 @@ async fn main() -> std::io::Result<()> {
 
 /// Configures the application's routes.
 fn configure_routes(cfg: &mut web::ServiceConfig) {
-    cfg.service(
-        web::scope("/")
-            .route(
-                "/getBusStop/{city}",
-                web::get().to(handlers::get_busstop_location_by_city),
-            )
-            .route(
-                "/getBusStopArrival/{city}/{busStopId}",
-                web::get().to(handlers::get_busstop_arrival_by_busstopid),
-            )
-            .route(
-                "/getBusLocation/{city}",
-                web::get().to(handlers::get_bus_location_by_city),
-            )
-            .route(
-                "/getBusLocation/{city}/{routeId}",
-                web::get().to(handlers::get_bus_location_by_routeid),
-            )
-            .route(
-                "/getRoutePolyline/{city}/{routeId}",
-                web::get().to(handlers::get_route_polyline_by_routeid),
-            ), // .route("/update", web::post().to(handlers::post_update)),
+    cfg.route(
+        "/getBusLocation/{city}",
+        web::get().to(handler::get_all_bus_location_by_city),
+    )
+    .route(
+        "/getBusLocation/{city}/{routeId}",
+        web::get().to(handler::get_all_bus_location_by_route),
+    )
+    .route(
+        "/getBusStopLocation/{city}",
+        web::get().to(handler::get_all_bus_stop_location_by_city),
+    )
+    .route(
+        "/getBusStopArrival/{city}/{busStopId}",
+        web::get().to(handler::get_arrival_by_bus_stop),
+    )
+    .route(
+        "/getRoutePolyline/{city}/{routeId}",
+        web::get().to(handler::get_route_polyline_by_route),
     );
 }
