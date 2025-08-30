@@ -1,5 +1,5 @@
 {
-  "name": "vbus",
+  "name": "wbus",
   "version": "2.0",
   "private": true,
   "scripts": {
@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@types/leaflet-rotatedmarker": "^0.2.5",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
     "leaflet": "^1.9.4",

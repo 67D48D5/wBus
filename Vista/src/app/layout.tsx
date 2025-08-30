@@ -12,7 +12,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
-}); 
+});
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -22,7 +22,7 @@ const geistMono = Geist_Mono({
 // Page Metadata
 export const metadata = {
   title: "wBus",
-  description: "실시간 시내버스 시각화 서비스",
+  description: "원주 실시간 시내버스 시각화 서비스",
   icons: {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
@@ -51,9 +51,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* 전역 지도 컨텍스트를 제공하는 MapProvider */}
+        {/* Provides global map context via MapProvider */}
         <MapProvider>{children}</MapProvider>
-        {/* Vercel SpeedInsights와 Analytics 컴포넌트 */}
+        {/* Vercel SpeedInsights and Analytics components */}
         <SpeedInsights />
         <Analytics />
       </body>

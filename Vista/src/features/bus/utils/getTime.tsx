@@ -1,32 +1,28 @@
 // src/features/bus/utils/getTime.ts
 
 import React, { JSX } from "react";
+import type { ReactNode } from "react";
 
 /**
- * "HH:MM" 형식의 문자열을 분 단위 정수로 변환합니다.
- * 예: "06:00" -> 360
+ * Converts a "HH:MM" formatted string to an integer representing minutes.
  */
-function parseTimeString(timeStr: string): number {
+const parseTimeStringToMinutes = (timeStr: string): number => {
   const [hour, minute] = timeStr.split(":").map(Number);
   return hour * 60 + minute;
-}
+};
 
 /**
- * 데이터 객체의 시간 키들을 분 단위로 정렬하여 반환합니다.
+ * Returns the time keys of a data object sorted in ascending order by minutes.
  */
-export function getSortedHourKeys(data: Record<string, any>): string[] {
+export const getSortedHourKeys = (data: Record<string, any>): string[] => {
   return Object.keys(data).sort(
-    (a, b) => parseTimeString(a) - parseTimeString(b)
+    (a, b) => parseTimeStringToMinutes(a) - parseTimeStringToMinutes(b)
   );
-}
+};
 
 /**
- * 현재 시각 기준, 지정된 출발 컬럼(=direction)에서
- * 가장 가까운 출발 시간까지 남은 분을 계산합니다.
- *
- * @param data { "06:00": {"연세대": [{time: "05"}], "장양리": [...]}, ... }
- * @param column "연세대" | "장양리" 등
- * @returns 남은 분(정수), 없다면 null
+ * Calculates the number of minutes left until the next departure time
+ * in the specified departure column (=direction) based on the current time.
  */
 export function getMinutesUntilNextDeparture(
   data: Record<string, Record<string, Array<{ time: string; note?: string }>>>,
@@ -34,98 +30,86 @@ export function getMinutesUntilNextDeparture(
 ): number | null {
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
-  let nextDeparture = Infinity;
+  let nextDeparture = null;
 
-  const hourKeys = getSortedHourKeys(data);
+  const sortedHourKeys = getSortedHourKeys(data);
 
-  for (const hourKey of hourKeys) {
-    if (!data[hourKey][column]) continue;
+  // Use a for...of loop to exit early once the next departure is found.
+  for (const hourKey of sortedHourKeys) {
+    if (!data[hourKey] || !data[hourKey][column]) {
+      continue;
+    }
     const departures = data[hourKey][column];
-    // "HH:MM" 중 시 부분를 분리하여 정수로 변환 (정렬에 이미 사용됨)
     const hour = parseInt(hourKey.split(":")[0], 10);
-    if (isNaN(hour)) continue;
 
+    // Use a for...of loop here as well for early exit.
     for (const dep of departures) {
       const minute = parseInt(dep.time, 10);
-      if (isNaN(minute)) continue;
       const totalMin = hour * 60 + minute;
-      if (totalMin >= nowMinutes && totalMin < nextDeparture) {
+      if (totalMin >= nowMinutes) {
         nextDeparture = totalMin;
+        break; // Found the next departure, exit the inner loop.
       }
+    }
+    if (nextDeparture !== null) {
+      break; // Found the next departure, exit the outer loop.
     }
   }
 
-  return nextDeparture === Infinity ? null : nextDeparture - nowMinutes;
+  return nextDeparture !== null ? nextDeparture - nowMinutes : null;
 }
 
 /**
- * 데이터에서 가장 빠른 출발 시간을 찾아 "HH시 MM분" 형식으로 반환합니다.
- *
- * @param data 시간대별 출발 데이터
- * @param column 출발 정보 컬럼 (예: "연세대", "장양리")
- * @returns "HH시 MM분" 형식의 문자열, 없으면 null
+ * Finds the earliest departure time in the data and returns it as a "HH시 MM분" formatted string.
  */
 export function getFirstDeparture(
   data: Record<string, Record<string, Array<{ time: string; note?: string }>>>,
   column: string
 ): string | null {
-  let earliest = Infinity;
+  const sortedHourKeys = getSortedHourKeys(data);
 
-  const hourKeys = getSortedHourKeys(data);
-
-  for (const hourKey of hourKeys) {
-    if (!data[hourKey][column]) continue;
+  for (const hourKey of sortedHourKeys) {
+    if (!data[hourKey] || !data[hourKey][column]) continue;
     const departures = data[hourKey][column];
-    const hour = parseInt(hourKey.split(":")[0], 10);
-    if (isNaN(hour)) continue;
 
-    for (const dep of departures) {
-      const minute = parseInt(dep.time, 10);
-      if (isNaN(minute)) continue;
+    // The first departure in the first hour key will be the earliest.
+    if (departures.length > 0) {
+      const firstDep = departures[0];
+      const hour = parseInt(hourKey.split(":")[0], 10);
+      const minute = parseInt(firstDep.time, 10);
       const totalMin = hour * 60 + minute;
-      if (totalMin < earliest) {
-        earliest = totalMin;
-      }
+      const hours = Math.floor(totalMin / 60);
+      const minutes = totalMin % 60;
+      return `${hours.toString().padStart(2, "0")}시 ${minutes
+        .toString()
+        .padStart(2, "0")}분`;
     }
   }
 
-  if (earliest === Infinity) {
-    return null;
-  }
-
-  const hours = Math.floor(earliest / 60);
-  const minutes = earliest % 60;
-  return `${hours.toString().padStart(2, "0")}시 ${minutes
-    .toString()
-    .padStart(2, "0")}분`;
+  return null;
 }
 
 /**
- * 현재 출발 정보에 따라 상태 메시지를 렌더링합니다.
- *
- * @param minutesLeft 남은 분
- * @param firstDeparture 첫 출발 시각 ("HH시 MM분" 형식)
- * @param departureColumn 어떤 방향의 정보인지 (ex. "연세대", "장양리")
- * @returns JSX.Element
+ * Renders a status message based on the current departure information.
  */
 export function renderScheduleStatusMessage(
   minutesLeft: number | null,
   firstDeparture: string | null,
   departureColumn: string | null
-): JSX.Element {
+): ReactNode { // Changed from JSX.Element to ReactNode for better type safety
   const headerText =
     departureColumn === "연세대"
       ? "학생회관 정류장 출발"
       : `${departureColumn} 버스 출발`;
 
-  let content: JSX.Element;
+  let content: ReactNode;
 
   if (minutesLeft !== null && minutesLeft <= 60) {
     if (minutesLeft <= 3) {
       content = (
         <div>
           대기 중인 버스가{" "}
-          <span className="text-red-600 font-semibold">곧 출발</span> 해요!
+          <span className="text-red-600 font-semibold">곧 출발</span> 합니다.
           <br />
           <span className="text-xs text-gray-500">({minutesLeft}분 이내)</span>
         </div>

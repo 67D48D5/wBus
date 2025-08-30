@@ -1,11 +1,9 @@
 // src/features/bus/hooks/useBusArrivalInfo.ts
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 
 import { API_REFRESH_INTERVAL } from "@core/constants/env";
-
 import { getBusArrivalInfoData } from "@bus/api/getRealtimeData";
-
 import type { ArrivalInfo } from "@bus/types/data";
 
 export function useBusArrivalInfo(busStopId: string | null) {
@@ -13,48 +11,66 @@ export function useBusArrivalInfo(busStopId: string | null) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // busStopId가 없으면 아무것도 안 함
-    if (!busStopId || busStopId.trim() === "") return;
+  // A ref to keep track of the timer without causing re-renders
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-    let timer: NodeJS.Timeout | null = null;
-
-    // 실제로 데이터를 불러오는 함수
-    async function fetchData() {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const result = await getBusArrivalInfoData(busStopId!);
-        setData(result);
-      } catch (e) {
-        console.error(e);
-        setError("도착 정보를 불러오는 데 실패했습니다.");
-      } finally {
-        setLoading(false);
-      }
+  // Use useCallback to memoize the fetchData function
+  const fetchData = useCallback(async () => {
+    // Only fetch if a valid busStopId is provided
+    if (!busStopId || busStopId.trim() === "") {
+      setData([]); // Clear data if busStopId becomes invalid
+      return;
     }
 
-    // 마운트(정류장 선택) 시점에 최초 1회 호출
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await getBusArrivalInfoData(busStopId);
+      setData(result);
+    } catch (e) {
+      console.error(e);
+      setError("도착 정보를 불러오는 데 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  }, [busStopId]);
+
+  useEffect(() => {
+    // Clear any existing timer when busStopId changes
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+
+    // Don't start a new fetch cycle if busStopId is invalid
+    if (!busStopId || busStopId.trim() === "") {
+      setData([]);
+      return;
+    }
+
+    // Initial data fetch
     fetchData();
 
-    // 이후 10초마다 재호출
-    timer = setInterval(fetchData, API_REFRESH_INTERVAL);
+    // Start a new timer for periodic fetches
+    timerRef.current = setInterval(fetchData, API_REFRESH_INTERVAL);
 
-    // 언마운트(또는 busStopId 변경) 시 타이머 정리
+    // Cleanup on unmount or busStopId change
     return () => {
-      if (timer) clearInterval(timer);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
     };
-  }, [busStopId]);
+  }, [busStopId, fetchData]); // fetchData is stable due to useCallback
 
   return { data, loading, error };
 }
 
-// 특정 노선의 도착 정보만 간단히 꺼내 쓰고 싶은 경우
+// For extracting arrival info for a specific route in a simple way
 export function getNextBusArrivalInfo(routeName: string, data: ArrivalInfo[]) {
-  const target = data.find(
-    (bus) => bus.routeno.replace("-", "") === routeName.replace("-", "")
+  // Use a more robust check to handle different route formats
+  const target = data.find((bus) =>
+    bus.routeno.replace(/-/g, "").trim() === routeName.replace(/-/g, "").trim()
   );
+
   if (!target) return null;
 
   return {
