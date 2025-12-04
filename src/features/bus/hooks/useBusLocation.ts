@@ -105,7 +105,7 @@ const VALID_ERROR_CODES: Set<Exclude<BusDataError, null>> = new Set([
  * Returns a cleanup function to stop polling and remove listeners.
  */
 export function startBusPolling(routeNames: string[]) {
-  const intervals: NodeJS.Timeout[] = [];
+  const intervals: ReturnType<typeof setInterval>[] = [];
   const cleanupCallbacks: (() => void)[] = [];
 
   for (const routeName of routeNames) {
@@ -141,7 +141,7 @@ export function startBusPolling(routeNames: string[]) {
         } else {
           errorListeners[routeName]?.forEach((cb) => cb(null));
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error("❌ Bus polling error:", err);
         cache[routeName] = [];
         dataListeners[routeName]?.forEach((cb) => cb([]));

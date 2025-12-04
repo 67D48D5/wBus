@@ -52,8 +52,12 @@ export default function Home() {
       <div className="flex flex-col w-full h-[100dvh]">
         <NavBar onRouteSelect={handleRouteChange} />
         <div className="relative flex-1 overflow-hidden">
-          <MapWrapper routeName={selectedRouteNames[0]} />
-          <BusList routeName={selectedRouteNames[0]} />
+          {selectedRouteNames.length > 0 && (
+            <>
+              <MapWrapper routeName={selectedRouteNames[0]} />
+              <BusList routeName={selectedRouteNames[0]} />
+            </>
+          )}
           <MyLocation />
         </div>
       </div>
