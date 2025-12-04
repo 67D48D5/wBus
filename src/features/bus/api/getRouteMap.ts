@@ -7,6 +7,8 @@ let pending: Promise<Record<string, string[]>> | null = null;
 
 /**
  * Fetches and caches the routeMap.json data.
+ * This function ensures only one fetch request is made even if called multiple times.
+ * @returns A promise that resolves to a map of route names to vehicle IDs
  */
 export async function getRouteMap(): Promise<Record<string, string[]>> {
   if (cache) return cache;
@@ -32,6 +34,8 @@ export async function getRouteMap(): Promise<Record<string, string[]>> {
 
 /**
  * Returns a RouteInfo object for the given route name.
+ * @param routeName - The name of the route (e.g., "30", "34")
+ * @returns A promise that resolves to RouteInfo or null if not found
  */
 export async function getRouteInfo(
   routeName: string

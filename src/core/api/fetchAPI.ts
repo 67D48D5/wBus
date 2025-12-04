@@ -21,7 +21,7 @@ export class HttpError extends Error {
  * @param retries Max retries (default: 3)
  * @param retryDelay Retry Interval (ms, default: 1000)
  */
-export async function fetchAPI<T = any>(
+export async function fetchAPI<T = unknown>(
   endpoint: string,
   retries = 3,
   retryDelay = 1000
@@ -50,14 +50,15 @@ export async function fetchAPI<T = any>(
       }
 
       return (await response.json()) as T;
-    } catch (error: any) {
+    } catch (error) {
       const isLast = i === retries - 1;
 
       if (isLast) {
         if (error instanceof HttpError) {
           throw error;
         }
-        throw new Error(`❌ Request failed: ${error.message}.`);
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(`❌ Request failed: ${message}.`);
       }
 
       await delay(retryDelay);

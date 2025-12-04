@@ -18,6 +18,12 @@ export interface UseBusData {
   mergedDown: L.LatLngTuple[];
 }
 
+/**
+ * Custom hook that aggregates all bus-related data for a given route.
+ * Combines route information, bus locations, polylines, and direction data.
+ * @param routeName - The name of the route (e.g., "30", "34")
+ * @returns An object containing all bus data for the route
+ */
 export function useBusData(routeName: string): UseBusData {
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
   const { data: busList } = useBusLocationData(routeName);

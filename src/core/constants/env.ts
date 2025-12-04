@@ -15,22 +15,29 @@ export const MAP_URL =
 export const MAP_ATTRIBUTION =
   process.env.NEXT_PUBLIC_MAP_ATTRIBUTION ||
   "&copy; OpenStreetMap Contributors";
-// @TODO: Fix this to use a proper attribution string
+
 export const MAP_MAX_BOUNDS = (() => {
-  process.env.NEXT_PUBLIC_MAP_MAX_BOUNDS || "37.28115,127.901946";
+  const raw = process.env.NEXT_PUBLIC_MAP_MAX_BOUNDS || "37.22,127.8,37.52,128.05";
+  const [swLat, swLng, neLat, neLng] = raw.split(",").map(Number);
+  return [
+    [swLat, swLng],
+    [neLat, neLng],
+  ] as [[number, number], [number, number]];
 })();
+
 export const MAP_DEFAULT_POSITION = (() => {
   const raw =
     process.env.NEXT_PUBLIC_MAP_DEFAULT_POSITION || "37.28115,127.901946";
   const [lat, lng] = raw.split(",").map(Number);
   return [lat, lng] as [number, number];
 })();
+
 export const MAP_DEFAULT_ZOOM =
   Number(process.env.NEXT_PUBLIC_MAP_DEFAULT_ZOOM) || 12;
 export const MAP_MIN_ZOOM =
-  Number(process.env.NEXT_PUBLIC_MAP_DEFAULT_ZOOM) || 12;
+  Number(process.env.NEXT_PUBLIC_MAP_MIN_ZOOM) || 12;
 export const MAP_MAX_ZOOM =
-  Number(process.env.NEXT_PUBLIC_MAP_DEFAULT_ZOOM) || 19;
+  Number(process.env.NEXT_PUBLIC_MAP_MAX_ZOOM) || 19;
 
 export const BUSSTOP_TARGET_NODE_IDS =
   process.env.NEXT_PUBLIC_BUSSTOP_TARGET_NODE_IDS?.split(",") || [

@@ -9,6 +9,7 @@ import {
   MAP_DEFAULT_POSITION,
   MAP_MIN_ZOOM,
   MAP_MAX_ZOOM,
+  MAP_MAX_BOUNDS,
 } from "@core/constants/env";
 
 import { MapContainer, TileLayer } from "react-leaflet";
@@ -23,29 +24,20 @@ type MapProps = {
   routeName: string;
 };
 
-const defaultPosition: [number, number] = (() => {
-  const position = String(MAP_DEFAULT_POSITION).split(",").map(Number);
-  return position.length === 2 ? [position[0], position[1]] : [0, 0];
-})();
-
-// @TODO: Move to constants file (max bounds, etc.)
 export default function Map({ routeName }: MapProps) {
   return (
     <MapContainer
-      center={defaultPosition}
+      center={MAP_DEFAULT_POSITION}
       zoom={MAP_DEFAULT_ZOOM}
       scrollWheelZoom={true}
       className="w-full h-full"
-      maxBounds={[
-        [37.22, 127.8],
-        [37.52, 128.05],
-      ]}
+      maxBounds={MAP_MAX_BOUNDS}
       maxBoundsViscosity={1.0}
       minZoom={MAP_MIN_ZOOM}
       maxZoom={MAP_MAX_ZOOM}
     >
       <MapProvider>
-        <TileLayer attribution={MAP_ATTRIBUTION} url={MAP_URL} maxZoom={19} />
+        <TileLayer attribution={MAP_ATTRIBUTION} url={MAP_URL} maxZoom={MAP_MAX_ZOOM} />
         <BusMarker routeName={routeName} />
         <BusStopMarker routeName={routeName} />
         <BusRoutePolyline routeName={routeName} />
