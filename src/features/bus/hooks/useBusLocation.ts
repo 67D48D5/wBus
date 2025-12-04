@@ -11,8 +11,8 @@ import type { BusItem } from "@bus/types/data";
 import type { BusDataError } from "@bus/types/error";
 
 const cache: Record<string, BusItem[]> = {};
-const dataListeners: Record<string, ((data: BusItem[]) => void)[]> = {};
-const errorListeners: Record<string, ((errMsg: BusDataError) => void)[]> = {};
+const dataListeners: Record<string, Set<(data: BusItem[]) => void>> = {};
+const errorListeners: Record<string, Set<(errMsg: BusDataError) => void>> = {};
 
 /**
  * Clears all cached data and listeners except for the given route.
@@ -21,6 +21,8 @@ function clearOtherCaches(current: string) {
   Object.keys(cache).forEach((key) => {
     if (key !== current) {
       delete cache[key];
+      delete dataListeners[key];
+      delete errorListeners[key];
     }
   });
 }
@@ -41,14 +43,6 @@ export function useBusLocationData(routeName: string): {
     // Remove all cached data for other routes
     clearOtherCaches(routeName);
 
-    // Avoids unnecessary fetch if data is already available
-    if (cache[routeName]) {
-      setBusList(cache[routeName]);
-      setTimeout(() => {
-        dataListeners[routeName]?.forEach((cb) => cb(cache[routeName]!));
-      }, 0);
-    }
-
     // Data update callback
     const updateData = (data: BusItem[]) => {
       setBusList(data);
@@ -63,22 +57,37 @@ export function useBusLocationData(routeName: string): {
       }
     };
 
-    dataListeners[routeName] = dataListeners[routeName] || [];
-    errorListeners[routeName] = errorListeners[routeName] || [];
+    // Initialize listener sets if they don't exist
+    if (!dataListeners[routeName]) {
+      dataListeners[routeName] = new Set();
+    }
+    if (!errorListeners[routeName]) {
+      errorListeners[routeName] = new Set();
+    }
 
-    dataListeners[routeName].push(updateData);
-    errorListeners[routeName].push(updateError);
+    dataListeners[routeName].add(updateData);
+    errorListeners[routeName].add(updateError);
 
-    // When the component using this hook unmounts,
-    // remove the callbacks to prevent memory leaks
-    // and ensure no further updates are made.
+    // If data is already cached, notify immediately
+    if (cache[routeName]) {
+      setBusList(cache[routeName]);
+      setTimeout(() => {
+        dataListeners[routeName]?.forEach((cb) => cb(cache[routeName]!));
+      }, 0);
+    }
+
+    // Cleanup function to remove callbacks and prevent memory leaks
     return () => {
-      dataListeners[routeName] = dataListeners[routeName].filter(
-        (fn) => fn !== updateData
-      );
-      errorListeners[routeName] = errorListeners[routeName].filter(
-        (fn) => fn !== updateError
-      );
+      dataListeners[routeName]?.delete(updateData);
+      errorListeners[routeName]?.delete(updateError);
+      
+      // Clean up empty listener sets
+      if (dataListeners[routeName]?.size === 0) {
+        delete dataListeners[routeName];
+      }
+      if (errorListeners[routeName]?.size === 0) {
+        delete errorListeners[routeName];
+      }
     };
   }, [routeName]);
 
@@ -96,8 +105,7 @@ const VALID_ERROR_CODES: Set<Exclude<BusDataError, null>> = new Set([
  * Returns a cleanup function to stop polling and remove listeners.
  */
 export function startBusPolling(routeNames: string[]) {
-  const intervals: NodeJS.Timer[] = [];
-
+  const intervals: ReturnType<typeof setInterval>[] = [];
   const cleanupCallbacks: (() => void)[] = [];
 
   for (const routeName of routeNames) {
@@ -157,10 +165,12 @@ export function startBusPolling(routeNames: string[]) {
     const interval = setInterval(fetchAndUpdate, API_REFRESH_INTERVAL);
     intervals.push(interval);
 
-    // Visibility listener
+    // Visibility listener - refresh data when page becomes visible
     const onVisible = () => {
       if (document.visibilityState === "visible") fetchAndUpdate();
     };
+    
+    // Page show listener - refresh data when page is restored from cache
     const onPageShow = (e: PageTransitionEvent) => {
       if (e.persisted) fetchAndUpdate();
     };
@@ -176,7 +186,7 @@ export function startBusPolling(routeNames: string[]) {
     });
   }
 
-  // Removes all intervals and listeners for all routes
+  // Returns cleanup function that removes all intervals and listeners for all routes
   return () => {
     cleanupCallbacks.forEach((fn) => fn());
   };

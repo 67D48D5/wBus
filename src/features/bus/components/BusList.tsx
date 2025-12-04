@@ -3,7 +3,6 @@
 "use client";
 
 import { useMapContext } from "@map/context/MapContext";
-
 import { useSortedBusList } from "@bus/hooks/useSortedBusList";
 
 type BusListProps = {
@@ -16,6 +15,10 @@ const ERROR_MESSAGE_MAP: Record<string, string> = {
   "ERR:INVALID_ROUTE": "⚠️ 유효하지 않은 노선입니다.",
 };
 
+/**
+ * Displays a list of buses for a given route with real-time location updates.
+ * Users can click on a bus to center the map on its location.
+ */
 export default function BusList({ routeName }: BusListProps) {
   const { map } = useMapContext();
   const { sortedList: busList, getDirection, error } = useSortedBusList(routeName);
@@ -24,8 +27,8 @@ export default function BusList({ routeName }: BusListProps) {
     ? ERROR_MESSAGE_MAP[error] ?? "⚠️ 알 수 없는 오류가 발생했습니다."
     : "버스 데이터를 불러오는 중...";
 
-  // Separate the two rendering states to improve clarity
   const isNoData = busList.length === 0;
+  const isErrorState = error && error !== "ERR:NONE_RUNNING";
 
   return (
     <div className="fixed bottom-4 left-4 bg-white/90 rounded-lg shadow-md w-60 z-20">
@@ -38,7 +41,7 @@ export default function BusList({ routeName }: BusListProps) {
       <ul className="text-sm text-gray-800 h-[90px] overflow-y-auto divide-y divide-gray-200 px-4 pb-3">
         {isNoData ? (
           <li
-            className={`py-2 text-xs ${error && error !== "ERR:NONE_RUNNING" ? "text-red-500" : "text-gray-500"}`}
+            className={`py-2 text-xs ${isErrorState ? "text-red-500" : "text-gray-500"}`}
           >
             {message}
           </li>
@@ -46,7 +49,7 @@ export default function BusList({ routeName }: BusListProps) {
           busList.map((bus) => {
             const direction = bus.nodeid && bus.nodeord !== undefined
               ? getDirection(bus.nodeid, bus.nodeord)
-              : null; // Check for valid data before calling getDirection
+              : null;
 
             return (
               <li

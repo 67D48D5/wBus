@@ -4,15 +4,26 @@ import { useState, useEffect } from "react";
 import { APP_NAME, APP_SPLASH_MESSAGE } from "@core/constants/env";
 
 interface SplashProps {
-  isVisible: boolean; // prop name changed for clarity
-  duration?: number; // add a new prop for animation duration
-  showLoader?: boolean; // add a new prop to control the loader
+  /** Controls the visibility of the splash screen */
+  isVisible: boolean;
+  /** Animation duration in milliseconds for fade out transition (default: 500ms) */
+  duration?: number;
+  /** Whether to show the loading spinner (default: true) */
+  showLoader?: boolean;
 }
 
-export default function Splash({ isVisible, duration = 500, showLoader = true }: SplashProps) {
+/**
+ * Splash screen component that displays during app initialization.
+ * Provides a smooth fade-out transition when the app is ready.
+ */
+export default function Splash({
+  isVisible,
+  duration = 500,
+  showLoader = true,
+}: SplashProps) {
   const [shouldRender, setShouldRender] = useState(isVisible);
 
-  // This useEffect ensures the component stays mounted during the fade-out
+  // This useEffect ensures the component stays mounted during the fade-out transition
   useEffect(() => {
     if (isVisible) {
       setShouldRender(true);
@@ -20,7 +31,7 @@ export default function Splash({ isVisible, duration = 500, showLoader = true }:
       const timer = setTimeout(() => {
         setShouldRender(false);
       }, duration);
-      return () => clearTimeout(timer); // Clean up the timer
+      return () => clearTimeout(timer);
     }
   }, [isVisible, duration]);
 
@@ -37,7 +48,6 @@ export default function Splash({ isVisible, duration = 500, showLoader = true }:
         ${isVisible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
       style={{ transitionDuration: `${duration}ms` }}
     >
-      {/* Conditionally render the loader */}
       {showLoader && (
         <div className="mb-4">
           <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin" />

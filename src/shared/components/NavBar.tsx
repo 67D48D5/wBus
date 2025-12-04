@@ -2,13 +2,13 @@
 
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 
 import { APP_NAME } from "@core/constants/env";
 import { useRouteMap } from "@bus/hooks/useRouteMap";
 
 type NavBarProps = {
-  onRouteSelect?: (routeName: string) => void; // 이름 변경
+  onRouteSelect?: (routeName: string) => void;
 };
 
 export default function NavBar({ onRouteSelect }: NavBarProps) {
@@ -26,16 +26,21 @@ export default function NavBar({ onRouteSelect }: NavBarProps) {
 
   // Call the callback only once when the initial route is selected
   useEffect(() => {
-    if (initialRouteName) {
-      onRouteSelect?.(initialRouteName);
+    if (initialRouteName && onRouteSelect) {
+      onRouteSelect(initialRouteName);
     }
   }, [initialRouteName, onRouteSelect]);
 
-  const handleRouteSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newRouteName = e.target.value;
-    setSelectedRouteName(newRouteName);
-    onRouteSelect?.(newRouteName);
-  };
+  const handleRouteSelect = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const newRouteName = e.target.value;
+      setSelectedRouteName(newRouteName);
+      if (onRouteSelect) {
+        onRouteSelect(newRouteName);
+      }
+    },
+    [onRouteSelect]
+  );
 
   return (
     <nav className="sticky top-0 left-0 w-full h-14 bg-[#003876] shadow-md z-70 flex items-center justify-between px-6">
