@@ -14,6 +14,8 @@ import { useIcons } from "@map/hooks/useIcons";
 import { useBusStop } from "@bus/hooks/useBusStop";
 import { useBusDirection } from "@bus/hooks/useBusDirection";
 
+import { getDirectionIcon } from "@shared/utils/directionIcons";
+
 import BusStopPopup from "./BusStopPopup";
 
 type Props = {
@@ -45,8 +47,7 @@ export default function BusStopMarker({ routeName }: Props) {
       {stops.map((stop) => {
         const isTargetStop = BUSSTOP_TARGET_NODE_IDS.includes(stop.nodeid);
         const directionCode = getDirection(stop.nodeid, stop.nodeord);
-        const directionLabel =
-          directionCode === 1 ? "⬆️" : directionCode === 0 ? "⬇️" : "❓";
+        const directionLabel = getDirectionIcon(directionCode);
 
         return (
           <Marker

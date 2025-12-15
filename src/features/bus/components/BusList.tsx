@@ -4,15 +4,11 @@
 
 import { useMapContext } from "@map/context/MapContext";
 import { useSortedBusList } from "@bus/hooks/useSortedBusList";
+import { getBusErrorMessage, isWarningError } from "@shared/utils/errorMessages";
+import { getDirectionIcon } from "@shared/utils/directionIcons";
 
 type BusListProps = {
   routeName: string;
-};
-
-const ERROR_MESSAGE_MAP: Record<string, string> = {
-  "ERR:NONE_RUNNING": "운행이 종료되었습니다.",
-  "ERR:NETWORK": "⚠️ 네트워크 오류가 발생했습니다.",
-  "ERR:INVALID_ROUTE": "⚠️ 유효하지 않은 노선입니다.",
 };
 
 /**
@@ -23,12 +19,11 @@ export default function BusList({ routeName }: BusListProps) {
   const { map } = useMapContext();
   const { sortedList: busList, getDirection, error } = useSortedBusList(routeName);
 
-  const message = error
-    ? ERROR_MESSAGE_MAP[error] ?? "⚠️ 알 수 없는 오류가 발생했습니다."
-    : "버스 데이터를 불러오는 중...";
+  const errorMessage = getBusErrorMessage(error);
+  const message = error ? errorMessage : "버스 데이터를 불러오는 중...";
 
   const isNoData = busList.length === 0;
-  const isErrorState = error && error !== "ERR:NONE_RUNNING";
+  const isErrorState = isWarningError(error);
 
   return (
     <div className="fixed bottom-4 left-4 bg-white/90 rounded-lg shadow-md w-60 z-20">
@@ -66,8 +61,7 @@ export default function BusList({ routeName }: BusListProps) {
               >
                 <span className="font-bold">{bus.vehicleno}</span>
                 <span className="text-gray-500 text-[10px] text-left">
-                  {bus.nodenm}{" "}
-                  {direction === 1 ? "⬆️" : direction === 0 ? "⬇️" : "❓"}
+                  {bus.nodenm} {getDirectionIcon(direction)}
                 </span>
               </li>
             );
