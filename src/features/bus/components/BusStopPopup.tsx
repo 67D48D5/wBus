@@ -7,6 +7,13 @@ import {
     BUSSTOP_YONSEI_END_ROUTES,
 } from "@core/constants/env";
 
+import {
+    formatArrivalTime,
+    formatRouteNumber,
+    formatVehicleType,
+    secondsToMinutes,
+} from "@shared/utils/formatters";
+
 import BusSchedule from "./BusSchedule";
 
 import { useBusArrivalInfo } from "@bus/hooks/useBusArrivalInfo";
@@ -51,17 +58,15 @@ function ArrivalList({
             {hasData && (
                 <ul className="divide-y divide-gray-200">
                     {arrivalData.map((bus, idx) => {
-                        const minutes = Math.ceil(bus.arrtime / 60);
-                        const timeString =
-                            minutes <= 3
-                                ? `곧 도착 (${bus.arrprevstationcnt} 정류장 전)`
-                                : `${minutes}분 (${bus.arrprevstationcnt} 정류장 전)`;
+                        const minutes = secondsToMinutes(bus.arrtime);
+                        const timeString = formatArrivalTime(minutes, bus.arrprevstationcnt);
+                        const vehicleType = formatVehicleType(bus.vehicletp);
 
                         return (
                             <li key={idx} className="flex justify-between py-1 px-1">
-                                <span className="font-semibold">{bus.routeno}번</span>
+                                <span className="font-semibold">{formatRouteNumber(bus.routeno)}</span>
                                 <span className="text-gray-600 text-[11px]">
-                                    {bus.vehicletp.slice(0, 2)} / {timeString} {directionLabel}
+                                    {vehicleType} / {timeString} {directionLabel}
                                 </span>
                             </li>
                         );

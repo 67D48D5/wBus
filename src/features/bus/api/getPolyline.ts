@@ -1,12 +1,9 @@
 // src/features/bus/api/getPolyline.ts
 
+import { CacheManager } from "@core/cache/CacheManager";
 import { GeoPolylineData } from "@bus/types/data";
 
-// For caching GeoJSON data
-// Key: routeName, Value: GeoJSON data
-// Example: { "30": { type: "FeatureCollection", features: [...] } }
-const cache: Record<string, GeoPolylineData> = {};
-const pending: Record<string, Promise<GeoPolylineData>> = {};
+const polylineCache = new CacheManager<GeoPolylineData>();
 
 /**
  * Fetch {routeName}.geojson file and cache the result.
@@ -16,29 +13,13 @@ const pending: Record<string, Promise<GeoPolylineData>> = {};
  * @throws {Error} - If the fetch fails or the response is not ok
  */
 export async function getPolyline(routeName: string): Promise<GeoPolylineData> {
-  // If already cached, return cached data
-  if (cache[routeName]) return cache[routeName];
-
-  // If a request is already pending, return the pending promise
-  if (await pending[routeName]) return pending[routeName];
-
-  // Start a new fetch request
-  pending[routeName] = fetch(`/data/polylines/${routeName}.geojson`)
-    .then((res) => {
-      if (!res.ok) {
-        throw new Error(`🚫 Polyline request failed: ${routeName}`);
-      }
-      return res.json();
-    })
-    .then((json: GeoPolylineData) => {
-      cache[routeName] = json;
-      return json;
-    })
-    .finally(() => {
-      delete pending[routeName];
-    });
-
-  return pending[routeName];
+  return polylineCache.getOrFetch(routeName, async () => {
+    const res = await fetch(`/data/polylines/${routeName}.geojson`);
+    if (!res.ok) {
+      throw new Error(`🚫 Polyline request failed: ${routeName}`);
+    }
+    return res.json() as Promise<GeoPolylineData>;
+  });
 }
 
 /**

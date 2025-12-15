@@ -10,6 +10,7 @@ import { useIcons } from "@map/hooks/useIcons";
 
 import { useBusData } from "@bus/hooks/useBusData";
 import { getSnappedPosition } from "@bus/utils/getSnappedPos";
+import { getDirectionIcon } from "@shared/utils/directionIcons";
 
 export default function BusMarker({ routeName }: { routeName: string }) {
   const { busIcon } = useIcons();
@@ -44,7 +45,7 @@ export default function BusMarker({ routeName }: { routeName: string }) {
         >
           <Popup autoPan={false}>
             <div className="font-bold mb-1">
-              {direction === 1 ? "⬆️" : "⬇️"} {bus.routenm}번
+              {getDirectionIcon(direction)} {bus.routenm}번
             </div>
             {bus.vehicleno}, {bus.nodenm}
           </Popup>

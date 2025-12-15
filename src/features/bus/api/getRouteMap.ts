@@ -1,9 +1,9 @@
 // src/features/bus/api/getRouteMap.ts
 
+import { CacheManager } from "@core/cache/CacheManager";
 import type { RouteInfo } from "@bus/types/data";
 
-let cache: Record<string, string[]> | null = null;
-let pending: Promise<Record<string, string[]>> | null = null;
+const routeMapCache = new CacheManager<Record<string, string[]>>();
 
 /**
  * Fetches and caches the routeMap.json data.
@@ -11,25 +11,11 @@ let pending: Promise<Record<string, string[]>> | null = null;
  * @returns A promise that resolves to a map of route names to vehicle IDs
  */
 export async function getRouteMap(): Promise<Record<string, string[]>> {
-  if (cache) return cache;
-  if (pending) return pending;
-
-  pending = fetch("/data/routeMap.json")
-    .then(async (res) => {
-      if (!res.ok) throw new Error("🚫 Failed to fetch routeMap.json");
-      const json = (await res.json()) as Record<string, string[]>;
-      cache = json;
-      return json;
-    })
-    .catch((err) => {
-      console.error("❌ routeMap.json fetch error:", err);
-      throw err;
-    })
-    .finally(() => {
-      pending = null;
-    });
-
-  return pending;
+  return routeMapCache.getOrFetch("routeMap", async () => {
+    const res = await fetch("/data/routeMap.json");
+    if (!res.ok) throw new Error("🚫 Failed to fetch routeMap.json");
+    return res.json() as Promise<Record<string, string[]>>;
+  });
 }
 
 /**

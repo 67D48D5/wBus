@@ -2,9 +2,9 @@
 
 import { useMemo } from "react";
 import { useBusStop } from "./useBusStop";
+import { ALWAYS_UPWARD_NODE_IDS } from "@core/constants/env";
 
-// @TODO: Move this to a config file or constants module
-const ALWAYS_UPWARD_NODEIDS = new Set(["WJB251036041"]);
+const ALWAYS_UPWARD_NODEIDS = new Set(ALWAYS_UPWARD_NODE_IDS);
 
 export function useBusDirection(routeName: string) {
   const stops = useBusStop(routeName);
