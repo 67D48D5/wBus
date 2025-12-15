@@ -2,6 +2,7 @@
 
 "use client";
 
+import React from "react";
 import {
   MAP_URL,
   MAP_ATTRIBUTION,
@@ -21,10 +22,10 @@ import BusStopMarker from "@bus/components/BusStopMarker";
 import BusRoutePolyline from "@bus/components/BusRoutePolyline";
 
 type MapProps = {
-  routeName: string;
+  routeNames: string[];
 };
 
-export default function Map({ routeName }: MapProps) {
+export default function Map({ routeNames }: MapProps) {
   return (
     <MapContainer
       center={MAP_DEFAULT_POSITION}
@@ -38,9 +39,13 @@ export default function Map({ routeName }: MapProps) {
     >
       <MapProvider>
         <TileLayer attribution={MAP_ATTRIBUTION} url={MAP_URL} maxZoom={MAP_MAX_ZOOM} />
-        <BusMarker routeName={routeName} />
-        <BusStopMarker routeName={routeName} />
-        <BusRoutePolyline routeName={routeName} />
+        {routeNames.map((routeName) => (
+          <React.Fragment key={routeName}>
+            <BusMarker routeName={routeName} />
+            <BusStopMarker routeName={routeName} />
+            <BusRoutePolyline routeName={routeName} />
+          </React.Fragment>
+        ))}
       </MapProvider>
     </MapContainer>
   );

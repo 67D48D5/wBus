@@ -9,12 +9,12 @@ import React from "react";
 const DynamicMap = dynamic(() => import("./Map"), { ssr: false });
 
 type MapWrapperProps = {
-  routeName: string;
+  routeNames: string[];
 };
 
 // MapWrapper component that wraps the dynamic Map component
-const MapWrapper: React.FC<MapWrapperProps> = ({ routeName }) => {
-  return <DynamicMap routeName={routeName} />;
+const MapWrapper: React.FC<MapWrapperProps> = ({ routeNames }) => {
+  return <DynamicMap routeNames={routeNames} />;
 };
 
 export default MapWrapper;
