@@ -2,7 +2,7 @@
 
 "use client";
 
-import React from "react";
+import React, { useState, useCallback } from "react";
 import {
   MAP_URL,
   MAP_ATTRIBUTION,
@@ -26,6 +26,12 @@ type MapProps = {
 };
 
 export default function Map({ routeNames }: MapProps) {
+  const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
+
+  const handleRouteClick = useCallback((routeName: string) => {
+    setSelectedRoute((prev) => (prev === routeName ? null : routeName));
+  }, []);
+
   return (
     <MapContainer
       center={MAP_DEFAULT_POSITION}
@@ -41,9 +47,11 @@ export default function Map({ routeNames }: MapProps) {
         <TileLayer attribution={MAP_ATTRIBUTION} url={MAP_URL} maxZoom={MAP_MAX_ZOOM} />
         {routeNames.map((routeName) => (
           <React.Fragment key={routeName}>
-            <BusMarker routeName={routeName} />
+            <BusMarker routeName={routeName} onRouteClick={handleRouteClick} />
             <BusStopMarker routeName={routeName} />
-            <BusRoutePolyline routeName={routeName} />
+            {selectedRoute === routeName && (
+              <BusRoutePolyline routeName={routeName} />
+            )}
           </React.Fragment>
         ))}
       </MapProvider>
