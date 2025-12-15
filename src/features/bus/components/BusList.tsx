@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useMemo } from "react";
+import React from "react";
 import { useMapContext } from "@map/context/MapContext";
 import { useSortedBusList } from "@bus/hooks/useSortedBusList";
 import { getBusErrorMessage, isWarningError } from "@shared/utils/errorMessages";
@@ -19,14 +19,23 @@ type BusListProps = {
 export default function BusList({ routeNames }: BusListProps) {
   const { map } = useMapContext();
 
-  // Collect all buses from all routes
-  const allRoutesData = routeNames.map((routeName) => {
-    const { sortedList, getDirection, error } = useSortedBusList(routeName);
-    return { routeName, sortedList, getDirection, error };
-  });
+  // Call hooks for each possible route (max 3 routes known from routeMap.json)
+  // This ensures hooks are called in the same order every render
+  const route0Data = useSortedBusList(routeNames[0] || "");
+  const route1Data = useSortedBusList(routeNames[1] || "");
+  const route2Data = useSortedBusList(routeNames[2] || "");
+
+  // Collect route data
+  const allRoutesData = React.useMemo(() => {
+    const data = [];
+    if (routeNames[0]) data.push({ routeName: routeNames[0], ...route0Data });
+    if (routeNames[1]) data.push({ routeName: routeNames[1], ...route1Data });
+    if (routeNames[2]) data.push({ routeName: routeNames[2], ...route2Data });
+    return data;
+  }, [routeNames, route0Data, route1Data, route2Data]);
 
   // Flatten all buses into a single list
-  const allBuses = useMemo(() => {
+  const allBuses = React.useMemo(() => {
     return allRoutesData.flatMap(({ routeName, sortedList, getDirection }) =>
       sortedList.map((bus) => ({ bus, routeName, getDirection }))
     );
