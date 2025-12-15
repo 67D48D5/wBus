@@ -28,8 +28,12 @@ type MapProps = {
 export default function Map({ routeNames }: MapProps) {
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
 
-  const handleRouteClick = useCallback((routeName: string) => {
-    setSelectedRoute((prev) => (prev === routeName ? null : routeName));
+  const handlePopupOpen = useCallback((routeName: string) => {
+    setSelectedRoute(routeName);
+  }, []);
+
+  const handlePopupClose = useCallback(() => {
+    setSelectedRoute(null);
   }, []);
 
   return (
@@ -47,7 +51,11 @@ export default function Map({ routeNames }: MapProps) {
         <TileLayer attribution={MAP_ATTRIBUTION} url={MAP_URL} maxZoom={MAP_MAX_ZOOM} />
         {routeNames.map((routeName) => (
           <React.Fragment key={routeName}>
-            <BusMarker routeName={routeName} onRouteClick={handleRouteClick} />
+            <BusMarker 
+              routeName={routeName} 
+              onPopupOpen={handlePopupOpen}
+              onPopupClose={handlePopupClose}
+            />
             <BusStopMarker routeName={routeName} />
             {selectedRoute === routeName && (
               <BusRoutePolyline routeName={routeName} />
