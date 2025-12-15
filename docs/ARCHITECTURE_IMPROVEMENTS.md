@@ -2,7 +2,7 @@
 
 ## Before Refactoring
 
-```
+```txt
 ┌─────────────────────────────────────────────────────────┐
 │                     Components                           │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐              │
@@ -44,7 +44,7 @@ Problems:
 
 ## After Refactoring
 
-```
+```txt
 ┌─────────────────────────────────────────────────────────┐
 │                     Components                           │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐              │
@@ -102,18 +102,22 @@ Benefits:
 ## Key Architectural Changes
 
 ### 1. Cache Management
+
 **Before:** Scattered `cache` and `pending` objects in each module
 **After:** Centralized `CacheManager` class with consistent API
 
 ### 2. Business Logic
+
 **Before:** Mixed in hooks alongside React lifecycle
 **After:** Separated into `BusPollingService` class
 
 ### 3. Display Logic
+
 **Before:** Inline string concatenation and calculations
 **After:** Shared utility functions (`formatters`, `errorMessages`, `directionIcons`)
 
 ### 4. Component Responsibilities
+
 **Before:** Components handling formatting, errors, and display
 **After:** Components focused on UI, utilities handle logic
 
@@ -130,7 +134,7 @@ Benefits:
 
 ## File Organization
 
-```
+```txt
 src/
 ├── core/                    # Core infrastructure
 │   ├── cache/              # ✨ NEW: Unified caching

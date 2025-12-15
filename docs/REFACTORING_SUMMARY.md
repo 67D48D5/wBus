@@ -11,16 +11,19 @@ The refactoring focused on improving code maintainability, clarity, and architec
 ### 1. Centralized Cache Management
 
 **Before:**
+
 - Each module had its own cache implementation using module-level variables
 - Inconsistent patterns across different files
 - Manual promise deduplication logic
 
 **After:**
+
 - Created `CacheManager` class (`src/core/cache/CacheManager.ts`)
 - Unified caching interface with automatic request deduplication
 - Used across all API functions: `getRouteMap`, `getPolyline`, `useBusStop`
 
 **Benefits:**
+
 - Consistent caching behavior
 - Easier to debug and test
 - Prevents duplicate concurrent requests
@@ -29,17 +32,20 @@ The refactoring focused on improving code maintainability, clarity, and architec
 ### 2. Service Layer Introduction
 
 **Before:**
+
 - Polling logic scattered across hooks
 - Direct module-level listeners and intervals
 - Difficult to manage lifecycle and cleanup
 
 **After:**
+
 - Created `BusPollingService` class (`src/features/bus/services/BusPollingService.ts`)
 - Encapsulates all polling logic, listeners, and state management
 - Clean subscription API with automatic cleanup
 - Singleton pattern for consistent behavior
 
 **Benefits:**
+
 - Better separation of concerns
 - Easier to test business logic
 - Proper lifecycle management
@@ -48,11 +54,13 @@ The refactoring focused on improving code maintainability, clarity, and architec
 ### 3. Shared Utilities
 
 **Before:**
+
 - Duplicate formatting logic across components
 - Inline string concatenation and calculations
 - Hard-coded icons and messages
 
 **After:**
+
 - Created utility modules:
   - `formatters.ts` - Data formatting functions
   - `errorMessages.ts` - Error handling utilities
@@ -60,6 +68,7 @@ The refactoring focused on improving code maintainability, clarity, and architec
   - `common.ts` - Shared TypeScript types
 
 **Benefits:**
+
 - DRY (Don't Repeat Yourself) principle
 - Consistent display logic
 - Easier to modify formatting rules
@@ -68,15 +77,18 @@ The refactoring focused on improving code maintainability, clarity, and architec
 ### 4. Constants Consolidation
 
 **Before:**
+
 - Hard-coded values in hooks (e.g., `ALWAYS_UPWARD_NODEIDS`)
 - Magic numbers without context
 
 **After:**
+
 - All constants moved to `src/core/constants/env.ts`
 - Environment variable support
 - Clear documentation
 
 **Benefits:**
+
 - Single place to update configuration
 - Environment-specific settings
 - Better documentation
@@ -84,19 +96,22 @@ The refactoring focused on improving code maintainability, clarity, and architec
 ### 5. Component Improvements
 
 **Modified Components:**
+
 - `BusList.tsx` - Uses error utilities and direction icons
 - `BusMarker.tsx` - Uses direction icons
 - `BusStopMarker.tsx` - Uses direction icons
 - `BusStopPopup.tsx` - Uses formatters for consistent display
 
 **Benefits:**
+
 - Less code duplication
 - Consistent user experience
 - Easier to maintain
 
 ## File Structure Changes
 
-### New Files Created:
+### New Files Created
+
 ```
 src/core/cache/CacheManager.ts
 src/features/bus/services/BusPollingService.ts
@@ -107,7 +122,8 @@ src/shared/utils/directionIcons.ts
 ARCHITECTURE.md
 ```
 
-### Files Modified:
+### Files Modified
+
 ```
 src/app/page.tsx
 src/core/constants/env.ts
@@ -164,6 +180,7 @@ While this refactoring maintains existing functionality, consider adding tests f
 If you have custom code that depends on the old patterns:
 
 ### Using the New Cache Manager
+
 ```typescript
 // Before
 let cache: Record<string, Data> = {};
@@ -176,6 +193,7 @@ const data = await cache.getOrFetch(key, fetchFn);
 ```
 
 ### Using the Bus Polling Service
+
 ```typescript
 // Before
 import { startBusPolling } from '@bus/hooks/useBusLocation';
@@ -187,6 +205,7 @@ const cleanup = busPollingService.startPolling(routeName);
 ```
 
 ### Using Shared Utilities
+
 ```typescript
 // Before
 const message = minutes <= 3 ? `곧 도착` : `${minutes}분`;
