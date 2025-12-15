@@ -1,5 +1,7 @@
 // src/shared/types/common.ts
 
+import type { ReactNode } from "react";
+
 /**
  * Common prop types used across components
  */
@@ -17,7 +19,7 @@ export interface LoadingStateProps {
 
 /** Props for components with optional children */
 export interface WithChildren {
-  children?: React.ReactNode;
+  children?: ReactNode;
 }
 
 /** Props for components with an optional className */

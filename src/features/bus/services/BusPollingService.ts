@@ -49,9 +49,7 @@ export class BusPollingService {
 
     // If data is already cached, notify immediately
     if (this.cache[routeName]) {
-      setTimeout(() => {
-        onData(this.cache[routeName]);
-      }, 0);
+      onData(this.cache[routeName]);
     }
 
     // Return cleanup function

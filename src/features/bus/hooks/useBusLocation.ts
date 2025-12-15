@@ -48,7 +48,9 @@ export function useBusLocationData(routeName: string): {
  * Starts polling bus location data for the specified routes.
  * Returns a cleanup function to stop polling.
  * 
- * @deprecated Consider using the busPollingService directly or useBusLocationData hook
+ * @deprecated Since v2.0, will be removed in v3.0. 
+ * Use the busPollingService.startPolling() method directly or useBusLocationData hook instead.
+ * Migration: Replace `startBusPolling(routes)` with `routes.map(r => busPollingService.startPolling(r))`.
  */
 export function startBusPolling(routeNames: string[]): () => void {
   const cleanupFunctions = routeNames.map((routeName) =>
