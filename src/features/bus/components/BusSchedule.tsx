@@ -13,10 +13,13 @@ type Props = {
 
 // Available bus routes for selection
 const AVAILABLE_ROUTES = ["30", "34", "34-1"];
+const DEFAULT_ROUTE = "30";
 
 export default function BusSchedule({ routeName }: Props) {
   const [weekday, setWeekday] = useState(true);
-  const [selectedRoute, setSelectedRoute] = useState("30"); // Default to route 30
+  // Use routeName as initial value if it's in available routes, otherwise default to route 30
+  const initialRoute = AVAILABLE_ROUTES.includes(routeName) ? routeName : DEFAULT_ROUTE;
+  const [selectedRoute, setSelectedRoute] = useState(initialRoute);
 
   const {
     data,
