@@ -11,8 +11,15 @@ type Props = {
   routeName: string;
 };
 
+// Available bus routes for selection
+const AVAILABLE_ROUTES = ["30", "34", "34-1"];
+const DEFAULT_ROUTE = "30";
+
 export default function BusSchedule({ routeName }: Props) {
   const [weekday, setWeekday] = useState(true);
+  // Use routeName as initial value if it's in available routes, otherwise default to route 30
+  const initialRoute = AVAILABLE_ROUTES.includes(routeName) ? routeName : DEFAULT_ROUTE;
+  const [selectedRoute, setSelectedRoute] = useState(initialRoute);
 
   const {
     data,
@@ -22,7 +29,7 @@ export default function BusSchedule({ routeName }: Props) {
     isLoading,
     errorMessage,
     state,
-  } = useScheduleData(routeName, weekday);
+  } = useScheduleData(selectedRoute, weekday); // Use selectedRoute instead of routeName
 
   const sortedHourKeys = useMemo(() => {
     return Object.keys(data).sort((a, b) => {
@@ -110,6 +117,25 @@ export default function BusSchedule({ routeName }: Props) {
         firstDeparture,
         defaultDirection
       )}
+
+      {/* Route selection dropdown */}
+      <div className="mt-2 flex items-center gap-2">
+        <label htmlFor="route-select" className="text-gray-600 font-medium">
+          노선:
+        </label>
+        <select
+          id="route-select"
+          value={selectedRoute}
+          onChange={(e) => setSelectedRoute(e.target.value)}
+          className="px-2 py-1 bg-white border border-gray-300 rounded text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+        >
+          {AVAILABLE_ROUTES.map((route) => (
+            <option key={route} value={route}>
+              {route}번
+            </option>
+          ))}
+        </select>
+      </div>
 
       {showToggle && (
         <button
