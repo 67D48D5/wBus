@@ -21,6 +21,7 @@ export default function BusList({ routeNames }: BusListProps) {
 
   // Call hooks for each possible route (max 3 routes known from routeMap.json)
   // This ensures hooks are called in the same order every render
+  // Empty string is handled gracefully by the hooks (no API calls)
   const route0Data = useSortedBusList(routeNames[0] || "");
   const route1Data = useSortedBusList(routeNames[1] || "");
   const route2Data = useSortedBusList(routeNames[2] || "");
