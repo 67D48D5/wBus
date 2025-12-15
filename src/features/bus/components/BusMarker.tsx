@@ -31,6 +31,15 @@ export default function BusMarker({
     return (routeNumber: string) => {
       if (typeof window === "undefined") return busIcon;
       
+      // Escape HTML to prevent XSS
+      const escapeHtml = (text: string) => {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      };
+      
+      const escapedRouteNumber = escapeHtml(routeNumber);
+      
       return L.divIcon({
         html: `
           <div style="position: relative; width: 29px; height: 43px;">
@@ -50,7 +59,7 @@ export default function BusMarker({
               white-space: nowrap;
               box-shadow: 0 1px 3px rgba(0,0,0,0.3);
             ">
-              ${routeNumber}
+              ${escapedRouteNumber}
             </div>
           </div>
         `,
