@@ -2,8 +2,9 @@
 
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { busPollingService } from "@bus/services/BusPollingService";
+import { useRouteMap } from "@bus/hooks/useRouteMap";
 
 import Splash from "@shared/components/Splash";
 import NavBar from "@shared/components/NavBar";
@@ -13,17 +14,12 @@ import MyLocation from "@bus/components/MyLocation";
 
 /**
  * Main home page component for the wBus application.
- * Displays real-time bus location information on a map with route selection.
+ * Displays real-time bus location information on a map for all routes.
  */
 export default function Home() {
-  const [selectedRouteNames, setSelectedRouteNames] = useState<string[]>([
-    "30",
-  ]);
   const [isSplashVisible, setIsSplashVisible] = useState(true);
-
-  const handleRouteChange = useCallback((route: string) => {
-    setSelectedRouteNames([route]);
-  }, []);
+  const routeMap = useRouteMap();
+  const allRoutes = useMemo(() => routeMap ? Object.keys(routeMap) : [], [routeMap]);
 
   // Effect for handling initial app loading and the splash screen
   useEffect(() => {
@@ -40,27 +36,29 @@ export default function Home() {
     initializeApp();
   }, []);
 
-  // Effect to start bus polling once the route is selected
+  // Effect to start bus polling for all routes
   useEffect(() => {
-    const cleanupFunctions = selectedRouteNames.map((routeName) =>
+    if (allRoutes.length === 0) return;
+
+    const cleanupFunctions = allRoutes.map((routeName) =>
       busPollingService.startPolling(routeName)
     );
 
     return () => {
       cleanupFunctions.forEach((cleanup) => cleanup());
     };
-  }, [selectedRouteNames]);
+  }, [allRoutes]);
 
   return (
     <>
       <Splash isVisible={isSplashVisible} />
       <div className="flex flex-col w-full h-[100dvh]">
-        <NavBar onRouteSelect={handleRouteChange} />
+        <NavBar />
         <div className="relative flex-1 overflow-hidden">
-          {selectedRouteNames.length > 0 && (
+          {allRoutes.length > 0 && (
             <>
-              <MapWrapper routeName={selectedRouteNames[0]} />
-              <BusList routeName={selectedRouteNames[0]} />
+              <MapWrapper routeNames={allRoutes} />
+              <BusList routeNames={allRoutes} />
             </>
           )}
           <MyLocation />

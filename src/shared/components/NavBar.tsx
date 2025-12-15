@@ -2,66 +2,19 @@
 
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
-
 import { APP_NAME } from "@core/constants/env";
-import { useRouteMap } from "@bus/hooks/useRouteMap";
 
-type NavBarProps = {
-  onRouteSelect?: (routeName: string) => void;
-};
-
-export default function NavBar({ onRouteSelect }: NavBarProps) {
-  const routeMap = useRouteMap();
-
-  // Cache the route list with useMemo to prevent unnecessary re-renders
-  const routes = useMemo(() => Object.keys(routeMap || {}), [routeMap]);
-
-  // Calculate the initial state only once using useMemo
-  const initialRouteName = useMemo(() => {
-    return routes.length > 0 ? routes[0] : "";
-  }, [routes]);
-
-  const [selectedRouteName, setSelectedRouteName] = useState(initialRouteName);
-
-  // Call the callback only once when the initial route is selected
-  useEffect(() => {
-    if (initialRouteName && onRouteSelect) {
-      onRouteSelect(initialRouteName);
-    }
-  }, [initialRouteName, onRouteSelect]);
-
-  const handleRouteSelect = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const newRouteName = e.target.value;
-      setSelectedRouteName(newRouteName);
-      if (onRouteSelect) {
-        onRouteSelect(newRouteName);
-      }
-    },
-    [onRouteSelect]
-  );
-
+export default function NavBar() {
   return (
-    <nav className="sticky top-0 left-0 w-full h-14 bg-[#003876] shadow-md z-70 flex items-center justify-between px-6">
-      <h1 className="text-xl font-extrabold tracking-wide text-white drop-shadow-sm">
+    <nav className="sticky top-0 left-0 w-full h-16 bg-gradient-to-r from-[#003876] to-[#0052a3] shadow-lg z-70 flex items-center justify-between px-6">
+      <h1 className="text-2xl font-extrabold tracking-wide text-white drop-shadow-md flex items-center gap-2">
+        <span className="text-3xl">🚌</span>
         {APP_NAME}
       </h1>
       <div className="flex items-center space-x-3">
-        {routes.length > 0 && (
-          <select
-            className="px-3 py-1 rounded-full text-sm font-medium text-[#003876] bg-white shadow-sm transition-colors duration-200 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300"
-            value={selectedRouteName}
-            onChange={handleRouteSelect}
-            aria-label="노선 선택"
-          >
-            {routes.map((route) => (
-              <option key={route} value={route}>
-                {route}번
-              </option>
-            ))}
-          </select>
-        )}
+        <div className="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 border border-white/30">
+          <span className="text-sm font-semibold text-white">전체 노선 표시</span>
+        </div>
       </div>
     </nav>
   );
