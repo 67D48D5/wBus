@@ -1,0 +1,210 @@
+// src/features/bus/services/BusPollingService.ts
+
+import { API_REFRESH_INTERVAL } from "@core/constants/env";
+import { getBusLocationData } from "@bus/api/getRealtimeData";
+import { getRouteMap } from "@bus/api/getRouteMap";
+
+import type { BusItem } from "@bus/types/data";
+import type { BusDataError } from "@bus/types/error";
+
+const VALID_ERROR_CODES: Set<Exclude<BusDataError, null>> = new Set([
+  "ERR:NONE_RUNNING",
+  "ERR:NETWORK",
+  "ERR:INVALID_ROUTE",
+]);
+
+type DataListener = (data: BusItem[]) => void;
+type ErrorListener = (error: BusDataError) => void;
+
+/**
+ * Service class for managing bus location polling
+ * Handles data fetching, caching, and listener management for bus location updates
+ */
+export class BusPollingService {
+  private cache: Record<string, BusItem[]> = {};
+  private dataListeners: Record<string, Set<DataListener>> = {};
+  private errorListeners: Record<string, Set<ErrorListener>> = {};
+  private intervals: Record<string, ReturnType<typeof setInterval>> = {};
+  private visibilityHandlers: Record<string, () => void> = {};
+  private pageShowHandlers: Record<string, (e: PageTransitionEvent) => void> = {};
+
+  /**
+   * Subscribe to bus location data updates for a route
+   */
+  subscribe(
+    routeName: string,
+    onData: DataListener,
+    onError: ErrorListener
+  ): () => void {
+    // Initialize listener sets if they don't exist
+    if (!this.dataListeners[routeName]) {
+      this.dataListeners[routeName] = new Set();
+    }
+    if (!this.errorListeners[routeName]) {
+      this.errorListeners[routeName] = new Set();
+    }
+
+    this.dataListeners[routeName].add(onData);
+    this.errorListeners[routeName].add(onError);
+
+    // If data is already cached, notify immediately
+    if (this.cache[routeName]) {
+      setTimeout(() => {
+        onData(this.cache[routeName]);
+      }, 0);
+    }
+
+    // Return cleanup function
+    return () => {
+      this.dataListeners[routeName]?.delete(onData);
+      this.errorListeners[routeName]?.delete(onError);
+
+      // Clean up empty listener sets
+      if (this.dataListeners[routeName]?.size === 0) {
+        delete this.dataListeners[routeName];
+      }
+      if (this.errorListeners[routeName]?.size === 0) {
+        delete this.errorListeners[routeName];
+      }
+    };
+  }
+
+  /**
+   * Clear cache for all routes except the specified one
+   */
+  clearOtherCaches(currentRoute: string): void {
+    Object.keys(this.cache).forEach((key) => {
+      if (key !== currentRoute) {
+        delete this.cache[key];
+        delete this.dataListeners[key];
+        delete this.errorListeners[key];
+      }
+    });
+  }
+
+  /**
+   * Fetch and update bus location data for a route
+   */
+  private async fetchAndUpdate(routeName: string): Promise<void> {
+    try {
+      const routeMap = await getRouteMap();
+      const vehicleIds = routeMap[routeName];
+
+      if (!vehicleIds || vehicleIds.length === 0) {
+        throw new Error("ERR:INVALID_ROUTE");
+      }
+
+      const results = await Promise.allSettled(
+        vehicleIds.map((id) => getBusLocationData(id))
+      );
+
+      const fulfilled = results.filter(
+        (r): r is PromiseFulfilledResult<BusItem[]> =>
+          r.status === "fulfilled"
+      );
+
+      if (fulfilled.length === 0) {
+        throw new Error("ERR:NETWORK");
+      }
+
+      const buses = fulfilled.flatMap((r) => r.value);
+
+      this.cache[routeName] = buses;
+      this.dataListeners[routeName]?.forEach((cb) => cb(buses));
+
+      if (buses.length === 0) {
+        this.errorListeners[routeName]?.forEach((cb) =>
+          cb("ERR:NONE_RUNNING")
+        );
+      } else {
+        this.errorListeners[routeName]?.forEach((cb) => cb(null));
+      }
+    } catch (err: unknown) {
+      console.error("❌ Bus polling error:", err);
+      this.cache[routeName] = [];
+      this.dataListeners[routeName]?.forEach((cb) => cb([]));
+
+      let errorCode: BusDataError = "ERR:NETWORK";
+      if (
+        err instanceof Error &&
+        VALID_ERROR_CODES.has(err.message as Exclude<BusDataError, null>)
+      ) {
+        errorCode = err.message as BusDataError;
+      }
+
+      this.errorListeners[routeName]?.forEach((cb) => cb(errorCode));
+    }
+  }
+
+  /**
+   * Start polling for bus location data
+   */
+  startPolling(routeName: string): () => void {
+    // Don't start if already polling
+    if (this.intervals[routeName]) {
+      return () => this.stopPolling(routeName);
+    }
+
+    const fetchFn = () => this.fetchAndUpdate(routeName);
+
+    // Immediate fetch
+    fetchFn();
+
+    // Set up polling interval
+    this.intervals[routeName] = setInterval(fetchFn, API_REFRESH_INTERVAL);
+
+    // Visibility listener - refresh data when page becomes visible
+    const onVisible = () => {
+      if (document.visibilityState === "visible") fetchFn();
+    };
+
+    // Page show listener - refresh data when page is restored from cache
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) fetchFn();
+    };
+
+    this.visibilityHandlers[routeName] = onVisible;
+    this.pageShowHandlers[routeName] = onPageShow;
+
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("pageshow", onPageShow);
+
+    // Return cleanup function
+    return () => this.stopPolling(routeName);
+  }
+
+  /**
+   * Stop polling for a route
+   */
+  stopPolling(routeName: string): void {
+    if (this.intervals[routeName]) {
+      clearInterval(this.intervals[routeName]);
+      delete this.intervals[routeName];
+    }
+
+    if (this.visibilityHandlers[routeName]) {
+      document.removeEventListener(
+        "visibilitychange",
+        this.visibilityHandlers[routeName]
+      );
+      delete this.visibilityHandlers[routeName];
+    }
+
+    if (this.pageShowHandlers[routeName]) {
+      window.removeEventListener("pageshow", this.pageShowHandlers[routeName]);
+      delete this.pageShowHandlers[routeName];
+    }
+  }
+
+  /**
+   * Stop all polling
+   */
+  stopAllPolling(): void {
+    Object.keys(this.intervals).forEach((routeName) => {
+      this.stopPolling(routeName);
+    });
+  }
+}
+
+// Export singleton instance
+export const busPollingService = new BusPollingService();

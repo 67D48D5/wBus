@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 
 import { useMapContext } from "@map/context/MapContext";
+import { CacheManager } from "@core/cache/CacheManager";
 
 import { getBusStopLocationData } from "@bus/api/getRealtimeData";
 import { getRouteInfo } from "@bus/api/getRouteMap";
 
 import type { BusStop } from "@bus/types/data";
 
-const stopCache: Record<string, BusStop[]> = {};
-const stopPromises: Record<string, Promise<BusStop[]>> = {};
+const stopCache = new CacheManager<BusStop[]>();
 
 export function useBusStop(routeName: string) {
   const [stops, setStops] = useState<BusStop[]>([]);
@@ -29,29 +29,14 @@ export function useBusStop(routeName: string) {
 
         const repRouteId = routeInfo.representativeRouteId;
 
-        // Use cached stops if available
-        if (stopCache[repRouteId]) {
-          if (isMounted) setStops(stopCache[repRouteId]);
-          return;
-        }
+        const data = await stopCache.getOrFetch(repRouteId, async () => {
+          const fetchedData = await getBusStopLocationData(repRouteId);
+          return fetchedData.sort(
+            (a: BusStop, b: BusStop) => a.nodeord - b.nodeord
+          );
+        });
 
-        // If not cached, fetch stops and cache the promise
-        if (!stopPromises[repRouteId]) {
-          stopPromises[repRouteId] = (async () => {
-            const data = await getBusStopLocationData(repRouteId);
-            const sorted = data.sort(
-              (a: BusStop, b: BusStop) => a.nodeord - b.nodeord
-            );
-            stopCache[repRouteId] = sorted;
-            return sorted;
-          })();
-          stopPromises[repRouteId].finally(() => {
-            delete stopPromises[repRouteId];
-          });
-        }
-
-        const fetched = await stopPromises[repRouteId];
-        if (isMounted) setStops(fetched);
+        if (isMounted) setStops(data);
       } catch (err) {
         console.error("❌ useBusStop fetch error:", err);
       }

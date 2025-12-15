@@ -47,3 +47,12 @@ export const BUSSTOP_YONSEI_END_ROUTES =
   process.env.NEXT_PUBLIC_BUSSTOP_YONSEI_END_ROUTES?.split(",") || ["30", "34"];
 export const BUSSTOP_MARKER_MIN_ZOOM =
   Number(process.env.NEXT_PUBLIC_BUSSTOP_MARKER_MIN_ZOOM) || 15;
+
+/**
+ * Bus stop node IDs that should always be considered as upward direction
+ * This is used for special cases where direction detection needs to be overridden
+ */
+export const ALWAYS_UPWARD_NODE_IDS = 
+  process.env.NEXT_PUBLIC_ALWAYS_UPWARD_NODE_IDS?.split(",") || [
+    "WJB251036041",
+  ];

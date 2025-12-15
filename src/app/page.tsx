@@ -3,7 +3,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { startBusPolling } from "@bus/hooks/useBusLocation";
+import { busPollingService } from "@bus/services/BusPollingService";
 
 import Splash from "@shared/components/Splash";
 import NavBar from "@shared/components/NavBar";
@@ -42,8 +42,13 @@ export default function Home() {
 
   // Effect to start bus polling once the route is selected
   useEffect(() => {
-    const cleanupPolling = startBusPolling(selectedRouteNames);
-    return cleanupPolling;
+    const cleanupFunctions = selectedRouteNames.map((routeName) =>
+      busPollingService.startPolling(routeName)
+    );
+
+    return () => {
+      cleanupFunctions.forEach((cleanup) => cleanup());
+    };
   }, [selectedRouteNames]);
 
   return (
