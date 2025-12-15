@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { busPollingService } from "@bus/services/BusPollingService";
 import { useRouteMap } from "@bus/hooks/useRouteMap";
 
@@ -19,7 +19,7 @@ import MyLocation from "@bus/components/MyLocation";
 export default function Home() {
   const [isSplashVisible, setIsSplashVisible] = useState(true);
   const routeMap = useRouteMap();
-  const allRoutes = routeMap ? Object.keys(routeMap) : [];
+  const allRoutes = useMemo(() => routeMap ? Object.keys(routeMap) : [], [routeMap]);
 
   // Effect for handling initial app loading and the splash screen
   useEffect(() => {
