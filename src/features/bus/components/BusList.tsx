@@ -19,6 +19,10 @@ type BusListProps = {
  * Note: Hooks must be called unconditionally to follow Rules of Hooks.
  * We call hooks for up to 3 routes (known maximum from routeMap.json).
  * Empty route names are handled gracefully by useSortedBusList.
+ * 
+ * **Limitation**: This component supports a maximum of 3 routes. If more routes
+ * are needed in the future, consider refactoring to use a different pattern
+ * such as extracting route data collection into a separate component per route.
  */
 export default function BusList({ routeNames }: BusListProps) {
   const { map } = useMapContext();

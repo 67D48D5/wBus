@@ -50,7 +50,15 @@ const RouteMarkers = React.memo(({
       <BusRoutePolyline routeName={routeName} />
     )}
   </>
-));
+), (prevProps, nextProps) => {
+  // Custom comparison to prevent unnecessary re-renders
+  return (
+    prevProps.routeName === nextProps.routeName &&
+    prevProps.selectedRoute === nextProps.selectedRoute &&
+    prevProps.onPopupOpen === nextProps.onPopupOpen &&
+    prevProps.onPopupClose === nextProps.onPopupClose
+  );
+});
 
 RouteMarkers.displayName = 'RouteMarkers';
 

@@ -143,19 +143,28 @@ export function withPerformanceMonitoring<T extends (...args: any[]) => any>(
 ): T {
   return ((...args: Parameters<T>): ReturnType<T> => {
     performanceMonitor.start(metricName);
+    
     try {
       const result = fn(...args);
       
       // Handle async functions
       if (result instanceof Promise) {
-        return result.finally(() => {
-          performanceMonitor.end(metricName);
-        }) as ReturnType<T>;
+        return result
+          .then((value) => {
+            performanceMonitor.end(metricName);
+            return value;
+          })
+          .catch((error) => {
+            performanceMonitor.end(metricName);
+            throw error;
+          }) as ReturnType<T>;
       }
       
+      // Synchronous function
       performanceMonitor.end(metricName);
       return result;
     } catch (error) {
+      // Only called for synchronous errors
       performanceMonitor.end(metricName);
       throw error;
     }

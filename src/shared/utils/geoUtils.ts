@@ -110,6 +110,12 @@ export function projectPointOnSegment(
   const AP = [P[0] - A[0], P[1] - A[1]];
   const AB = [B[0] - A[0], B[1] - A[1]];
   const ab2 = AB[0] * AB[0] + AB[1] * AB[1];
+  
+  // Handle case where A and B are the same point
+  if (ab2 === 0) {
+    return A;
+  }
+  
   const dot = AP[0] * AB[0] + AP[1] * AB[1];
   let t = dot / ab2;
   if (t < 0) t = 0;
