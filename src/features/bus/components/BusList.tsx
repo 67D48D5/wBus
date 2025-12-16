@@ -16,28 +16,39 @@ type BusListProps = {
  * Displays a list of buses for all routes with real-time location updates.
  * Users can click on a bus to center the map on its location.
  * 
- * Optimized to properly memoize expensive operations and use stable callbacks.
+ * Note: Hooks must be called unconditionally to follow Rules of Hooks.
+ * We call hooks for up to 3 routes (known maximum from routeMap.json).
+ * Empty route names are handled gracefully by useSortedBusList.
  */
 export default function BusList({ routeNames }: BusListProps) {
   const { map } = useMapContext();
 
-  // Dynamic hooks for each route - properly handles any number of routes
-  const routeDataList = routeNames.map((routeName) => ({
-    routeName,
-    data: useSortedBusList(routeName),
-  }));
+  // Call hooks unconditionally for known maximum number of routes (3)
+  // Empty strings are handled gracefully - no API calls are made
+  const route0Data = useSortedBusList(routeNames[0] || "");
+  const route1Data = useSortedBusList(routeNames[1] || "");
+  const route2Data = useSortedBusList(routeNames[2] || "");
+
+  // Collect all active route data with proper memoization
+  const allRoutesData = useMemo(() => {
+    const data = [];
+    if (routeNames[0]) data.push({ routeName: routeNames[0], ...route0Data });
+    if (routeNames[1]) data.push({ routeName: routeNames[1], ...route1Data });
+    if (routeNames[2]) data.push({ routeName: routeNames[2], ...route2Data });
+    return data;
+  }, [routeNames, route0Data, route1Data, route2Data]);
 
   // Flatten all buses into a single list with proper memoization
   const allBuses = useMemo(() => {
-    return routeDataList.flatMap(({ routeName, data }) =>
-      data.sortedList.map((bus) => ({ bus, routeName, getDirection: data.getDirection }))
+    return allRoutesData.flatMap(({ routeName, sortedList, getDirection }) =>
+      sortedList.map((bus) => ({ bus, routeName, getDirection }))
     );
-  }, [routeDataList]);
+  }, [allRoutesData]);
 
   // Check if any route has errors with proper memoization
   const anyError = useMemo(() => {
-    return routeDataList.find((item) => item.data.error !== null)?.data.error || null;
-  }, [routeDataList]);
+    return allRoutesData.find((data) => data.error !== null)?.error || null;
+  }, [allRoutesData]);
 
   const errorMessage = getBusErrorMessage(anyError);
   const message = anyError ? errorMessage : "버스 데이터를 불러오는 중...";
