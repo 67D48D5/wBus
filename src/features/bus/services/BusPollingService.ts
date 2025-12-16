@@ -74,10 +74,30 @@ export class BusPollingService {
     Object.keys(this.cache).forEach((key) => {
       if (key !== currentRoute) {
         delete this.cache[key];
+      }
+    });
+    // Also clean up listeners for routes that are no longer active
+    Object.keys(this.dataListeners).forEach((key) => {
+      if (key !== currentRoute && this.dataListeners[key]?.size === 0) {
         delete this.dataListeners[key];
+      }
+    });
+    Object.keys(this.errorListeners).forEach((key) => {
+      if (key !== currentRoute && this.errorListeners[key]?.size === 0) {
         delete this.errorListeners[key];
       }
     });
+  }
+
+  /**
+   * Clear all caches and stop all polling
+   * Useful for cleanup when component unmounts or app closes
+   */
+  cleanup(): void {
+    this.stopAllPolling();
+    this.cache = {};
+    this.dataListeners = {};
+    this.errorListeners = {};
   }
 
   /**

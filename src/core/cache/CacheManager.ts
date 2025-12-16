@@ -1,25 +1,65 @@
 // src/core/cache/CacheManager.ts
 
 /**
- * Generic cache manager for storing and retrieving data
+ * Generic cache manager for storing and retrieving data with memory management
  * Provides a centralized way to manage cache across the application
  */
 export class CacheManager<T> {
   private cache: Map<string, T> = new Map();
   private pendingRequests: Map<string, Promise<T>> = new Map();
+  private accessTimes: Map<string, number> = new Map();
+  private maxSize: number;
+
+  /**
+   * Create a new cache manager
+   * @param maxSize - Maximum number of items to store (default: 100)
+   */
+  constructor(maxSize: number = 100) {
+    this.maxSize = maxSize;
+  }
 
   /**
    * Get cached data or return null if not found
    */
   get(key: string): T | null {
-    return this.cache.get(key) ?? null;
+    const value = this.cache.get(key) ?? null;
+    if (value !== null) {
+      this.accessTimes.set(key, Date.now());
+    }
+    return value;
   }
 
   /**
-   * Set data in cache
+   * Set data in cache with automatic eviction if cache is full
    */
   set(key: string, value: T): void {
+    // Evict least recently used items if cache is full
+    if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
+      this.evictLRU();
+    }
     this.cache.set(key, value);
+    this.accessTimes.set(key, Date.now());
+  }
+
+  /**
+   * Evict the least recently used item from cache
+   */
+  private evictLRU(): void {
+    let oldestKey: string | null = null;
+    let oldestTime = Infinity;
+
+    for (const [key, time] of this.accessTimes.entries()) {
+      if (time < oldestTime) {
+        oldestTime = time;
+        oldestKey = key;
+      }
+    }
+
+    if (oldestKey !== null) {
+      this.cache.delete(oldestKey);
+      this.accessTimes.delete(oldestKey);
+      this.pendingRequests.delete(oldestKey);
+    }
   }
 
   /**
@@ -34,6 +74,7 @@ export class CacheManager<T> {
    */
   delete(key: string): void {
     this.cache.delete(key);
+    this.accessTimes.delete(key);
     this.pendingRequests.delete(key);
   }
 
@@ -42,6 +83,7 @@ export class CacheManager<T> {
    */
   clear(): void {
     this.cache.clear();
+    this.accessTimes.clear();
     this.pendingRequests.clear();
   }
 
@@ -53,6 +95,7 @@ export class CacheManager<T> {
     for (const key of this.cache.keys()) {
       if (!keepSet.has(key)) {
         this.cache.delete(key);
+        this.accessTimes.delete(key);
       }
     }
     for (const key of this.pendingRequests.keys()) {
@@ -74,6 +117,7 @@ export class CacheManager<T> {
   ): Promise<T> {
     // Return cached data if available
     if (this.cache.has(key)) {
+      this.accessTimes.set(key, Date.now());
       return this.cache.get(key)!;
     }
 
@@ -85,7 +129,7 @@ export class CacheManager<T> {
     // Create new request
     const promise = fetchFn()
       .then((data) => {
-        this.cache.set(key, data);
+        this.set(key, data);
         return data;
       })
       .finally(() => {
@@ -108,5 +152,22 @@ export class CacheManager<T> {
    */
   size(): number {
     return this.cache.size;
+  }
+
+  /**
+   * Get cache statistics for monitoring
+   */
+  getStats(): {
+    size: number;
+    maxSize: number;
+    pendingRequests: number;
+    utilizationPercent: number;
+  } {
+    return {
+      size: this.cache.size,
+      maxSize: this.maxSize,
+      pendingRequests: this.pendingRequests.size,
+      utilizationPercent: Math.round((this.cache.size / this.maxSize) * 100),
+    };
   }
 }

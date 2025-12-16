@@ -1,6 +1,12 @@
 // src/features/bus/api/getPolyline.ts
 
 import { CacheManager } from "@core/cache/CacheManager";
+import { 
+  getEuclideanDistance, 
+  calculateBearing, 
+  calculateAngle,
+  projectPointOnSegment 
+} from "@shared/utils/geoUtils";
 import { GeoPolylineData } from "@bus/types/data";
 
 const polylineCache = new CacheManager<GeoPolylineData>();
@@ -45,6 +51,7 @@ export function transformPolyline(data: GeoPolylineData) {
 
 /**
  * Merge multiple polylines into a single polyline.
+ * Removes duplicate consecutive points for efficiency.
  *
  * @param polylines - Target polylines to merge
  *                    (each polyline is an array of [lat, lng] pairs)
@@ -65,80 +72,6 @@ export function mergePolylines(
       }
       return merged;
     }, []);
-}
-
-/**
- * Calculate the bearing (direction) between two points A and B.
- * (Coordinates are in [lat, lng] format)
- */
-export function calculateBearing(
-  A: [number, number],
-  B: [number, number]
-): number {
-  const [lat1, lon1] = A.map((d) => (d * Math.PI) / 180);
-  const [lat2, lon2] = B.map((d) => (d * Math.PI) / 180);
-  const dLon = lon2 - lon1;
-
-  const y = Math.sin(dLon) * Math.cos(lat2);
-  const x =
-    Math.cos(lat1) * Math.sin(lat2) -
-    Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
-
-  const brng = (Math.atan2(y, x) * 180) / Math.PI;
-  return (brng + 360) % 360;
-}
-
-/**
- * When given a point P and a line segment AB,
- * this function projects point P onto the line segment AB.
- *
- * @param P - The point to project
- * @param A - The start point of the line segment
- * @param B - The end point of the line segment
- * @returns - The projected point on the line segment AB
- *            (returns the closest point on the segment to P)
- */
-function projectPointOnSegment(
-  P: [number, number],
-  A: [number, number],
-  B: [number, number]
-): [number, number] {
-  const AP = [P[0] - A[0], P[1] - A[1]];
-  const AB = [B[0] - A[0], B[1] - A[1]];
-  const ab2 = AB[0] * AB[0] + AB[1] * AB[1];
-  const dot = AP[0] * AB[0] + AP[1] * AB[1];
-  let t = dot / ab2;
-  if (t < 0) t = 0;
-  if (t > 1) t = 1;
-  return [A[0] + AB[0] * t, A[1] + AB[1] * t];
-}
-
-/**
- * Calculate the distance between two points P and Q.
- * Coordinates are in [lat, lng] format.
- *
- * @param P - The first point
- * @param Q - The second point
- * @returns - The Euclidean distance between P and Q
- *            (not considering the curvature of the Earth)
- */
-function distance(P: [number, number], Q: [number, number]): number {
-  const dx = P[0] - Q[0];
-  const dy = P[1] - Q[1];
-  return Math.sqrt(dx * dx + dy * dy);
-}
-
-/**
- * Calculate the angle (rotation) between two coordinates A and B.
- * Coordinates are in [lat, lng] format.
- */
-export function calculateAngle(
-  A: [number, number],
-  B: [number, number]
-): number {
-  const deltaLat = B[0] - A[0];
-  const deltaLng = B[1] - A[1];
-  return (Math.atan2(deltaLat, deltaLng) * 180) / Math.PI;
 }
 
 /**
@@ -169,7 +102,7 @@ export function snapToPolyline(
     const A = polyline[i];
     const B = polyline[i + 1];
     const projection = projectPointOnSegment(P, A, B);
-    const d = distance(P, projection);
+    const d = getEuclideanDistance(P, projection);
     if (d < bestDist) {
       bestDist = d;
       bestPosition = projection;
@@ -185,3 +118,6 @@ export function snapToPolyline(
     segment: bestSegment,
   };
 }
+
+// Re-export shared utilities for backward compatibility
+export { calculateBearing, calculateAngle };
