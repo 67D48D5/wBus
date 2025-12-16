@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   MAP_URL,
   MAP_ATTRIBUTION,
@@ -25,6 +25,43 @@ type MapProps = {
   routeNames: string[];
 };
 
+/**
+ * Memoized route marker component to prevent unnecessary re-renders
+ */
+const RouteMarkers = React.memo(({ 
+  routeName, 
+  selectedRoute,
+  onPopupOpen, 
+  onPopupClose 
+}: { 
+  routeName: string;
+  selectedRoute: string | null;
+  onPopupOpen: (routeName: string) => void;
+  onPopupClose: () => void;
+}) => (
+  <>
+    <BusMarker 
+      routeName={routeName} 
+      onPopupOpen={onPopupOpen}
+      onPopupClose={onPopupClose}
+    />
+    <BusStopMarker routeName={routeName} />
+    {selectedRoute === routeName && (
+      <BusRoutePolyline routeName={routeName} />
+    )}
+  </>
+), (prevProps, nextProps) => {
+  // Custom comparison to prevent unnecessary re-renders
+  return (
+    prevProps.routeName === nextProps.routeName &&
+    prevProps.selectedRoute === nextProps.selectedRoute &&
+    prevProps.onPopupOpen === nextProps.onPopupOpen &&
+    prevProps.onPopupClose === nextProps.onPopupClose
+  );
+});
+
+RouteMarkers.displayName = 'RouteMarkers';
+
 export default function Map({ routeNames }: MapProps) {
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
 
@@ -36,31 +73,32 @@ export default function Map({ routeNames }: MapProps) {
     setSelectedRoute(null);
   }, []);
 
+  // Memoize map options to prevent unnecessary re-renders
+  const mapOptions = useMemo(() => ({
+    center: MAP_DEFAULT_POSITION,
+    zoom: MAP_DEFAULT_ZOOM,
+    scrollWheelZoom: true,
+    maxBounds: MAP_MAX_BOUNDS,
+    maxBoundsViscosity: 1.0,
+    minZoom: MAP_MIN_ZOOM,
+    maxZoom: MAP_MAX_ZOOM,
+  }), []);
+
   return (
     <MapContainer
-      center={MAP_DEFAULT_POSITION}
-      zoom={MAP_DEFAULT_ZOOM}
-      scrollWheelZoom={true}
+      {...mapOptions}
       className="w-full h-full"
-      maxBounds={MAP_MAX_BOUNDS}
-      maxBoundsViscosity={1.0}
-      minZoom={MAP_MIN_ZOOM}
-      maxZoom={MAP_MAX_ZOOM}
     >
       <MapProvider>
         <TileLayer attribution={MAP_ATTRIBUTION} url={MAP_URL} maxZoom={MAP_MAX_ZOOM} />
         {routeNames.map((routeName) => (
-          <React.Fragment key={routeName}>
-            <BusMarker 
-              routeName={routeName} 
-              onPopupOpen={handlePopupOpen}
-              onPopupClose={handlePopupClose}
-            />
-            <BusStopMarker routeName={routeName} />
-            {selectedRoute === routeName && (
-              <BusRoutePolyline routeName={routeName} />
-            )}
-          </React.Fragment>
+          <RouteMarkers
+            key={routeName}
+            routeName={routeName}
+            selectedRoute={selectedRoute}
+            onPopupOpen={handlePopupOpen}
+            onPopupClose={handlePopupClose}
+          />
         ))}
       </MapProvider>
     </MapContainer>

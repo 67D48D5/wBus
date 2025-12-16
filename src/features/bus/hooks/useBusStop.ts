@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { useMapContext } from "@map/context/MapContext";
 import { CacheManager } from "@core/cache/CacheManager";
+import { getHaversineDistance } from "@shared/utils/geoUtils";
 
 import { getBusStopLocationData } from "@bus/api/getRealtimeData";
 import { getRouteInfo } from "@bus/api/getRouteMap";
@@ -54,27 +55,6 @@ export function useBusStop(routeName: string) {
 }
 
 /**
- * Get Haversine distance between two geographical points.
- *
- * @param lat1 First point's latitude
- * @param lon1 First point's longitude
- * @param lat2 Second point's latitude
- * @param lon2 Second point's longitude
- * @returns Distance in kilometers
- */
-function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const toRad = (deg: number) => (deg * Math.PI) / 180;
-  const R = 6371; // Earth's radius in kilometers
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-/**
  * Get the closest bus stop's nodeord based on the current map center.
  *
  * @param routeName routeName
@@ -91,8 +71,8 @@ export function useClosestStopOrd(routeName: string): number | null {
     const updateClosest = () => {
       const { lat, lng } = map.getCenter();
       const closestStop = stops.reduce((prev, curr) => {
-        const prevDistance = getDistance(lat, lng, prev.gpslati, prev.gpslong);
-        const currDistance = getDistance(lat, lng, curr.gpslati, curr.gpslong);
+        const prevDistance = getHaversineDistance(lat, lng, prev.gpslati, prev.gpslong);
+        const currDistance = getHaversineDistance(lat, lng, curr.gpslati, curr.gpslong);
         return currDistance < prevDistance ? curr : prev;
       }, stops[0]);
 

@@ -2,7 +2,7 @@
 
 "use client";
 
-import React from "react";
+import React, { useMemo, useCallback } from "react";
 import { useMapContext } from "@map/context/MapContext";
 import { useSortedBusList } from "@bus/hooks/useSortedBusList";
 import { getBusErrorMessage, isWarningError } from "@shared/utils/errorMessages";
@@ -15,19 +15,26 @@ type BusListProps = {
 /**
  * Displays a list of buses for all routes with real-time location updates.
  * Users can click on a bus to center the map on its location.
+ * 
+ * Note: Hooks must be called unconditionally to follow Rules of Hooks.
+ * We call hooks for up to 3 routes (known maximum from routeMap.json).
+ * Empty route names are handled gracefully by useSortedBusList.
+ * 
+ * **Limitation**: This component supports a maximum of 3 routes. If more routes
+ * are needed in the future, consider refactoring to use a different pattern
+ * such as extracting route data collection into a separate component per route.
  */
 export default function BusList({ routeNames }: BusListProps) {
   const { map } = useMapContext();
 
-  // Call hooks for each possible route (max 3 routes known from routeMap.json)
-  // This ensures hooks are called in the same order every render
-  // Empty string is handled gracefully by the hooks (no API calls)
+  // Call hooks unconditionally for known maximum number of routes (3)
+  // Empty strings are handled gracefully - no API calls are made
   const route0Data = useSortedBusList(routeNames[0] || "");
   const route1Data = useSortedBusList(routeNames[1] || "");
   const route2Data = useSortedBusList(routeNames[2] || "");
 
-  // Collect route data
-  const allRoutesData = React.useMemo(() => {
+  // Collect all active route data with proper memoization
+  const allRoutesData = useMemo(() => {
     const data = [];
     if (routeNames[0]) data.push({ routeName: routeNames[0], ...route0Data });
     if (routeNames[1]) data.push({ routeName: routeNames[1], ...route1Data });
@@ -35,20 +42,33 @@ export default function BusList({ routeNames }: BusListProps) {
     return data;
   }, [routeNames, route0Data, route1Data, route2Data]);
 
-  // Flatten all buses into a single list
-  const allBuses = React.useMemo(() => {
+  // Flatten all buses into a single list with proper memoization
+  const allBuses = useMemo(() => {
     return allRoutesData.flatMap(({ routeName, sortedList, getDirection }) =>
       sortedList.map((bus) => ({ bus, routeName, getDirection }))
     );
   }, [allRoutesData]);
 
-  // Check if any route has errors
-  const anyError = allRoutesData.find((data) => data.error !== null)?.error || null;
+  // Check if any route has errors with proper memoization
+  const anyError = useMemo(() => {
+    return allRoutesData.find((data) => data.error !== null)?.error || null;
+  }, [allRoutesData]);
+
   const errorMessage = getBusErrorMessage(anyError);
   const message = anyError ? errorMessage : "버스 데이터를 불러오는 중...";
 
   const isNoData = allBuses.length === 0;
   const isErrorState = isWarningError(anyError);
+
+  // Stable callback for bus click handler
+  const handleBusClick = useCallback((lat: number, lng: number) => {
+    if (map) {
+      map.flyTo([lat, lng], map.getZoom(), {
+        animate: true,
+        duration: 1.5,
+      });
+    }
+  }, [map]);
 
   return (
     <div className="fixed bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl w-64 z-20 border border-gray-200">
@@ -78,14 +98,7 @@ export default function BusList({ routeNames }: BusListProps) {
               <li
                 key={`${routeName}-${bus.vehicleno}`}
                 className="flex justify-between items-center py-2.5 px-2 cursor-pointer hover:bg-blue-50 transition-all duration-200 rounded-lg group"
-                onClick={() => {
-                  if (map) {
-                    map.flyTo([bus.gpslati, bus.gpslong], map.getZoom(), {
-                      animate: true,
-                      duration: 1.5,
-                    });
-                  }
-                }}
+                onClick={() => handleBusClick(bus.gpslati, bus.gpslong)}
               >
                 <div className="flex flex-col gap-0.5">
                   <span className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors">{bus.vehicleno}</span>
