@@ -13,9 +13,10 @@ if (typeof window !== "undefined") {
 const RotatedMarker = forwardRef<
   L.Marker,
   MarkerProps & { rotationAngle?: number; rotationOrigin?: string }
->(({ rotationAngle = 0, rotationOrigin = "center", ...props }, ref) => {
+>(({ rotationAngle = 0, rotationOrigin = "center", position, ...props }, ref) => {
   const markerRef = useRef<L.Marker | null>(null);
 
+  // Update rotation when it changes
   useEffect(() => {
     if (markerRef.current) {
       markerRef.current.setRotationAngle?.(rotationAngle);
@@ -23,8 +24,19 @@ const RotatedMarker = forwardRef<
     }
   }, [rotationAngle, rotationOrigin]);
 
+  // Update position when it changes - this is critical for animation!
+  useEffect(() => {
+    if (markerRef.current && position) {
+      const latLng = Array.isArray(position)
+        ? L.latLng(position[0], position[1])
+        : position;
+      markerRef.current.setLatLng(latLng);
+    }
+  }, [position]);
+
   return (
     <Marker
+      position={position}
       ref={(instance) => {
         markerRef.current = instance;
         if (typeof ref === "function") {

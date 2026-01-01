@@ -8,8 +8,10 @@ import L from "leaflet";
 
 import { useIcons } from "@live/hooks/useIcons";
 import { useBusData } from "@live/hooks/useBusData";
+
 import { getSnappedPosition } from "@live/utils/getSnappedPos";
 import { getDirectionIcon } from "@live/utils/directionIcons";
+
 import { AnimatedBusMarker } from "@live/components/AnimatedBusMarker";
 
 import type { LatLngTuple } from "leaflet";
@@ -104,7 +106,7 @@ export default function BusMarker({
             rotationAngle={angle % 360}
             icon={icon}
             polyline={polyline}
-            animationDuration={1000}
+            animationDuration={500}
             eventHandlers={{
               popupopen: () => {
                 if (onPopupOpen) {

@@ -2,8 +2,6 @@
 
 "use client";
 
-import { memo } from "react";
-
 import type { LatLngTuple } from "leaflet";
 import type L from "leaflet";
 
@@ -15,6 +13,7 @@ interface AnimatedBusMarkerProps {
     rotationAngle: number;
     icon: L.Icon | L.DivIcon;
     polyline?: LatLngTuple[];
+    /** Animation duration in ms. Keep low (300-500ms) to avoid lag behind real-time data */
     animationDuration?: number;
     children?: React.ReactNode;
     eventHandlers?: L.LeafletEventHandlerFnMap;
@@ -24,12 +23,12 @@ interface AnimatedBusMarkerProps {
  * A bus marker that smoothly animates along a polyline when its position updates.
  * Uses requestAnimationFrame for smooth 60fps animation.
  */
-function AnimatedBusMarkerComponent({
+export function AnimatedBusMarker({
     position,
     rotationAngle,
     icon,
     polyline = [],
-    animationDuration = 1000,
+    animationDuration = 500,
     children,
     eventHandlers,
 }: AnimatedBusMarkerProps) {
@@ -54,6 +53,3 @@ function AnimatedBusMarkerComponent({
         </RotatedMarker>
     );
 }
-
-// Memoize to prevent unnecessary re-renders
-export const AnimatedBusMarker = memo(AnimatedBusMarkerComponent);
