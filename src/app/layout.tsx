@@ -9,6 +9,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import { MapProvider } from "@live/context/MapContext";
+
 import { SITE_INFO } from "@core/constants/locale";
 
 // Google Fonts (Geist Safns, Geist Mono)

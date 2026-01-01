@@ -1,89 +1,90 @@
 // src/app/page.tsx
 
-import Link from "next/link";
-import { MapPin, Clock, Bus } from "lucide-react";
+import type { Metadata } from 'next';
 
-import { SITE_INFO, UI_TEXT } from "@core/constants/locale";
+import Link from 'next/link';
+import { MapPin } from 'lucide-react';
 
-/**
- * Main landing page for wBus application.
- * Provides navigation to real-time bus map and schedule timetable.
- */
-export default function HomePage() {
+import { METADATA, UI_TEXT, SITE_INFO } from '@core/constants/locale';
+import { COMMON } from '@core/constants/locale';
+
+import RouteCard from '@schedule/components/RouteCard';
+import { getAllRoutes } from '@schedule/utils/data';
+
+export const metadata: Metadata = {
+  title: METADATA.TITLE,
+  description: METADATA.DESCRIPTION,
+};
+
+export default async function HomePage() {
+  const routes = await getAllRoutes();
+
   return (
-    <div className="min-h-[100dvh] bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
-      {/* Header */}
-      <header className="pt-16 pb-8 px-6 text-center">
-        <div className="flex justify-center mb-4">
-          <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25">
-            <Bus className="w-10 h-10 text-white" />
+    <div className="bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
+      <div className="max-w-md mx-auto min-h-screen flex flex-col">
+        <main className="flex-grow p-4">
+          <div className="space-y-6">
+            <header className="text-center py-6">
+              <h1 className="text-4xl font-black italic bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent mb-2">
+                {COMMON.APP_TITLE}
+              </h1>
+              <p className="text-slate-500 dark:text-slate-400 text-sm">{SITE_INFO.SHORT_DESCRIPTION}</p>
+            </header>
+
+            {/* Route Cards */}
+            <div className="grid gap-3">
+              {routes.map((route, index) => (
+                <div
+                  key={route.routeId}
+                  style={{ animationDelay: `${index * 50}ms` }}
+                  className="animate-fade-in-up"
+                >
+                  <RouteCard
+                    routeId={route.routeId}
+                    routeName={route.routeName}
+                    description={route.description}
+                    busData={route}
+                    basePath=""
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Separator */}
+            <div className="flex items-center gap-3 py-2">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-300 dark:via-slate-600 to-transparent" />
+              <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">{UI_TEXT.REAL_TIME_LOCATION}</span>
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-300 dark:via-slate-600 to-transparent" />
+            </div>
+
+            {/* Live Map Card */}
+            <div
+              style={{ animationDelay: `${routes.length * 50}ms` }}
+              className="animate-fade-in-up"
+            >
+              <Link
+                href="/live"
+                className="block p-5 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/50 dark:to-teal-950/50 backdrop-blur rounded-2xl border border-emerald-200 dark:border-emerald-800/50 shadow-sm hover:shadow-lg hover:shadow-emerald-500/10 hover:border-emerald-400 dark:hover:border-emerald-600 hover:-translate-y-1 transition-all duration-200 group"
+              >
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/25 group-hover:scale-110 transition-transform duration-200">
+                      <MapPin className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <span className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
+                        {UI_TEXT.REAL_TIME_LOCATION}
+                      </span>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">{UI_TEXT.REAL_TIME_LOCATION_DESC}</p>
+                    </div>
+                  </div>
+                  <span className="text-2xl text-emerald-300 dark:text-emerald-700 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 group-hover:translate-x-1 transition-all duration-200">→</span>
+                </div>
+              </Link>
+            </div>
           </div>
-        </div>
-        <h1 className="text-4xl font-black italic bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent mb-2">
-          wBus
-        </h1>
-        <p className="text-slate-500 dark:text-slate-400 text-sm">
-          {SITE_INFO.DESCRIPTION}
-        </p>
-      </header>
-
-      {/* Navigation Cards */}
-      <main className="max-w-md mx-auto px-4 pb-16">
-        <div className="grid gap-4">
-          {/* Real-time Map Card */}
-          <Link
-            href="/live"
-            className="group block p-6 bg-white dark:bg-slate-800/80 backdrop-blur rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm hover:shadow-xl hover:border-blue-400 dark:hover:border-blue-600 hover:-translate-y-1 transition-all duration-300"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/25 group-hover:scale-110 transition-transform duration-300">
-                <MapPin className="w-7 h-7 text-white" />
-              </div>
-              <div className="flex-1">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1">
-                  {UI_TEXT.REAL_TIME_LOCATION}
-                </h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  {UI_TEXT.REAL_TIME_LOCATION_DESC}
-                </p>
-              </div>
-              <span className="text-2xl text-slate-300 dark:text-slate-600 group-hover:text-blue-500 dark:group-hover:text-blue-400 group-hover:translate-x-1 transition-all duration-200">
-                →
-              </span>
-            </div>
-          </Link>
-
-          {/* Schedule/Timetable Card */}
-          <Link
-            href="/schedule"
-            className="group block p-6 bg-white dark:bg-slate-800/80 backdrop-blur rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm hover:shadow-xl hover:border-purple-400 dark:hover:border-purple-600 hover:-translate-y-1 transition-all duration-300"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/25 group-hover:scale-110 transition-transform duration-300">
-                <Clock className="w-7 h-7 text-white" />
-              </div>
-              <div className="flex-1">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1">
-                  {UI_TEXT.SCHEDULE_INQUIRY}
-                </h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  {UI_TEXT.SCHEDULE_INQUIRY_DESC}
-                </p>
-              </div>
-              <span className="text-2xl text-slate-300 dark:text-slate-600 group-hover:text-purple-500 dark:group-hover:text-purple-400 group-hover:translate-x-1 transition-all duration-200">
-                →
-              </span>
-            </div>
-          </Link>
-        </div>
-
-        {/* Footer Info */}
-        <div className="mt-12 text-center">
-          <p className="text-xs text-slate-400 dark:text-slate-500">
-            {SITE_INFO.FOOTER_TEXT}
-          </p>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
