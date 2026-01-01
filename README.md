@@ -93,7 +93,7 @@ npm start
 
 ## 📁 Project Structure
 
-```
+```shell
 wBus/
 ├── src/
 │   ├── app/                    # Next.js app directory
@@ -124,7 +124,6 @@ wBus/
 │   └── icons/                 # App icons
 ├── docs/                       # Documentation
 └── ...config files
-
 ```
 
 ## 🎯 Key Architectural Features
@@ -207,16 +206,3 @@ For questions, issues, or feature requests:
 
 - Open an issue on [GitHub Issues](https://github.com/67D48D5/wBus/issues)
 - Check our [documentation](./docs/)
-
-## 🗺️ Roadmap
-
-- [ ] Add support for more bus routes
-- [ ] Implement route planning features
-- [ ] Add notifications for bus arrivals
-- [ ] Support for multiple cities
-- [ ] Mobile app (React Native)
-- [ ] Offline mode with service workers
-
----
-
-**Built with ❤️ for Wonju commuters**
