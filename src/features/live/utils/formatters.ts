@@ -7,22 +7,6 @@ import { SCHEDULE_MESSAGES } from "@core/constants/locale";
  */
 
 /**
- * Format arrival time in minutes to a human-readable string
- * @param minutes - Time in minutes until arrival
- * @param stopsAway - Number of stops away (optional)
- * @returns Formatted string
- */
-export function formatArrivalTime(minutes: number, stopsAway?: number): string {
-  const stopsText = stopsAway !== undefined ? ` (${stopsAway} 정류장 전)` : "";
-
-  if (minutes <= 3) {
-    return `${SCHEDULE_MESSAGES.ARRIVING_SOON}${stopsText}`;
-  }
-
-  return `${minutes}분${stopsText}`;
-}
-
-/**
  * Format seconds to minutes, rounding up
  * @param seconds - Time in seconds
  * @returns Time in minutes (rounded up)
