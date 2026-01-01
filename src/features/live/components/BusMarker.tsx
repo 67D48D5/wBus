@@ -6,12 +6,14 @@ import { useMemo } from "react";
 import { Popup } from "react-leaflet";
 import L from "leaflet";
 
-import RotatedMarker from "@live/components/RotatedMarker";
+import { AnimatedBusMarker } from "@live/components/AnimatedBusMarker";
 import { useIcons } from "@live/hooks/useIcons";
 
 import { useBusData } from "@live/hooks/useBusData";
 import { getSnappedPosition } from "@live/utils/getSnappedPos";
 import { getDirectionIcon } from "@live/utils/directionIcons";
+
+import type { LatLngTuple } from "leaflet";
 
 export default function BusMarker({
   routeName,
@@ -83,7 +85,9 @@ export default function BusMarker({
       );
       // Use only vehicle number as a unique key
       const key = bus.vehicleno;
-      return { bus, key, ...snapped };
+      // Determine which polyline to use for animation
+      const polyline: LatLngTuple[] = snapped.direction === 1 ? mergedUp : mergedDown;
+      return { bus, key, polyline, ...snapped };
     });
   }, [busList, getDirection, mergedUp, mergedDown]);
 
@@ -91,56 +95,62 @@ export default function BusMarker({
 
   return (
     <>
-      {snappedList.map(({ bus, key, position, angle, direction }) => (
-        <RotatedMarker
-          key={key}
-          position={position}
-          rotationAngle={angle % 360}
-          icon={createBusIconWithLabel(bus.routenm)}
-          eventHandlers={{
-            popupopen: () => {
-              if (onPopupOpen) {
-                onPopupOpen(routeName);
-              }
-            },
-            popupclose: () => {
-              if (onPopupClose) {
-                onPopupClose();
-              }
-            },
-          }}
-        >
-          <Popup autoPan={false} className="custom-bus-popup">
-            <div className="min-w-[180px]">
-              <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white px-4 py-2.5 -mx-5 -mt-4 mb-3 rounded-t-lg shadow-md">
-                <div className="flex items-center gap-2">
-                  {(() => {
-                    const DirectionIcon = getDirectionIcon(direction);
-                    return <DirectionIcon className="w-5 h-5" />;
-                  })()}
-                  <span className="font-bold text-base tracking-tight">
-                    {bus.routenm}번 버스
-                  </span>
+      {snappedList.map(({ bus, key, position, angle, direction, polyline }) => {
+        const icon = createBusIconWithLabel(bus.routenm);
+        if (!icon) return null;
+        return (
+          <AnimatedBusMarker
+            key={key}
+            position={position}
+            rotationAngle={angle % 360}
+            icon={icon}
+            polyline={polyline}
+            animationDuration={1000}
+            eventHandlers={{
+              popupopen: () => {
+                if (onPopupOpen) {
+                  onPopupOpen(routeName);
+                }
+              },
+              popupclose: () => {
+                if (onPopupClose) {
+                  onPopupClose();
+                }
+              },
+            }}
+          >
+            <Popup autoPan={false} className="custom-bus-popup">
+              <div className="min-w-[180px]">
+                <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white px-4 py-2.5 -mx-5 -mt-4 mb-3 rounded-t-lg shadow-md">
+                  <div className="flex items-center gap-2">
+                    {(() => {
+                      const DirectionIcon = getDirectionIcon(direction);
+                      return <DirectionIcon className="w-5 h-5" />;
+                    })()}
+                    <span className="font-bold text-base tracking-tight">
+                      {bus.routenm}번 버스
+                    </span>
+                  </div>
+                </div>
+                <div className="space-y-2 px-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-gray-500 w-16">차량번호</span>
+                    <span className="text-sm font-bold text-gray-900 bg-gray-100 px-3 py-1 rounded-md">
+                      {bus.vehicleno}
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-xs font-semibold text-gray-500 w-16 mt-1">현재위치</span>
+                    <span className="text-sm text-gray-700 font-medium flex-1">
+                      {bus.nodenm}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div className="space-y-2 px-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-gray-500 w-16">차량번호</span>
-                  <span className="text-sm font-bold text-gray-900 bg-gray-100 px-3 py-1 rounded-md">
-                    {bus.vehicleno}
-                  </span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-xs font-semibold text-gray-500 w-16 mt-1">현재위치</span>
-                  <span className="text-sm text-gray-700 font-medium flex-1">
-                    {bus.nodenm}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </Popup>
-        </RotatedMarker>
-      ))}
+            </Popup>
+          </AnimatedBusMarker>
+        );
+      })}
     </>
   );
 }
