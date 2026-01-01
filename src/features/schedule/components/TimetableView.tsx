@@ -162,6 +162,29 @@ function TimetableView({ data }: { data: BusData }) {
                 ))}
             </div>
 
+            {/* Highlighted current hour - shown above the full timetable */}
+            {hours.includes(highlightedHour) && (
+                <div className="bg-blue-50 dark:bg-blue-950/40 rounded-2xl shadow-sm border-2 border-blue-400 dark:border-blue-600 overflow-hidden">
+                    <div className="grid grid-cols-[70px_1fr]">
+                        <div className="p-4 text-center border-r border-blue-200 dark:border-blue-800 font-mono font-bold flex flex-col items-center gap-1 text-blue-600 dark:text-blue-400">
+                            <div>{highlightedHour}</div>
+                            {nextBus?.timeUntil && (
+                                <div className="text-xs font-normal text-blue-500 dark:text-blue-400">
+                                    {nextBus.timeUntil.minutes}:{nextBus.timeUntil.seconds.toString().padStart(2, '0')}
+                                </div>
+                            )}
+                        </div>
+                        <div className="p-4 flex flex-wrap gap-4 items-center">
+                            {schedule[highlightedHour]?.[direction]?.map((item, i) => (
+                                <span key={i} className={`text-lg font-medium ${nextBus && item.minute === nextBus.minute ? "text-blue-600 dark:text-blue-400 font-bold" : ""}`}>
+                                    {item.minute}{item.noteId && <sup className="text-red-500 ml-0.5">{item.noteId}</sup>}
+                                </span>
+                            )) ?? <span className="text-slate-300">{UI_TEXT.NO_BUSES_SYMBOL}</span>}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border dark:border-slate-700 overflow-hidden">
                 {hours.map(hour => {
                     const isNow = hour === highlightedHour;
