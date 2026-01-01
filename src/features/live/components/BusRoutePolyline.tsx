@@ -45,10 +45,12 @@ export default function BusRoutePolyline({ routeName }: Props) {
             key={`up-${idx}`}
             positions={coords}
             pathOptions={{
-              color: "blue",
-              weight: 4,
-              dashArray: isInactive ? "4" : undefined,
+              color: "#3b82f6",
+              weight: 5,
+              dashArray: isInactive ? "8, 4" : undefined,
               opacity,
+              lineCap: "round",
+              lineJoin: "round",
             }}
           />
         );
@@ -61,10 +63,12 @@ export default function BusRoutePolyline({ routeName }: Props) {
             key={`down-${idx}`}
             positions={coords}
             pathOptions={{
-              color: "red",
-              weight: 4,
-              dashArray: isInactive ? "4" : undefined,
+              color: "#ef4444",
+              weight: 5,
+              dashArray: isInactive ? "8, 4" : undefined,
               opacity,
+              lineCap: "round",
+              lineJoin: "round",
             }}
           />
         );

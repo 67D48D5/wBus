@@ -8,7 +8,7 @@ import { busPollingService } from "@live/services/BusPollingService";
 import { useRouteMap } from "@live/hooks/useRouteMap";
 
 import Splash from "@live/components/MapSplash";
-import NavBar from "@live/components/NavBar";
+import MapNavBar from "@live/components/MapNavBar";
 import MapWrapper from "@live/components/MapWrapper";
 import BusList from "@live/components/BusList";
 import MyLocation from "@live/components/MyLocation";
@@ -54,7 +54,7 @@ export default function MapPage() {
         <>
             <Splash isVisible={isSplashVisible} />
             <div className="flex flex-col w-full h-[100dvh]">
-                <NavBar />
+                <MapNavBar />
                 <div className="relative flex-1 overflow-hidden">
                     {allRoutes.length > 0 && (
                         <>

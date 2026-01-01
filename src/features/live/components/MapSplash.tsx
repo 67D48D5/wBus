@@ -43,22 +43,35 @@ export default function Splash({
     <div
       role="status"
       aria-live="polite"
-      className={`fixed inset-0 z-[9999] bg-[#003876] flex flex-col items-center justify-center
+      className={`fixed inset-0 z-[9999] bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 flex flex-col items-center justify-center
         transition-opacity ease-out
         ${isVisible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
       style={{ transitionDuration: `${duration}ms` }}
     >
-      {showLoader && (
-        <div className="mb-4">
-          <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin" />
-        </div>
-      )}
-
-      <div className="text-white text-4xl font-extrabold tracking-wider">
-        {APP_NAME}
+      {/* Animated background pattern */}
+      <div className="absolute inset-0 overflow-hidden opacity-10">
+        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-white rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-white rounded-full blur-3xl animate-pulse delay-1000" />
       </div>
-      <div className="mt-2 text-gray-300 text-sm animate-pulse">
-        {APP_SPLASH_MESSAGE}
+
+      {/* Main content */}
+      <div className="relative z-10 flex flex-col items-center">
+        {showLoader && (
+          <div className="mb-6">
+            <div className="w-14 h-14 border-5 border-white/30 border-t-white rounded-full animate-spin shadow-2xl" />
+          </div>
+        )}
+
+        <div className="text-white text-5xl font-extrabold tracking-tight drop-shadow-2xl mb-3 animate-bounce">
+          {APP_NAME}
+        </div>
+
+        <div className="flex items-center gap-2 px-6 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 shadow-xl">
+          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+          <div className="text-blue-50 text-sm font-medium tracking-wide">
+            {APP_SPLASH_MESSAGE}
+          </div>
+        </div>
       </div>
     </div>
   );

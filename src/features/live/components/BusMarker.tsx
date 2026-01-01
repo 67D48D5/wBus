@@ -13,11 +13,11 @@ import { useBusData } from "@live/hooks/useBusData";
 import { getSnappedPosition } from "@live/utils/getSnappedPos";
 import { getDirectionIcon } from "@live/utils/directionIcons";
 
-export default function BusMarker({ 
-  routeName, 
+export default function BusMarker({
+  routeName,
   onPopupOpen,
   onPopupClose
-}: { 
+}: {
   routeName: string;
   onPopupOpen?: (routeName: string) => void;
   onPopupClose?: () => void;
@@ -30,34 +30,35 @@ export default function BusMarker({
   const createBusIconWithLabel = useMemo(() => {
     return (routeNumber: string) => {
       if (typeof window === "undefined") return busIcon;
-      
+
       // Escape HTML to prevent XSS
       const escapeHtml = (text: string) => {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
       };
-      
+
       const escapedRouteNumber = escapeHtml(routeNumber);
-      
+
       return L.divIcon({
         html: `
-          <div style="position: relative; width: 29px; height: 43px;">
-            <img src="/icons/bus-icon.png" style="width: 29px; height: 43px;" />
+          <div style="position: relative; width: 29px; height: 43px; filter: drop-shadow(0 2px 8px rgba(37, 99, 235, 0.4));">
+            <img src="/icons/bus-icon.png" style="width: 29px; height: 43px; transition: transform 0.3s ease;" />
             <div style="
               position: absolute;
-              top: 8px;
+              top: 7px;
               left: 50%;
               transform: translateX(-50%);
-              background: rgba(255, 255, 255, 0.95);
-              color: #003876;
+              background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+              color: white;
               font-size: 10px;
               font-weight: bold;
-              padding: 1px 3px;
-              border-radius: 3px;
-              border: 1px solid #003876;
+              padding: 2px 5px;
+              border-radius: 6px;
+              border: 1.5px solid white;
               white-space: nowrap;
-              box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+              box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+              letter-spacing: 0.3px;
             ">
               ${escapedRouteNumber}
             </div>
@@ -109,11 +110,34 @@ export default function BusMarker({
             },
           }}
         >
-          <Popup autoPan={false}>
-            <div className="font-bold mb-1">
-              {getDirectionIcon(direction)} {bus.routenm}번
+          <Popup autoPan={false} className="custom-bus-popup">
+            <div className="min-w-[180px]">
+              <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white px-4 py-2.5 -mx-5 -mt-4 mb-3 rounded-t-lg shadow-md">
+                <div className="flex items-center gap-2">
+                  {(() => {
+                    const DirectionIcon = getDirectionIcon(direction);
+                    return <DirectionIcon className="w-5 h-5" />;
+                  })()}
+                  <span className="font-bold text-base tracking-tight">
+                    {bus.routenm}번 버스
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-2 px-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-gray-500 w-16">차량번호</span>
+                  <span className="text-sm font-bold text-gray-900 bg-gray-100 px-3 py-1 rounded-md">
+                    {bus.vehicleno}
+                  </span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-xs font-semibold text-gray-500 w-16 mt-1">현재위치</span>
+                  <span className="text-sm text-gray-700 font-medium flex-1">
+                    {bus.nodenm}
+                  </span>
+                </div>
+              </div>
             </div>
-            {bus.vehicleno}, {bus.nodenm}
           </Popup>
         </RotatedMarker>
       ))}

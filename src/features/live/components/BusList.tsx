@@ -72,20 +72,26 @@ export default function BusList({ routeNames }: BusListProps) {
   }, [map]);
 
   return (
-    <div className="fixed bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl w-64 z-20 border border-gray-200">
-      <div className="px-4 pt-4 pb-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-xl">
-        <h2 className="text-sm font-bold text-gray-800 mb-1 flex items-center gap-2">
+    <div className="fixed bottom-4 left-4 bg-white/98 backdrop-blur-md rounded-2xl shadow-2xl w-72 z-20 border border-gray-200/50 overflow-hidden transition-all duration-300 hover:shadow-blue-200/50">
+      <div className="px-5 pt-5 pb-3 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-t-2xl">
+        <h2 className="text-base font-bold text-white mb-2 flex items-center gap-2 tracking-tight">
           전체 버스 목록
         </h2>
-        <p className="text-xs text-gray-600">
-          {isNoData ? "운행 중인 버스 없음" : `${allBuses.length}대 운행 중`}
-        </p>
+        <div className="flex items-center gap-2">
+          <div className={`h-2 w-2 rounded-full animate-pulse ${isNoData ? 'bg-gray-300' : 'bg-green-400'}`}></div>
+          <p className="text-sm text-blue-50 font-medium">
+            {isNoData ? "운행 중인 버스 없음" : `${allBuses.length}대 운행 중`}
+          </p>
+        </div>
       </div>
 
-      <ul className="text-sm text-gray-800 max-h-[120px] overflow-y-auto divide-y divide-gray-100 px-2 pb-2">
+      <ul className="text-sm text-gray-800 max-h-[140px] overflow-y-auto px-3 py-2 space-y-1.5">
         {isNoData ? (
           <li
-            className={`py-3 px-2 text-xs text-center ${isErrorState ? "text-red-500" : "text-gray-500"}`}
+            className={`py-4 px-3 text-sm text-center rounded-lg ${isErrorState
+              ? "bg-red-50 text-red-600 border border-red-200"
+              : "bg-gray-50 text-gray-500 border border-gray-200"
+              }`}
           >
             {message}
           </li>
@@ -98,16 +104,24 @@ export default function BusList({ routeNames }: BusListProps) {
             return (
               <li
                 key={`${routeName}-${bus.vehicleno}`}
-                className="flex justify-between items-center py-2.5 px-2 cursor-pointer hover:bg-blue-50 transition-all duration-200 rounded-lg group"
+                className="flex justify-between items-center py-3 px-3 cursor-pointer bg-gradient-to-r from-gray-50 to-blue-50/50 hover:from-blue-100 hover:to-indigo-100 transition-all duration-300 rounded-xl group border border-transparent hover:border-blue-300 hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
                 onClick={() => handleBusClick(bus.gpslati, bus.gpslong)}
               >
-                <div className="flex flex-col gap-0.5">
-                  <span className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors">{bus.vehicleno}</span>
-                  <span className="text-[10px] font-semibold text-white bg-blue-600 rounded px-1.5 py-0.5 inline-block w-fit">{routeName}번</span>
+                <div className="flex flex-col gap-1">
+                  <span className="font-bold text-base text-gray-900 group-hover:text-blue-700 transition-colors">
+                    {bus.vehicleno}
+                  </span>
+                  <span className="text-[11px] font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full px-2.5 py-1 inline-block w-fit shadow-sm">
+                    {routeName}번
+                  </span>
                 </div>
-                <span className="text-gray-600 text-[11px] text-right max-w-[120px] truncate">
-                  {bus.nodenm} {getDirectionIcon(direction)}
-                </span>
+                <div className="flex items-center gap-1 text-gray-600 group-hover:text-gray-900 text-xs text-right max-w-[130px] font-medium transition-colors">
+                  <span className="truncate">{bus.nodenm}</span>
+                  {(() => {
+                    const DirectionIcon = getDirectionIcon(direction);
+                    return <DirectionIcon className="w-3.5 h-3.5 flex-shrink-0" />;
+                  })()}
+                </div>
               </li>
             );
           })

@@ -63,10 +63,15 @@ export default function MyLocation() {
   return (
     <button
       onClick={handleClick}
-      className="fixed bottom-4 right-4 z-30 bg-white hover:bg-blue-700 text-black text-xs px-3 py-2 rounded shadow-md"
+      className="fixed bottom-6 right-6 z-30 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 hover:from-blue-500 hover:via-blue-600 hover:to-indigo-600 text-white p-4 rounded-full shadow-2xl hover:shadow-3xl hover:shadow-blue-400/60 transition-all duration-300 hover:scale-125 active:scale-95 border-2 border-white/30 backdrop-blur-sm drop-shadow-lg"
+      title="내 위치 찾기"
     >
       {isClient && findMyLocationIcon && (
-        <img src={findMyLocationIcon.options.iconUrl} alt="내 위치 찾기" />
+        <img
+          src={findMyLocationIcon.options.iconUrl}
+          alt="내 위치 찾기"
+          className="w-6 h-6 brightness-0 invert"
+        />
       )}
     </button>
   );
