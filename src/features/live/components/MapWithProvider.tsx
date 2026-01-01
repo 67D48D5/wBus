@@ -3,7 +3,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useBus } from "react-leaflet";
+import { useMap } from "react-leaflet";
 
 import { useBusContext } from "@live/context/MapContext";
 
@@ -12,7 +12,7 @@ interface MapWithProviderProps {
 }
 
 export default function MapWithProvider({ children }: MapWithProviderProps) {
-  const leafletMap = useBus();
+  const leafletMap = useMap();
   const { setMap } = useBusContext();
 
   useEffect(() => {

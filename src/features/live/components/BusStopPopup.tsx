@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 
 import {
-    formatArrivalTime,
     formatRouteNumber,
     formatVehicleType,
     secondsToMinutes,
@@ -38,12 +37,10 @@ function ArrivalList({
     loading,
     error,
     arrivalData,
-    directionLabel,
 }: {
     loading: boolean;
     error: string | null;
     arrivalData: ArrivalInfo[];
-    directionLabel: string;
 }) {
     const hasData = arrivalData.length > 0;
 
@@ -79,7 +76,6 @@ function ArrivalList({
                 <ul className="space-y-1.5">
                     {arrivalData.map((bus, idx) => {
                         const minutes = secondsToMinutes(bus.arrtime);
-                        const timeString = formatArrivalTime(minutes, bus.arrprevstationcnt);
                         const vehicleType = formatVehicleType(bus.vehicletp);
                         const urgencyColor = getUrgencyColor(minutes);
                         const stopCount = formatStopCount(bus.arrprevstationcnt);
@@ -117,14 +113,6 @@ function ArrivalList({
                                         </div>
                                     </div>
                                 </div>
-
-                                {/* Direction label */}
-                                <div className="px-2 pb-1.5 pt-0 pl-3">
-                                    <div className="flex items-center gap-1 text-[10px] text-gray-500">
-                                        <span>→</span>
-                                        <span className="truncate">{directionLabel}</span>
-                                    </div>
-                                </div>
                             </li>
                         );
                     })}
@@ -136,7 +124,6 @@ function ArrivalList({
 
 export default function BusStopPopup({
     stopId,
-    directionLabel,
 }: Props) {
     const {
         data: arrivalRawData,
@@ -154,17 +141,11 @@ export default function BusStopPopup({
 
     return (
         <div className="w-full max-w-[360px]">
-            {/* Header */}
-            <div className="mb-2 pb-2 border-b border-gray-200">
-                <p className="text-xs text-gray-500 mt-0.5">실시간 도착 정보</p>
-            </div>
-
             {/* Arrival list */}
             <ArrivalList
                 loading={loading}
                 error={error}
                 arrivalData={sortedArrivalData}
-                directionLabel={directionLabel}
             />
         </div>
     );

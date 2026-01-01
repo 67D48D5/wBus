@@ -3,7 +3,7 @@
 "use client";
 
 import { useState } from "react";
-import { Marker, Popup, useBus, useBusEvents } from "react-leaflet";
+import { Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 
 import { BUSSTOP_MARKER_MIN_ZOOM } from "@core/constants/env";
 
@@ -25,10 +25,10 @@ export default function BusStopMarker({ routeName }: Props) {
   const { busStopIcon } = useIcons();
   const getDirection = useBusDirection(routeName);
 
-  const map = useBus();
+  const map = useMap();
   const [zoom, setZoom] = useState(map.getZoom());
 
-  useBusEvents({
+  useMapEvents({
     zoomend: () => {
       setZoom(map.getZoom());
     },
