@@ -2,11 +2,22 @@
     "routeId": "34",
     "routeName": "34번",
     "description": "장양리 ↔ 연세대",
-    "lastUpdated": "2026-01-01",
+    "lastUpdated": "2026-01-02",
     "directions": [
         "연세대",
         "장양리"
     ],
+    "routeDetails": [
+        "특정 시간에만 원주역 경유"
+    ],
+    "featuredStops": {
+        "general": [
+            "원주종합버스터미널",
+            "흥업사거리",
+            "매지리",
+            "연세대"
+        ]
+    },
     "schedule": {
         "weekday": {
             "06": {

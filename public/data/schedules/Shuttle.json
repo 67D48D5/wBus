@@ -1,7 +1,7 @@
 {
     "routeId": "Shuttle",
     "routeName": "셔틀버스",
-    "description": "1 ~ 4호차 전체 노선",
+    "description": "1 - 4호차",
     "lastUpdated": "2025-08-17",
     "directions": [
         "등교 (원주/여주/만종)",

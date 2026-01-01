@@ -2,11 +2,25 @@
     "routeId": "30",
     "routeName": "30번",
     "description": "장양리 ↔ 연세대",
-    "lastUpdated": "2026-01-01",
+    "lastUpdated": "2026-01-02",
     "directions": [
         "연세대",
         "장양리"
     ],
+    "routeDetails": [
+        "터미널로 가는 가장 빠른 시내버스",
+        "오후 11시 배차는 원주역 미경유"
+    ],
+    "featuredStops": {
+        "general": [
+            "원주종합버스터미널",
+            "베스파타운(무실동)",
+            "흥업사거리",
+            "매지리",
+            "원주역",
+            "연세대"
+        ]
+    },
     "schedule": {
         "general": {
             "06": {
