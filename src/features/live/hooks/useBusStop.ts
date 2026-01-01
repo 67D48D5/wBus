@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 
-import { useBusContext } from "@live/context/MapContext";
-import { CacheManager } from "@core/cache/CacheManager";
-import { getHaversineDistance } from "@live/utils/geoUtils";
-
 import { getBusStopLocationData } from "@live/api/getRealtimeData";
 import { getRouteInfo } from "@live/api/getRouteMap";
+
+import { CacheManager } from "@core/cache/CacheManager";
+
+import { useBusContext } from "@live/context/MapContext";
+
+import { getHaversineDistance } from "@live/utils/geoUtils";
 
 import type { BusStop } from "@live/models/data";
 

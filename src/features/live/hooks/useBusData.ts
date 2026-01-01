@@ -1,11 +1,13 @@
 // src/features/live/hooks/useBusData.ts
 
 import { useEffect, useMemo, useState } from "react";
+
 import { getRouteInfo } from "@live/api/getRouteMap";
+import { mergePolylines } from "@live/api/getPolyline";
+
 import { usePolyline } from "@live/hooks/usePolyline";
 import { useBusDirection } from "@live/hooks/useBusDirection";
 import { useBusLocationData } from "@live/hooks/useBusLocation";
-import { mergePolylines } from "@live/api/getPolyline";
 
 import type { RouteInfo } from "@live/models/data";
 import type { BusItem } from "@live/models/data";

@@ -3,6 +3,8 @@
 "use client";
 
 import React, { useState, useCallback, useMemo } from "react";
+import { MapContainer, TileLayer } from "react-leaflet";
+
 import {
   MAP_URL,
   MAP_ATTRIBUTION,
@@ -12,8 +14,6 @@ import {
   MAP_MAX_ZOOM,
   MAP_MAX_BOUNDS,
 } from "@core/constants/env";
-
-import { MapContainer, TileLayer } from "react-leaflet";
 
 import MapProvider from "./MapWithProvider";
 
@@ -28,20 +28,20 @@ type MapProps = {
 /**
  * Memoized route marker component to prevent unnecessary re-renders
  */
-const RouteMarkers = React.memo(({ 
-  routeName, 
+const RouteMarkers = React.memo(({
+  routeName,
   selectedRoute,
-  onPopupOpen, 
-  onPopupClose 
-}: { 
+  onPopupOpen,
+  onPopupClose
+}: {
   routeName: string;
   selectedRoute: string | null;
   onPopupOpen: (routeName: string) => void;
   onPopupClose: () => void;
 }) => (
   <>
-    <BusMarker 
-      routeName={routeName} 
+    <BusMarker
+      routeName={routeName}
       onPopupOpen={onPopupOpen}
       onPopupClose={onPopupClose}
     />

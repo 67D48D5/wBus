@@ -4,14 +4,15 @@
 
 import { useState, useMemo, useEffect, memo } from "react";
 
-import { BusData, BusTime } from "@schedule/models/bus";
 import { DAY_TYPES, DayType } from "@core/constants/env";
 import { UI_TEXT } from "@core/constants/locale";
 
+import { BusData, BusTime } from "@schedule/models/bus";
+
 // Map day type values to labels
 const DAY_TYPE_LABELS: Record<string, string> = {
-  [DAY_TYPES.WEEKDAY]: '평일',
-  [DAY_TYPES.WEEKEND]: '주말/공휴일',
+    [DAY_TYPES.WEEKDAY]: '평일',
+    [DAY_TYPES.WEEKEND]: '주말/공휴일',
 };
 
 interface NextBusInfo {

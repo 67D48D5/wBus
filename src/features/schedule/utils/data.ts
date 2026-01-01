@@ -1,7 +1,8 @@
 // src/features/schedule/utils/data.ts
 
-import { BusData } from '@schedule/models/bus';
 import { DATA_SOURCE } from '@core/constants/env';
+
+import { BusData } from '@schedule/models/bus';
 
 import { promises as fs } from 'fs';
 import path from 'path';

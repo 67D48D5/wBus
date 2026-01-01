@@ -3,12 +3,13 @@
 import { useMemo } from "react";
 import { AlertTriangle, Bus, Clock, MapPin } from "lucide-react";
 
+import { ARRIVAL_MESSAGES, SCHEDULE_MESSAGES, TIME_LABELS } from "@core/constants/locale";
+
 import {
     formatRouteNumber,
     formatVehicleType,
     secondsToMinutes,
 } from "@live/utils/formatters";
-import { ARRIVAL_MESSAGES, SCHEDULE_MESSAGES, TIME_LABELS } from "@core/constants/locale";
 import { useBusArrivalInfo } from "@live/hooks/useBusArrivalInfo";
 
 import type { ArrivalInfo } from "@live/models/data";

@@ -3,6 +3,7 @@
 import { useMemo, useCallback } from "react";
 
 import { useBusStop } from "./useBusStop";
+
 import { ALWAYS_UPWARD_NODE_IDS } from "@core/constants/env";
 
 import type { BusStop } from "@live/models/data";

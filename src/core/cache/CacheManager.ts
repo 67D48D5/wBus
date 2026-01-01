@@ -47,7 +47,7 @@ export class CacheManager<T> {
   private evictLRU(): void {
     const oldestKey = Array.from(this.accessTimes.entries())
       .reduce((oldest, curr) => (curr[1] < oldest[1] ? curr : oldest))[0];
-    
+
     this.cache.delete(oldestKey);
     this.accessTimes.delete(oldestKey);
     this.pendingRequests.delete(oldestKey);

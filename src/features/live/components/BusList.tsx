@@ -5,9 +5,10 @@
 import React, { useMemo, useCallback } from "react";
 
 import { useBusContext } from "@live/context/MapContext";
+import { getDirectionIcon } from "@live/utils/directionIcons";
 import { useSortedBusList } from "@live/hooks/useSortedBusList";
 import { getBusErrorMessage, isWarningError } from "@live/utils/errorMessages";
-import { getDirectionIcon } from "@live/utils/directionIcons";
+
 
 type BusListProps = {
   routeNames: string[];

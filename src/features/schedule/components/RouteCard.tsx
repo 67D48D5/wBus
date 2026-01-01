@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { memo } from 'react';
 
 import NextBusTime from './NextBusTime';
+
 import { BusData } from '@schedule/models/bus';
 
 interface RouteCardProps {

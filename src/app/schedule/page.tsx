@@ -5,9 +5,9 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 import RouteCard from '@schedule/components/RouteCard';
+import { getAllRoutes } from '@schedule/utils/data';
 import { METADATA, UI_TEXT, SITE_INFO } from '@core/constants/locale';
 import { COMMON } from '@core/constants/locale';
-import { getAllRoutes } from '@schedule/utils/data';
 
 export const metadata: Metadata = {
   title: METADATA.TITLE,

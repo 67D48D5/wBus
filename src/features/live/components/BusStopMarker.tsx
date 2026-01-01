@@ -3,8 +3,8 @@
 "use client";
 
 import { useState } from "react";
-import { Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 import { MapPinned } from "lucide-react";
+import { Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 
 import { BUSSTOP_MARKER_MIN_ZOOM } from "@core/constants/env";
 

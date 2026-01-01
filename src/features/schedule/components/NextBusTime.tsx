@@ -5,6 +5,7 @@
 import { memo, useState, useEffect } from 'react';
 
 import { UI_TEXT, COMMON } from '@core/constants/locale';
+
 import { BusData } from '@schedule/models/bus';
 import { getNearestBusTime } from '@schedule/utils/time';
 

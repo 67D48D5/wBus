@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { MapPin, Clock, Bus } from "lucide-react";
+
 import { SITE_INFO, UI_TEXT } from "@core/constants/locale";
 
 /**

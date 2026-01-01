@@ -1,6 +1,7 @@
 // src/features/live/components/Splash.tsx
 
 import { useState, useEffect } from "react";
+
 import { APP_NAME, APP_SPLASH_MESSAGE } from "@core/constants/env";
 
 interface SplashProps {

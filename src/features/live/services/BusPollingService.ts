@@ -1,6 +1,7 @@
 // src/features/live/services/BusPollingService.ts
 
 import { API_REFRESH_INTERVAL } from "@core/constants/env";
+
 import { getBusLocationData } from "@live/api/getRealtimeData";
 import { getRouteMap } from "@live/api/getRouteMap";
 
@@ -74,7 +75,7 @@ export class BusPollingService {
     const cleanupKeys = <T>(obj: Record<string, T>, shouldKeep: (key: string) => boolean) => {
       Object.keys(obj).filter(k => !shouldKeep(k)).forEach(k => delete obj[k]);
     };
-    
+
     cleanupKeys(this.cache, k => k === currentRoute);
     cleanupKeys(this.dataListeners, k => k === currentRoute || (this.dataListeners[k]?.size ?? 0) > 0);
     cleanupKeys(this.errorListeners, k => k === currentRoute || (this.errorListeners[k]?.size ?? 0) > 0);

@@ -1,6 +1,7 @@
 // src/features/live/api/getRealtimeData.ts
 
 import { fetchAPI } from "@core/api/fetchAPI";
+
 import type { BusItem, BusStop, ArrivalInfo } from "@live/models/data";
 
 /**

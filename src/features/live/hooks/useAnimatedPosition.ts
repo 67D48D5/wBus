@@ -3,6 +3,7 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
+
 import type { LatLngTuple } from "leaflet";
 
 interface AnimatedPositionState {

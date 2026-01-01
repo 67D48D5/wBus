@@ -6,12 +6,11 @@ import { useMemo } from "react";
 import { Popup } from "react-leaflet";
 import L from "leaflet";
 
-import { AnimatedBusMarker } from "@live/components/AnimatedBusMarker";
 import { useIcons } from "@live/hooks/useIcons";
-
 import { useBusData } from "@live/hooks/useBusData";
 import { getSnappedPosition } from "@live/utils/getSnappedPos";
 import { getDirectionIcon } from "@live/utils/directionIcons";
+import { AnimatedBusMarker } from "@live/components/AnimatedBusMarker";
 
 import type { LatLngTuple } from "leaflet";
 

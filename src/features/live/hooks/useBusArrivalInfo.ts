@@ -4,7 +4,9 @@ import { useEffect, useState, useRef, useCallback } from "react";
 
 import { API_REFRESH_INTERVAL } from "@core/constants/env";
 import { ARRIVAL_MESSAGES } from "@core/constants/locale";
+
 import { getBusArrivalInfoData } from "@live/api/getRealtimeData";
+
 import type { ArrivalInfo } from "@live/models/data";
 
 export function useBusArrivalInfo(busStopId: string | null) {
