@@ -3,6 +3,7 @@
 "use client";
 
 import React, { Component, ReactNode, ErrorInfo } from "react";
+import { ERROR_MESSAGES, COMMON } from "@core/constants/locale";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -66,10 +67,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               <span className="text-2xl">⚠️</span>
             </div>
             <h2 className="text-xl font-bold text-gray-900 text-center mb-2">
-              문제가 발생했습니다
+              {ERROR_MESSAGES.ERROR_OCCURRED}
             </h2>
             <p className="text-gray-600 text-center mb-6">
-              앱을 다시 시작해주세요.
+              {ERROR_MESSAGES.RESTART_APP}
             </p>
             {process.env.NODE_ENV === "development" && this.state.error && (
               <div className="bg-red-50 border border-red-200 rounded p-3 mb-4">
@@ -82,7 +83,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               onClick={this.handleReset}
               className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
             >
-              다시 시도
+              {COMMON.RETRY}
             </button>
           </div>
         </div>

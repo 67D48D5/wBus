@@ -7,9 +7,9 @@ import {
     formatVehicleType,
     secondsToMinutes,
 } from "@live/utils/formatters";
-
-import { useBusArrivalInfo } from "@live/hooks/useBusArrivalInfo";
+import { ARRIVAL_MESSAGES, SCHEDULE_MESSAGES, TIME_LABELS } from "@core/constants/locale";
 import type { ArrivalInfo } from "@live/models/data";
+import { useBusArrivalInfo } from "@live/hooks/useBusArrivalInfo";
 
 type Props = {
     routeName: string;
@@ -27,9 +27,9 @@ function getUrgencyColor(minutes: number) {
 
 // Helper to format remaining stops
 function formatStopCount(count: number) {
-    if (count === 0) return "곧 도착";
-    if (count === 1) return "1정거장 전";
-    return `${count}정거장 전`;
+    if (count === 0) return SCHEDULE_MESSAGES.ARRIVING_SOON;
+    if (count === 1) return SCHEDULE_MESSAGES.ONE_STOP_AWAY;
+    return SCHEDULE_MESSAGES.STOPS_AWAY(count);
 }
 
 // Real-time arrival list component
@@ -59,7 +59,7 @@ function ArrivalList({
                 <div className="flex items-center justify-center py-6">
                     <div className="flex flex-col items-center gap-2">
                         <div className="animate-spin h-8 w-8 border-3 border-blue-500 border-t-transparent rounded-full"></div>
-                        <p className="text-xs text-gray-500">도착 정보를 불러오는 중...</p>
+                        <p className="text-xs text-gray-500">{ARRIVAL_MESSAGES.LOADING}</p>
                     </div>
                 </div>
             )}
@@ -67,8 +67,8 @@ function ArrivalList({
             {!hasData && !loading && (
                 <div className="flex flex-col items-center justify-center py-6 text-center">
                     <span className="text-3xl mb-2">🚌</span>
-                    <p className="text-sm text-gray-500 font-medium">예정된 버스가 없습니다</p>
-                    <p className="text-xs text-gray-400 mt-1">운행 시간을 확인해주세요</p>
+                    <p className="text-sm text-gray-500 font-medium">{ARRIVAL_MESSAGES.NO_BUSES}</p>
+                    <p className="text-xs text-gray-400 mt-1">{ARRIVAL_MESSAGES.CHECK_SCHEDULE}</p>
                 </div>
             )}
 
@@ -105,7 +105,7 @@ function ArrivalList({
                                     <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
                                         <div className={`flex items-center gap-1 px-2 py-0.5 rounded-md ${urgencyColor} font-bold text-sm whitespace-nowrap`}>
                                             <span>🕐</span>
-                                            <span>{minutes}분</span>
+                                            <span>{minutes}${TIME_LABELS.MINUTE_SUFFIX}</span>
                                         </div>
                                         <div className="flex items-center gap-0.5 text-[10px] text-gray-500 whitespace-nowrap">
                                             <span>📍</span>

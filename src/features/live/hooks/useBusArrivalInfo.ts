@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 
 import { API_REFRESH_INTERVAL } from "@core/constants/env";
+import { ARRIVAL_MESSAGES } from "@core/constants/locale";
 import { getBusArrivalInfoData } from "@live/api/getRealtimeData";
 import type { ArrivalInfo } from "@live/models/data";
 
@@ -29,7 +30,7 @@ export function useBusArrivalInfo(busStopId: string | null) {
       setData(result);
     } catch (e) {
       console.error(e);
-      setError("도착 정보를 불러오는 데 실패했습니다.");
+      setError(ARRIVAL_MESSAGES.LOAD_FAILED);
     } finally {
       setLoading(false);
     }

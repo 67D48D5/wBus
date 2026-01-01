@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { MapPin, Clock, Bus } from "lucide-react";
+import { SITE_INFO, UI_TEXT, COMMON } from "@core/constants/locale";
 
 /**
  * Main landing page for wBus application.
@@ -21,7 +22,7 @@ export default function HomePage() {
           wBus
         </h1>
         <p className="text-slate-500 dark:text-slate-400 text-sm">
-          원주 시내버스 정보 서비스
+          {SITE_INFO.DESCRIPTION}
         </p>
       </header>
 
@@ -39,10 +40,10 @@ export default function HomePage() {
               </div>
               <div className="flex-1">
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1">
-                  실시간 버스 위치
+                  {UI_TEXT.REAL_TIME_LOCATION}
                 </h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                  지도에서 버스 위치를 실시간으로 확인하세요
+                  {UI_TEXT.REAL_TIME_LOCATION_DESC}
                 </p>
               </div>
               <span className="text-2xl text-slate-300 dark:text-slate-600 group-hover:text-blue-500 dark:group-hover:text-blue-400 group-hover:translate-x-1 transition-all duration-200">
@@ -62,10 +63,10 @@ export default function HomePage() {
               </div>
               <div className="flex-1">
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1">
-                  시간표 조회
+                  {UI_TEXT.SCHEDULE_INQUIRY}
                 </h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                  노선별 버스 운행 시간표를 확인하세요
+                  {UI_TEXT.SCHEDULE_INQUIRY_DESC}
                 </p>
               </div>
               <span className="text-2xl text-slate-300 dark:text-slate-600 group-hover:text-purple-500 dark:group-hover:text-purple-400 group-hover:translate-x-1 transition-all duration-200">
@@ -78,7 +79,7 @@ export default function HomePage() {
         {/* Footer Info */}
         <div className="mt-12 text-center">
           <p className="text-xs text-slate-400 dark:text-slate-500">
-            원주시 시내버스 실시간 정보 제공
+            {SITE_INFO.FOOTER_TEXT}
           </p>
         </div>
       </main>

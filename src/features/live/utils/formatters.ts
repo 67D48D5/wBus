@@ -1,5 +1,7 @@
 // src/features/live/utils/formatters.ts
 
+import { SCHEDULE_MESSAGES } from "@core/constants/locale";
+
 /**
  * Utility functions for formatting data for display
  */
@@ -14,7 +16,7 @@ export function formatArrivalTime(minutes: number, stopsAway?: number): string {
   const stopsText = stopsAway !== undefined ? ` (${stopsAway} 정류장 전)` : "";
 
   if (minutes <= 3) {
-    return `곧 도착${stopsText}`;
+    return `${SCHEDULE_MESSAGES.ARRIVING_SOON}${stopsText}`;
   }
 
   return `${minutes}분${stopsText}`;
@@ -44,5 +46,5 @@ export function formatVehicleType(vehicleType: string): string {
  * @returns Formatted route number with "번" suffix
  */
 export function formatRouteNumber(routeNo: string): string {
-  return `${routeNo}번`;
+  return `${routeNo}${SCHEDULE_MESSAGES.ROUTE_SUFFIX}`;
 }

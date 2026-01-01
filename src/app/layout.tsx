@@ -9,6 +9,7 @@ import { ThemeProvider } from "next-themes";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { MapProvider } from "@live/context/MapContext";
+import { SITE_INFO } from "@core/constants/locale";
 
 // Google Fonts (Geist Safns, Geist Mono)
 const geistSans = Geist({
@@ -24,7 +25,7 @@ const geistMono = Geist_Mono({
 // Page Metadata
 export const metadata = {
   title: "wBus",
-  description: "원주 시내버스 정보 서비스",
+  description: SITE_INFO.DESCRIPTION,
   icons: {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",

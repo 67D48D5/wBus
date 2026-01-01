@@ -1,9 +1,11 @@
 // src/core/constants/env.ts
 
+import { APP_MESSAGES } from "./locale";
+
 export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "wBus";
 export const APP_SPLASH_MESSAGE =
   process.env.NEXT_PUBLIC_APP_SPLASH_MESSAGE ||
-  "실시간 버스 정보를 불러오는 중...";
+  APP_MESSAGES.LOADING_INFO;
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "NOT_SET";
 export const API_REFRESH_INTERVAL =
@@ -51,39 +53,13 @@ export const ALWAYS_UPWARD_NODE_IDS =
     "WJB251036041",
   ];
 
-// Day types
+// Day types - Configuration
 export const DAY_TYPES = {
   WEEKDAY: 'weekday',
   WEEKEND: 'weekend',
 } as const;
 
-export const DAY_TYPE_LABELS = {
-  [DAY_TYPES.WEEKDAY]: '평일',
-  [DAY_TYPES.WEEKEND]: '주말/공휴일',
-} as const;
-
 export type DayType = typeof DAY_TYPES[keyof typeof DAY_TYPES];
-
-// UI Text
-export const UI_TEXT = {
-  APP_TITLE: 'wBus',
-  SITE_DESCRIPTION: '원주 시내버스 시간표',
-  SITE_DESCRIPTION_FULL: '원주 시내버스 시간표',
-  BACK_TO_HOME: '시간표 목록으로',
-  NOTES_TITLE: '※ 비고 사항',
-  NO_BUSES: '-',
-  ROUTE_NOT_FOUND: '노선을 찾을 수 없습니다',
-  BUS_TIMETABLE_SUFFIX: '버스 시간표',
-  LAST_UPDATED: '최종 업데이트:',
-  LOADING: 'Loading...',
-  NO_BUSES_TODAY: '운행 예정인 버스가 없습니다.',
-} as const;
-
-// Metadata
-export const METADATA = {
-  TITLE: `wBus - 시간표`,
-  DESCRIPTION: `원주 시내버스 시간표`,
-} as const;
 
 // Theme
 export const THEME = {

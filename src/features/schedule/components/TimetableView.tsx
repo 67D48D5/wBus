@@ -5,7 +5,14 @@
 import { useState, useMemo, useEffect, memo } from "react";
 
 import { BusData, BusTime } from "@schedule/models/bus";
-import { DAY_TYPES, DAY_TYPE_LABELS, DayType, UI_TEXT } from "@core/constants/env";
+import { DAY_TYPES, DayType } from "@core/constants/env";
+import { UI_TEXT } from "@core/constants/locale";
+
+// Map day type values to labels
+const DAY_TYPE_LABELS: Record<string, string> = {
+  [DAY_TYPES.WEEKDAY]: '평일',
+  [DAY_TYPES.WEEKEND]: '주말/공휴일',
+};
 
 interface NextBusInfo {
     hour: string;
@@ -107,7 +114,7 @@ function TimetableView({ data }: { data: BusData }) {
 
             {data.featuredStops && Object.keys(data.featuredStops).length > 0 && (
                 <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-sm">
-                    <p className="font-bold text-slate-700 dark:text-slate-300 mb-2">주요 정류장</p>
+                    <p className="font-bold text-slate-700 dark:text-slate-300 mb-2">{UI_TEXT.MAJOR_STOPS}</p>
                     {Object.entries(data.featuredStops).map(([key, stops]) => (
                         <div key={key} className="mb-2 last:mb-0">
                             <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{key === 'general' ? '평일' : key === 'sunday' ? '일요일' : key}</p>
@@ -161,7 +168,7 @@ function TimetableView({ data }: { data: BusData }) {
                                     <span key={i} className="text-lg font-medium">
                                         {item.minute}{item.noteId && <sup className="text-red-500 ml-0.5">{item.noteId}</sup>}
                                     </span>
-                                )) ?? <span className="text-slate-300">{UI_TEXT.NO_BUSES}</span>}
+                                )) ?? <span className="text-slate-300">{UI_TEXT.NO_BUSES_SYMBOL}</span>}
                             </div>
                         </div>
                     );

@@ -4,7 +4,7 @@
 
 import { memo, useState, useEffect } from 'react';
 
-import { UI_TEXT } from '@core/constants/env';
+import { UI_TEXT, COMMON } from '@core/constants/locale';
 import { BusData } from '@schedule/models/bus';
 import { getNearestBusTime } from '@schedule/utils/time';
 
@@ -29,7 +29,7 @@ function NextBusTime({ data }: { data: BusData }) {
 
     // Avoid hydration mismatch by not rendering time-sensitive content on server
     if (!mounted) {
-        return <span className="text-xs text-slate-400">{UI_TEXT.LOADING}</span>;
+        return <span className="text-xs text-slate-400">{COMMON.LOADING}</span>;
     }
 
     if (!nearestBus) {

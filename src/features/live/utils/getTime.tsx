@@ -2,6 +2,7 @@
 
 import React, { JSX } from "react";
 import type { ReactNode } from "react";
+import { SCHEDULE_MESSAGES, TIME_LABELS } from "@core/constants/locale";
 
 /**
  * Converts a "HH:MM" formatted string to an integer representing minutes.
@@ -80,9 +81,9 @@ export function getFirstDeparture(
       const totalMin = hour * 60 + minute;
       const hours = Math.floor(totalMin / 60);
       const minutes = totalMin % 60;
-      return `${hours.toString().padStart(2, "0")}시 ${minutes
+      return `${hours.toString().padStart(2, "0")}${TIME_LABELS.HOUR_SUFFIX} ${minutes
         .toString()
-        .padStart(2, "0")}분`;
+        .padStart(2, "0")}${TIME_LABELS.MINUTE_SUFFIX}`;
     }
   }
 
@@ -99,8 +100,8 @@ export function renderScheduleStatusMessage(
 ): ReactNode { // Changed from JSX.Element to ReactNode for better type safety
   const headerText =
     departureColumn === "연세대"
-      ? "학생회관 정류장 출발"
-      : `${departureColumn} 버스 출발`;
+      ? SCHEDULE_MESSAGES.STATION_DEPARTURE_YONSEI
+      : SCHEDULE_MESSAGES.STATION_DEPARTURE(departureColumn!);
 
   let content: ReactNode;
 
@@ -108,8 +109,7 @@ export function renderScheduleStatusMessage(
     if (minutesLeft <= 3) {
       content = (
         <div>
-          대기 중인 버스가{" "}
-          <span className="text-red-600 font-semibold">곧 출발</span> 합니다.
+          {SCHEDULE_MESSAGES.WAITING_BUS_DEPARTING}
           <br />
           <span className="text-xs text-gray-500">({minutesLeft}분 이내)</span>
         </div>
@@ -129,15 +129,15 @@ export function renderScheduleStatusMessage(
     content = (
       <div>
         <div className="font-bold">
-          현재 출발 예정인 버스가 없습니다.
+          {SCHEDULE_MESSAGES.NO_SCHEDULED_BUSES}
           <br />
         </div>
-        가장 가까운 출발 시간 |{" "}
+        {SCHEDULE_MESSAGES.NEXT_DEPARTURE_TIME} |{" "}
         <span className="text-blue-700 font-semibold">{firstDeparture}</span>
       </div>
     );
   } else {
-    content = <div>시간표 정보가 없습니다.</div>;
+    content = <div>{SCHEDULE_MESSAGES.NO_TIMETABLE_INFO}</div>;
   }
 
   return (

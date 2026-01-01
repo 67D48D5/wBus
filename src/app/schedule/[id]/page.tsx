@@ -2,7 +2,7 @@
 
 import TimetableView from '@schedule/components/TimetableView';
 import { getAllRouteIds, getRouteData } from '@schedule/utils/data';
-import { UI_TEXT } from '@core/constants/env';
+import { UI_TEXT } from '@core/constants/locale';
 
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     return {
         title: `${data.routeName} - ${data.description}`,
-        description: `${data.routeName} ${UI_TEXT.BUS_TIMETABLE_SUFFIX} - ${data.description}`,
+        description: `${data.routeName} ${UI_TEXT.TIMETABLE_SUFFIX} - ${data.description}`,
     };
 }
 

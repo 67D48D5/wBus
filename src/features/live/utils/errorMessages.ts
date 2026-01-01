@@ -1,14 +1,15 @@
 // src/features/live/utils/errorMessages.ts
 
 import type { BusDataError } from "@live/models/error";
+import { ERROR_MESSAGES } from "@core/constants/locale";
 
 /**
  * Map of error codes to user-friendly messages
  */
 export const ERROR_MESSAGE_MAP: Record<string, string> = {
-  "ERR:NONE_RUNNING": "운행이 종료되었습니다.",
-  "ERR:NETWORK": "⚠️ 네트워크 오류가 발생했습니다.",
-  "ERR:INVALID_ROUTE": "⚠️ 유효하지 않은 노선입니다.",
+  "ERR:NONE_RUNNING": ERROR_MESSAGES.NONE_RUNNING,
+  "ERR:NETWORK": ERROR_MESSAGES.NETWORK,
+  "ERR:INVALID_ROUTE": ERROR_MESSAGES.INVALID_ROUTE,
 };
 
 /**
@@ -18,7 +19,7 @@ export const ERROR_MESSAGE_MAP: Record<string, string> = {
  */
 export function getBusErrorMessage(error: BusDataError): string {
   if (!error) return "";
-  return ERROR_MESSAGE_MAP[error] ?? "⚠️ 알 수 없는 오류가 발생했습니다.";
+  return ERROR_MESSAGE_MAP[error] ?? ERROR_MESSAGES.UNKNOWN;
 }
 
 /**
