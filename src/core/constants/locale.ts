@@ -102,7 +102,7 @@ export const APP_MESSAGES = {
 
 export const SITE_INFO = {
     DESCRIPTION: '원주 시내버스 정보 서비스',
-    SHORT_DESCRIPTION: '원주 시내버스 시간표',
+    SHORT_DESCRIPTION: '원주 시내버스 시간표 및 실시간 위치 정보 서비스',
     FOOTER_TEXT: '원주시 시내버스 실시간 정보 제공',
 } as const;
 
@@ -144,6 +144,6 @@ export const FEATURED_STOPS_LABELS = {
 // ============================================================================
 
 export const METADATA = {
-    TITLE: 'wBus - 시간표',
-    DESCRIPTION: '원주 시내버스 시간표',
+    TITLE: 'wBus',
+    DESCRIPTION: '원주 시내버스 시간표 및 실시간 위치 정보 서비스',
 } as const;
