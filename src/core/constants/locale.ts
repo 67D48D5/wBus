@@ -135,6 +135,7 @@ export const DAY_TYPE_LABELS = {
 } as const;
 
 export const FEATURED_STOPS_LABELS = {
+    WEEKDAY: '평일',
     SUNDAY: '일요일',
 } as const;
 
