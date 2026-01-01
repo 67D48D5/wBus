@@ -39,12 +39,6 @@ export const MAP_MIN_ZOOM =
 export const MAP_MAX_ZOOM =
   Number(process.env.NEXT_PUBLIC_MAP_MAX_ZOOM) || 19;
 
-export const BUSSTOP_TARGET_NODE_IDS =
-  process.env.NEXT_PUBLIC_BUSSTOP_TARGET_NODE_IDS?.split(",") || [
-    "WJB251036041",
-  ];
-export const BUSSTOP_YONSEI_END_ROUTES =
-  process.env.NEXT_PUBLIC_BUSSTOP_YONSEI_END_ROUTES?.split(",") || ["30", "34"];
 export const BUSSTOP_MARKER_MIN_ZOOM =
   Number(process.env.NEXT_PUBLIC_BUSSTOP_MARKER_MIN_ZOOM) || 15;
 
@@ -52,7 +46,67 @@ export const BUSSTOP_MARKER_MIN_ZOOM =
  * Bus stop node IDs that should always be considered as upward direction
  * This is used for special cases where direction detection needs to be overridden
  */
-export const ALWAYS_UPWARD_NODE_IDS = 
+export const ALWAYS_UPWARD_NODE_IDS =
   process.env.NEXT_PUBLIC_ALWAYS_UPWARD_NODE_IDS?.split(",") || [
     "WJB251036041",
   ];
+
+// Day types
+export const DAY_TYPES = {
+  WEEKDAY: 'weekday',
+  WEEKEND: 'weekend',
+} as const;
+
+export const DAY_TYPE_LABELS = {
+  [DAY_TYPES.WEEKDAY]: '평일',
+  [DAY_TYPES.WEEKEND]: '주말/공휴일',
+} as const;
+
+export type DayType = typeof DAY_TYPES[keyof typeof DAY_TYPES];
+
+// UI Text
+export const UI_TEXT = {
+  APP_TITLE: 'wBus',
+  SITE_DESCRIPTION: '원주 시내버스 시간표',
+  SITE_DESCRIPTION_FULL: '원주 시내버스 시간표',
+  BACK_TO_HOME: '시간표 목록으로',
+  NOTES_TITLE: '※ 비고 사항',
+  NO_BUSES: '-',
+  ROUTE_NOT_FOUND: '노선을 찾을 수 없습니다',
+  BUS_TIMETABLE_SUFFIX: '버스 시간표',
+  LAST_UPDATED: '최종 업데이트:',
+  LOADING: 'Loading...',
+  NO_BUSES_TODAY: '운행 예정인 버스가 없습니다.',
+} as const;
+
+// Metadata
+export const METADATA = {
+  TITLE: `wBus - 시간표`,
+  DESCRIPTION: `원주 시내버스 시간표`,
+} as const;
+
+// Theme
+export const THEME = {
+  DARK: 'dark',
+  LIGHT: 'light',
+  ATTRIBUTE: 'class',
+} as const;
+
+export const THEME_ICONS = {
+  [THEME.DARK]: '☀️',
+  [THEME.LIGHT]: '🌙',
+} as const;
+
+// Locale
+export const LOCALE = {
+  KOREAN: 'ko',
+} as const;
+
+// Data Source Configuration
+export const DATA_SOURCE = {
+  // Change this to your S3 bucket URL or CDN URL
+  BASE_URL: process.env.NEXT_PUBLIC_DATA_URL || process.env.DATA_URL || '',
+  USE_REMOTE: process.env.NEXT_PUBLIC_USE_REMOTE_DATA === 'true',
+  ROUTE_MAP_PATH: 'data/routeMap.json',
+  CACHE_REVALIDATE: 3600, // 1 hour in seconds
+} as const;

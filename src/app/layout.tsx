@@ -1,12 +1,14 @@
 // src/app/layout.tsx
 
-import "@styles/globals.css";
+import "./globals.css";
 
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
-import { MapProvider } from "@map/context/MapContext";
+import { ThemeProvider } from "next-themes";
 import { Geist, Geist_Mono } from "next/font/google";
+
+import { MapProvider } from "@live/context/MapContext";
 
 // Google Fonts (Geist Safns, Geist Mono)
 const geistSans = Geist({
@@ -22,7 +24,7 @@ const geistMono = Geist_Mono({
 // Page Metadata
 export const metadata = {
   title: "wBus",
-  description: "원주 실시간 시내버스 시각화 서비스",
+  description: "원주 시내버스 정보 서비스",
   icons: {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
@@ -47,12 +49,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ko">
+    <html lang="ko" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* Provides global map context via MapProvider */}
-        <MapProvider>{children}</MapProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          {/* Provides global map context via MapProvider */}
+          <MapProvider>{children}</MapProvider>
+        </ThemeProvider>
         {/* Vercel SpeedInsights and Analytics components */}
         <SpeedInsights />
         <Analytics />

@@ -32,17 +32,11 @@
       "@core/*": [
         "./src/core/*"
       ],
-      "@shared/*": [
-        "./src/shared/*"
+      "@live/*": [
+        "./src/features/live/*"
       ],
-      "@styles/*": [
-        "./src/shared/styles/*"
-      ],
-      "@bus/*": [
-        "./src/features/bus/*"
-      ],
-      "@map/*": [
-        "./src/features/map/*"
+      "@schedule/*": [
+        "./src/features/schedule/*"
       ]
     }
   },

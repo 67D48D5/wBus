@@ -45,21 +45,12 @@ export class CacheManager<T> {
    * Evict the least recently used item from cache
    */
   private evictLRU(): void {
-    let oldestKey: string | null = null;
-    let oldestTime = Infinity;
-
-    for (const [key, time] of this.accessTimes.entries()) {
-      if (time < oldestTime) {
-        oldestTime = time;
-        oldestKey = key;
-      }
-    }
-
-    if (oldestKey !== null) {
-      this.cache.delete(oldestKey);
-      this.accessTimes.delete(oldestKey);
-      this.pendingRequests.delete(oldestKey);
-    }
+    const oldestKey = Array.from(this.accessTimes.entries())
+      .reduce((oldest, curr) => (curr[1] < oldest[1] ? curr : oldest))[0];
+    
+    this.cache.delete(oldestKey);
+    this.accessTimes.delete(oldestKey);
+    this.pendingRequests.delete(oldestKey);
   }
 
   /**

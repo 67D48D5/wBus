@@ -1,4 +1,4 @@
-# wBus 🚍
+# wBus
 
 > **Real-time Bus Tracking Visualization Service for Wonju, South Korea**
 
@@ -68,22 +68,26 @@ npm start
 ## 🏗️ Technology Stack
 
 ### Core Technologies
+
 - **[Next.js 15.5](https://nextjs.org/)** - React framework with App Router
 - **[React 19](https://reactjs.org/)** - UI library
 - **[TypeScript 5.x](https://www.typescriptlang.org/)** - Type-safe development
 - **[Tailwind CSS 4](https://tailwindcss.com/)** - Utility-first CSS framework
 
 ### Mapping & Visualization
+
 - **[Leaflet 1.9](https://leafletjs.com/)** - Interactive maps
 - **[React Leaflet 5](https://react-leaflet.js.org/)** - React bindings for Leaflet
 - **[OpenStreetMap](https://www.openstreetmap.org/)** - Map tiles
 
 ### Infrastructure
+
 - **[AWS API Gateway](https://aws.amazon.com/api-gateway/)** - API proxy and caching
 - **[Vercel](https://vercel.com/)** - Deployment and hosting
 - **[공공데이터포털](https://www.data.go.kr/)** - Korean public transportation data
 
 ### Development Tools
+
 - **ESLint** - Code linting
 - **PostCSS** - CSS processing
 
@@ -126,21 +130,25 @@ wBus/
 ## 🎯 Key Architectural Features
 
 ### 1. **Centralized Cache Management**
+
 - Unified `CacheManager` class with LRU eviction
 - Automatic request deduplication
 - Memory-efficient storage with configurable limits
 
 ### 2. **Service Layer Pattern**
+
 - `BusPollingService` for managing bus location polling
 - Clean separation of business logic from UI components
 - Lifecycle management for subscriptions and cleanup
 
 ### 3. **Optimized Rendering**
+
 - Proper use of React.memo for expensive components
 - useCallback and useMemo for performance optimization
 - Dynamic hook usage without violating Rules of Hooks
 
 ### 4. **Geographic Utilities**
+
 - Haversine distance calculation for accurate positioning
 - Polyline snapping for smooth bus movements
 - Bearing and angle calculations for proper icon rotation
@@ -196,6 +204,7 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 ## 📞 Support
 
 For questions, issues, or feature requests:
+
 - Open an issue on [GitHub Issues](https://github.com/67D48D5/wBus/issues)
 - Check our [documentation](./docs/)
 

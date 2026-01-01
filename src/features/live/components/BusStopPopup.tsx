@@ -1,0 +1,171 @@
+// src/features/live/components/BusStopPopup.tsx
+
+import { useMemo } from "react";
+
+import {
+    formatArrivalTime,
+    formatRouteNumber,
+    formatVehicleType,
+    secondsToMinutes,
+} from "@live/utils/formatters";
+
+import { useBusArrivalInfo } from "@live/hooks/useBusArrivalInfo";
+import type { ArrivalInfo } from "@live/models/data";
+
+type Props = {
+    routeName: string;
+    stopId: string;
+    directionLabel: string;
+};
+
+// Helper to determine urgency color based on arrival time
+function getUrgencyColor(minutes: number) {
+    if (minutes <= 2) return "text-red-500 bg-red-50";
+    if (minutes <= 5) return "text-orange-500 bg-orange-50";
+    if (minutes <= 10) return "text-blue-500 bg-blue-50";
+    return "text-gray-600 bg-gray-50";
+}
+
+// Helper to format remaining stops
+function formatStopCount(count: number) {
+    if (count === 0) return "곧 도착";
+    if (count === 1) return "1정거장 전";
+    return `${count}정거장 전`;
+}
+
+// Real-time arrival list component
+function ArrivalList({
+    loading,
+    error,
+    arrivalData,
+    directionLabel,
+}: {
+    loading: boolean;
+    error: string | null;
+    arrivalData: ArrivalInfo[];
+    directionLabel: string;
+}) {
+    const hasData = arrivalData.length > 0;
+
+    if (error) {
+        return (
+            <div className="flex items-center gap-2 p-3 bg-red-50 rounded-lg">
+                <span className="text-red-500 text-lg">⚠️</span>
+                <p className="text-sm text-red-600">{error}</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="relative">
+            {!hasData && loading && (
+                <div className="flex items-center justify-center py-6">
+                    <div className="flex flex-col items-center gap-2">
+                        <div className="animate-spin h-8 w-8 border-3 border-blue-500 border-t-transparent rounded-full"></div>
+                        <p className="text-xs text-gray-500">도착 정보를 불러오는 중...</p>
+                    </div>
+                </div>
+            )}
+
+            {!hasData && !loading && (
+                <div className="flex flex-col items-center justify-center py-6 text-center">
+                    <span className="text-3xl mb-2">🚌</span>
+                    <p className="text-sm text-gray-500 font-medium">예정된 버스가 없습니다</p>
+                    <p className="text-xs text-gray-400 mt-1">운행 시간을 확인해주세요</p>
+                </div>
+            )}
+
+            {hasData && (
+                <ul className="space-y-1.5">
+                    {arrivalData.map((bus, idx) => {
+                        const minutes = secondsToMinutes(bus.arrtime);
+                        const timeString = formatArrivalTime(minutes, bus.arrprevstationcnt);
+                        const vehicleType = formatVehicleType(bus.vehicletp);
+                        const urgencyColor = getUrgencyColor(minutes);
+                        const stopCount = formatStopCount(bus.arrprevstationcnt);
+
+                        return (
+                            <li
+                                key={idx}
+                                className="group relative bg-white rounded-md border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-200 overflow-hidden"
+                            >
+                                {/* Urgency indicator bar */}
+                                <div className={`absolute left-0 top-0 bottom-0 w-1 ${urgencyColor.split(' ')[1]}`}></div>
+
+                                <div className="flex items-center justify-between p-2 pl-3 gap-2">
+                                    {/* Route number */}
+                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                        <div className="flex items-center justify-center min-w-[50px] h-8 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-md font-bold text-sm shadow-sm">
+                                            {formatRouteNumber(bus.routeno)}
+                                        </div>
+
+                                        {/* Vehicle type badge */}
+                                        <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-medium">
+                                            {vehicleType}
+                                        </span>
+                                    </div>
+
+                                    {/* Arrival info */}
+                                    <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
+                                        <div className={`flex items-center gap-1 px-2 py-0.5 rounded-md ${urgencyColor} font-bold text-sm whitespace-nowrap`}>
+                                            <span>🕐</span>
+                                            <span>{minutes}분</span>
+                                        </div>
+                                        <div className="flex items-center gap-0.5 text-[10px] text-gray-500 whitespace-nowrap">
+                                            <span>📍</span>
+                                            <span>{stopCount}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Direction label */}
+                                <div className="px-2 pb-1.5 pt-0 pl-3">
+                                    <div className="flex items-center gap-1 text-[10px] text-gray-500">
+                                        <span>→</span>
+                                        <span className="truncate">{directionLabel}</span>
+                                    </div>
+                                </div>
+                            </li>
+                        );
+                    })}
+                </ul>
+            )}
+        </div>
+    );
+}
+
+export default function BusStopPopup({
+    stopId,
+    directionLabel,
+}: Props) {
+    const {
+        data: arrivalRawData,
+        loading,
+        error,
+    } = useBusArrivalInfo(stopId);
+
+    const sortedArrivalData = useMemo(() => {
+        return arrivalRawData
+            ? [...arrivalRawData].sort(
+                (a, b) => a.arrprevstationcnt - b.arrprevstationcnt
+            )
+            : [];
+    }, [arrivalRawData]);
+
+    return (
+        <div className="w-full max-w-[360px]">
+            {/* Header */}
+            <div className="mb-2 pb-2 border-b border-gray-200">
+                <p className="text-xs text-gray-500 mt-0.5">실시간 도착 정보</p>
+            </div>
+
+            {/* Arrival list */}
+            <ArrivalList
+                loading={loading}
+                error={error}
+                arrivalData={sortedArrivalData}
+                directionLabel={directionLabel}
+            />
+        </div>
+    );
+}
