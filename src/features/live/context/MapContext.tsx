@@ -22,7 +22,7 @@ const MapContext = createContext<MapContextType | undefined>(undefined);
 export function useBusContext(): MapContextType {
   const context = useContext(MapContext);
   if (!context) {
-    throw new Error("useBusContext must be used within MapProvider");
+    throw new Error("`useBusContext` must be used within `MapProvider`");
   }
   return context;
 }
