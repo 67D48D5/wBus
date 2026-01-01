@@ -5,15 +5,9 @@
 import { useState, useMemo, useEffect, memo } from "react";
 
 import { DAY_TYPES, DayType } from "@core/constants/env";
-import { UI_TEXT } from "@core/constants/locale";
+import { UI_TEXT, DAY_TYPE_LABELS, FEATURED_STOPS_LABELS } from "@core/constants/locale";
 
 import { BusData, BusTime } from "@schedule/models/bus";
-
-// Map day type values to labels
-const DAY_TYPE_LABELS: Record<string, string> = {
-    [DAY_TYPES.WEEKDAY]: '평일',
-    [DAY_TYPES.WEEKEND]: '주말/공휴일',
-};
 
 interface NextBusInfo {
     hour: string;
@@ -118,7 +112,7 @@ function TimetableView({ data }: { data: BusData }) {
                     <p className="font-bold text-slate-700 dark:text-slate-300 mb-2">{UI_TEXT.MAJOR_STOPS}</p>
                     {Object.entries(data.featuredStops).map(([key, stops]) => (
                         <div key={key} className="mb-2 last:mb-0">
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{key === 'general' ? '평일' : key === 'sunday' ? '일요일' : key}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{key === 'general' ? FEATURED_STOPS_LABELS.GENERAL : key === 'sunday' ? FEATURED_STOPS_LABELS.SUNDAY : key}</p>
                             <div className="flex flex-wrap gap-2">
                                 {stops.map((stop, i) => (
                                     <span key={i} className="px-2 py-1 bg-white dark:bg-slate-700 rounded-md text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
@@ -136,7 +130,7 @@ function TimetableView({ data }: { data: BusData }) {
                     {Object.values(DAY_TYPES).map(t => (
                         <button key={t} onClick={() => setDayType(t)}
                             className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${dayType === t ? "bg-white dark:bg-slate-700 text-blue-600 shadow-sm" : "text-slate-500"}`}>
-                            {DAY_TYPE_LABELS[t]}
+                            {t === DAY_TYPES.WEEKDAY ? DAY_TYPE_LABELS.WEEKDAY : DAY_TYPE_LABELS.WEEKEND}
                         </button>
                     ))}
                 </div>
