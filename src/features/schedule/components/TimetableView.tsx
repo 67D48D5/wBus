@@ -18,6 +18,14 @@ function getFeaturedStopsLabel(key: string): string {
     return key;
 }
 
+/**
+ * Mapping from day type values to localized labels
+ */
+const dayTypeToLabel = {
+    [DAY_TYPES.WEEKDAY]: DAY_TYPE_LABELS.WEEKDAY,
+    [DAY_TYPES.WEEKEND]: DAY_TYPE_LABELS.WEEKEND,
+} as const;
+
 interface NextBusInfo {
     hour: string;
     minute: string;
@@ -139,7 +147,7 @@ function TimetableView({ data }: { data: BusData }) {
                     {Object.values(DAY_TYPES).map(t => (
                         <button key={t} onClick={() => setDayType(t)}
                             className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${dayType === t ? "bg-white dark:bg-slate-700 text-blue-600 shadow-sm" : "text-slate-500"}`}>
-                            {t === DAY_TYPES.WEEKDAY ? DAY_TYPE_LABELS.WEEKDAY : DAY_TYPE_LABELS.WEEKEND}
+                            {dayTypeToLabel[t]}
                         </button>
                     ))}
                 </div>
