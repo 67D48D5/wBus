@@ -9,6 +9,15 @@ import { UI_TEXT, DAY_TYPE_LABELS, FEATURED_STOPS_LABELS } from "@core/constants
 
 import { BusData, BusTime } from "@schedule/models/bus";
 
+/**
+ * Get the localized label for a featured stops key
+ */
+function getFeaturedStopsLabel(key: string): string {
+    if (key === 'general') return FEATURED_STOPS_LABELS.GENERAL;
+    if (key === 'sunday') return FEATURED_STOPS_LABELS.SUNDAY;
+    return key;
+}
+
 interface NextBusInfo {
     hour: string;
     minute: string;
@@ -112,7 +121,7 @@ function TimetableView({ data }: { data: BusData }) {
                     <p className="font-bold text-slate-700 dark:text-slate-300 mb-2">{UI_TEXT.MAJOR_STOPS}</p>
                     {Object.entries(data.featuredStops).map(([key, stops]) => (
                         <div key={key} className="mb-2 last:mb-0">
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{key === 'general' ? FEATURED_STOPS_LABELS.GENERAL : key === 'sunday' ? FEATURED_STOPS_LABELS.SUNDAY : key}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{getFeaturedStopsLabel(key)}</p>
                             <div className="flex flex-wrap gap-2">
                                 {stops.map((stop, i) => (
                                     <span key={i} className="px-2 py-1 bg-white dark:bg-slate-700 rounded-md text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
