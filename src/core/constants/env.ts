@@ -44,6 +44,10 @@ export const MAP_MAX_ZOOM =
 export const BUSSTOP_MARKER_MIN_ZOOM =
   Number(process.env.NEXT_PUBLIC_BUSSTOP_MARKER_MIN_ZOOM) || 15;
 
+/** Duration of bus marker animation in milliseconds. Longer = smoother but more lag behind real-time data */
+export const BUS_ANIMATION_DURATION =
+  Number(process.env.NEXT_PUBLIC_BUS_ANIMATION_DURATION) || 12000;
+
 /**
  * Bus stop node IDs that should always be considered as upward direction
  * This is used for special cases where direction detection needs to be overridden

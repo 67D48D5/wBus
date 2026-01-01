@@ -4,6 +4,8 @@
 
 import { useRef, useState, useEffect } from "react";
 
+import { BUS_ANIMATION_DURATION } from "@/core/constants/env";
+
 import type { LatLngTuple } from "leaflet";
 
 interface AnimatedPositionState {
@@ -12,7 +14,7 @@ interface AnimatedPositionState {
 }
 
 interface UseAnimatedPositionOptions {
-    /** Duration of the animation in milliseconds. Keep low (300-500ms) to avoid lag behind real-time data */
+    /** Duration of the animation in milliseconds. Longer = smoother but more lag behind real-time data */
     duration?: number;
     /** Polyline to snap the animation path to */
     polyline?: LatLngTuple[];
@@ -240,7 +242,7 @@ export function useAnimatedPosition(
     targetAngle: number,
     options: UseAnimatedPositionOptions = {}
 ): AnimatedPositionState {
-    const { duration = 500, polyline = [], snapToPolyline: shouldSnap = true } = options;
+    const { duration = BUS_ANIMATION_DURATION, polyline = [], snapToPolyline: shouldSnap = true } = options;
 
     // Current animated state
     const [state, setState] = useState<AnimatedPositionState>(() => {

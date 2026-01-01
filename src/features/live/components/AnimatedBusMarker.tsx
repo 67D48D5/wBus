@@ -5,6 +5,8 @@
 import type { LatLngTuple } from "leaflet";
 import type L from "leaflet";
 
+import { BUS_ANIMATION_DURATION } from "@/core/constants/env";
+
 import RotatedMarker from "@live/components/RotatedMarker";
 import { useAnimatedPosition } from "@live/hooks/useAnimatedPosition";
 
@@ -13,7 +15,7 @@ interface AnimatedBusMarkerProps {
     rotationAngle: number;
     icon: L.Icon | L.DivIcon;
     polyline?: LatLngTuple[];
-    /** Animation duration in ms. Keep low (300-500ms) to avoid lag behind real-time data */
+    /** Animation duration in ms. Longer = smoother but more lag behind real-time data */
     animationDuration?: number;
     children?: React.ReactNode;
     eventHandlers?: L.LeafletEventHandlerFnMap;
@@ -28,7 +30,7 @@ export function AnimatedBusMarker({
     rotationAngle,
     icon,
     polyline = [],
-    animationDuration = 500,
+    animationDuration = BUS_ANIMATION_DURATION,
     children,
     eventHandlers,
 }: AnimatedBusMarkerProps) {

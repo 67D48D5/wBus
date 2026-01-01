@@ -6,6 +6,8 @@ import { useMemo } from "react";
 import { Popup } from "react-leaflet";
 import L from "leaflet";
 
+import { BUS_ANIMATION_DURATION } from "@/core/constants/env";
+
 import { useIcons } from "@live/hooks/useIcons";
 import { useBusData } from "@live/hooks/useBusData";
 
@@ -106,7 +108,7 @@ export default function BusMarker({
             rotationAngle={angle % 360}
             icon={icon}
             polyline={polyline}
-            animationDuration={500}
+            animationDuration={BUS_ANIMATION_DURATION}
             eventHandlers={{
               popupopen: () => {
                 if (onPopupOpen) {
