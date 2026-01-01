@@ -46,6 +46,9 @@ export const TIME_LABELS = {
     MINUTES_LEFT_SUFFIX: '분 후',
     WITHIN_MINUTES: '분 이내',
     ARRIVAL_FORMAT: (hours: string, minutes: string) => `${hours}시 ${minutes}분`,
+    HOUR_ABBREV: 'h',
+    MINUTE_ABBREV: 'm',
+    IN_PREFIX: 'in',
 } as const;
 
 export const SCHEDULE_MESSAGES = {
@@ -126,9 +129,14 @@ export const UI_TEXT = {
 // Day Type Labels
 // ============================================================================
 
-export const DAY_TYPES = {
+export const DAY_TYPE_LABELS = {
     WEEKDAY: '평일',
     WEEKEND: '주말/공휴일',
+} as const;
+
+export const FEATURED_STOPS_LABELS = {
+    GENERAL: '평일',
+    SUNDAY: '일요일',
 } as const;
 
 // ============================================================================

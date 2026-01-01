@@ -4,7 +4,7 @@
 
 import { memo, useState, useEffect } from 'react';
 
-import { UI_TEXT, COMMON } from '@core/constants/locale';
+import { UI_TEXT, COMMON, TIME_LABELS } from '@core/constants/locale';
 
 import { BusData } from '@schedule/models/bus';
 import { getNearestBusTime } from '@schedule/utils/time';
@@ -40,7 +40,7 @@ function NextBusTime({ data }: { data: BusData }) {
     const hours = Math.floor(nearestBus.minutes / 60);
     const mins = nearestBus.minutes % 60;
 
-    const timeText = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+    const timeText = hours > 0 ? `${hours}${TIME_LABELS.HOUR_ABBREV} ${mins}${TIME_LABELS.MINUTE_ABBREV}` : `${mins}${TIME_LABELS.MINUTE_ABBREV}`;
 
     return (
         <div className="flex flex-col items-end">
@@ -48,7 +48,7 @@ function NextBusTime({ data }: { data: BusData }) {
                 {nearestBus.time}
             </span>
             <span className="text-xs text-slate-500 dark:text-slate-400">
-                in {timeText}
+                {TIME_LABELS.IN_PREFIX} {timeText}
             </span>
         </div>
     );
