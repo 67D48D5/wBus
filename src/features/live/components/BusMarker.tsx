@@ -119,28 +119,28 @@ export default function BusMarker({
             }}
           >
             <Popup autoPan={false} className="custom-bus-popup">
-              <div className="min-w-[180px]">
-                <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white px-4 py-2.5 -mx-5 -mt-4 mb-3 rounded-t-lg shadow-md">
-                  <div className="flex items-center gap-2">
+              <div className="min-w-[140px] sm:min-w-[180px]">
+                <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white px-3 py-2 sm:px-4 sm:py-2.5 -mx-5 -mt-4 mb-2 sm:mb-3 rounded-t-lg shadow-md">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
                     {(() => {
                       const DirectionIcon = getDirectionIcon(direction);
-                      return <DirectionIcon className="w-5 h-5" />;
+                      return <DirectionIcon className="w-4 h-4 sm:w-5 sm:h-5" />;
                     })()}
-                    <span className="font-bold text-base tracking-tight">
+                    <span className="font-bold text-sm sm:text-base tracking-tight">
                       {bus.routenm}번 버스
                     </span>
                   </div>
                 </div>
-                <div className="space-y-2 px-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-gray-500 w-16">차량번호</span>
-                    <span className="text-sm font-bold text-gray-900 bg-gray-100 px-3 py-1 rounded-md">
+                <div className="space-y-1.5 sm:space-y-2 px-0.5 sm:px-1">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <span className="text-[10px] sm:text-xs font-semibold text-gray-500 w-14 sm:w-16">차량번호</span>
+                    <span className="text-xs sm:text-sm font-bold text-gray-900 bg-gray-100 px-2 py-0.5 sm:px-3 sm:py-1 rounded-md">
                       {bus.vehicleno}
                     </span>
                   </div>
-                  <div className="flex items-start gap-2">
-                    <span className="text-xs font-semibold text-gray-500 w-16 mt-1">현재위치</span>
-                    <span className="text-sm text-gray-700 font-medium flex-1">
+                  <div className="flex items-start gap-1.5 sm:gap-2">
+                    <span className="text-[10px] sm:text-xs font-semibold text-gray-500 w-14 sm:w-16 mt-0.5 sm:mt-1">현재위치</span>
+                    <span className="text-xs sm:text-sm text-gray-700 font-medium flex-1">
                       {bus.nodenm}
                     </span>
                   </div>

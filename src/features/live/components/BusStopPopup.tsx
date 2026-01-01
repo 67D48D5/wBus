@@ -48,9 +48,9 @@ function ArrivalList({
 
     if (error) {
         return (
-            <div className="flex items-center gap-2 p-3 bg-gradient-to-r from-red-50 to-orange-50 rounded-xl border border-red-200 shadow-sm">
-                <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
-                <p className="text-sm text-red-600 font-medium">{error}</p>
+            <div className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-3 bg-gradient-to-r from-red-50 to-orange-50 rounded-lg sm:rounded-xl border border-red-200 shadow-sm">
+                <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 flex-shrink-0" />
+                <p className="text-xs sm:text-sm text-red-600 font-medium">{error}</p>
             </div>
         );
     }
@@ -58,25 +58,25 @@ function ArrivalList({
     return (
         <div className="relative">
             {!hasData && loading && (
-                <div className="flex items-center justify-center py-8">
-                    <div className="flex flex-col items-center gap-3">
-                        <div className="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full shadow-lg"></div>
-                        <p className="text-sm text-gray-600 font-medium">{ARRIVAL_MESSAGES.LOADING}</p>
+                <div className="flex items-center justify-center py-5 sm:py-8">
+                    <div className="flex flex-col items-center gap-2 sm:gap-3">
+                        <div className="animate-spin h-8 w-8 sm:h-10 sm:w-10 border-3 sm:border-4 border-blue-500 border-t-transparent rounded-full shadow-lg"></div>
+                        <p className="text-xs sm:text-sm text-gray-600 font-medium">{ARRIVAL_MESSAGES.LOADING}</p>
                     </div>
                 </div>
             )}
 
             {!hasData && !loading && (
-                <div className="flex flex-col items-center justify-center py-8 text-center bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl border border-gray-200">
-                    <Bus className="w-12 h-12 text-blue-500 mb-3 animate-bounce" />
-                    <p className="text-sm text-gray-600 font-semibold">{ARRIVAL_MESSAGES.NO_BUSES}</p>
-                    <p className="text-xs text-gray-500 mt-1">{ARRIVAL_MESSAGES.CHECK_SCHEDULE}</p>
+                <div className="flex flex-col items-center justify-center py-5 sm:py-8 text-center bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg sm:rounded-xl border border-gray-200">
+                    <Bus className="w-9 h-9 sm:w-12 sm:h-12 text-blue-500 mb-2 sm:mb-3 animate-bounce" />
+                    <p className="text-xs sm:text-sm text-gray-600 font-semibold">{ARRIVAL_MESSAGES.NO_BUSES}</p>
+                    <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">{ARRIVAL_MESSAGES.CHECK_SCHEDULE}</p>
                 </div>
             )}
 
             {hasData && (
-                <div className="max-h-[320px] overflow-y-auto">
-                    <ul className="space-y-2">
+                <div className="max-h-[240px] sm:max-h-[320px] overflow-y-auto">
+                    <ul className="space-y-1.5 sm:space-y-2">
                         {arrivalData.map((bus, idx) => {
                             const minutes = secondsToMinutes(bus.arrtime);
                             const vehicleType = formatVehicleType(bus.vehicletp);
@@ -86,32 +86,32 @@ function ArrivalList({
                             return (
                                 <li
                                     key={idx}
-                                    className="groups relative bg-gradient-to-r from-white to-blue-50/30 rounded-xl border border-gray-200 hover:border-blue-400 hover:shadow-xl transition-all duration-300 overflow-hidden hover:scale-[1.02] active:scale-[0.98]"
+                                    className="groups relative bg-gradient-to-r from-white to-blue-50/30 rounded-lg sm:rounded-xl border border-gray-200 hover:border-blue-400 hover:shadow-xl transition-all duration-300 overflow-hidden hover:scale-[1.02] active:scale-[0.98]"
                                 >
                                     {/* Urgency indicator bar */}
-                                    <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${urgencyColor.split(' ')[1]} shadow-sm`}></div>
+                                    <div className={`absolute left-0 top-0 bottom-0 w-1 sm:w-1.5 ${urgencyColor.split(' ')[1]} shadow-sm`}></div>
 
-                                    <div className="flex items-center justify-between p-3 pl-4 gap-3">
+                                    <div className="flex items-center justify-between p-2 pl-3 sm:p-3 sm:pl-4 gap-2 sm:gap-3">
                                         {/* Route number */}
-                                        <div className="flex items-center gap-2 flex-shrink-0">
-                                            <div className="flex items-center justify-center min-w-[55px] h-9 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-bold text-sm shadow-md group-hover:shadow-lg transition-shadow">
+                                        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                                            <div className="flex items-center justify-center min-w-[45px] sm:min-w-[55px] h-7 sm:h-9 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-md sm:rounded-lg font-bold text-xs sm:text-sm shadow-md group-hover:shadow-lg transition-shadow">
                                                 {formatRouteNumber(bus.routeno)}
                                             </div>
 
                                             {/* Vehicle type badge */}
-                                            <span className="px-2 py-1 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-md text-[10px] font-semibold shadow-sm">
+                                            <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded sm:rounded-md text-[9px] sm:text-[10px] font-semibold shadow-sm">
                                                 {vehicleType}
                                             </span>
                                         </div>
 
                                         {/* Arrival info */}
-                                        <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${urgencyColor} font-bold text-sm whitespace-nowrap shadow-sm`}>
-                                                <Clock className="w-4 h-4" />
+                                        <div className="flex flex-col items-end gap-0.5 sm:gap-1 flex-shrink-0">
+                                            <div className={`flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg ${urgencyColor} font-bold text-xs sm:text-sm whitespace-nowrap shadow-sm`}>
+                                                <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
                                                 <span>{minutes}{TIME_LABELS.MINUTE_SUFFIX}</span>
                                             </div>
-                                            <div className="flex items-center gap-1 text-[11px] text-gray-600 font-medium whitespace-nowrap bg-white px-2 py-0.5 rounded-md shadow-sm">
-                                                <MapPin className="w-3.5 h-3.5" />
+                                            <div className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-[11px] text-gray-600 font-medium whitespace-nowrap bg-white px-1.5 py-0.5 sm:px-2 rounded sm:rounded-md shadow-sm">
+                                                <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                                 <span>{stopCount}</span>
                                             </div>
                                         </div>
