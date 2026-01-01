@@ -105,7 +105,7 @@ function ArrivalList({
                                     <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
                                         <div className={`flex items-center gap-1 px-2 py-0.5 rounded-md ${urgencyColor} font-bold text-sm whitespace-nowrap`}>
                                             <span>🕐</span>
-                                            <span>{minutes}${TIME_LABELS.MINUTE_SUFFIX}</span>
+                                            <span>{minutes}{TIME_LABELS.MINUTE_SUFFIX}</span>
                                         </div>
                                         <div className="flex items-center gap-0.5 text-[10px] text-gray-500 whitespace-nowrap">
                                             <span>📍</span>
