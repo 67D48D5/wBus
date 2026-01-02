@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useMemo, useCallback, useState } from "react";
+import React, { useMemo, useCallback, useState, useEffect } from "react";
 
 import { useBusContext } from "@live/context/MapContext";
 
@@ -35,6 +35,11 @@ type BusListProps = {
 export default function BusList({ routeNames }: BusListProps) {
   const { map, setSelectedRoute: setMapSelectedRoute } = useBusContext();
   const [selectedRoute, setSelectedRoute] = useState<string>(ALL_ROUTES);
+
+  // Reset map-selected route when the list is hidden/unmounted
+  useEffect(() => {
+    return () => setMapSelectedRoute(null);
+  }, [setMapSelectedRoute]);
 
   // Update map polyline visibility based on dropdown selection
   const handleRouteChange = useCallback((route: string) => {
