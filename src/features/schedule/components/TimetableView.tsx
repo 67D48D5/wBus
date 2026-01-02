@@ -13,6 +13,7 @@ import { BusData, BusTime } from "@schedule/models/bus";
  * Get the localized label for a featured stops key
  */
 function getFeaturedStopsLabel(key: string): string {
+    if (key === 'general') return '';
     if (key === 'weekday') return FEATURED_STOPS_LABELS.WEEKDAY;
     if (key === 'sunday') return FEATURED_STOPS_LABELS.SUNDAY;
     return key;
