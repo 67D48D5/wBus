@@ -11,6 +11,7 @@ import Splash from "@live/components/MapSplash";
 import MapNavBar from "@live/components/MapNavBar";
 import MapWrapper from "@live/components/MapWrapper";
 import BusList from "@live/components/BusList";
+import BusListToggle from "@live/components/BusListToggle";
 import MyLocation from "@live/components/MyLocation";
 
 /**
@@ -19,6 +20,7 @@ import MyLocation from "@live/components/MyLocation";
  */
 export default function MapPage() {
     const [isSplashVisible, setIsSplashVisible] = useState(true);
+    const [isBusListVisible, setIsBusListVisible] = useState(false);
     const routeMap = useRouteMap();
     const allRoutes = useMemo(() => routeMap ? Object.keys(routeMap) : [], [routeMap]);
 
@@ -59,9 +61,13 @@ export default function MapPage() {
                     {allRoutes.length > 0 && (
                         <>
                             <MapWrapper routeNames={allRoutes} />
-                            <BusList routeNames={allRoutes} />
+                            {isBusListVisible && <BusList routeNames={allRoutes} />}
                         </>
                     )}
+                    <BusListToggle
+                        isVisible={isBusListVisible}
+                        onToggle={() => setIsBusListVisible((prev) => !prev)}
+                    />
                     <MyLocation />
                 </div>
             </div>
