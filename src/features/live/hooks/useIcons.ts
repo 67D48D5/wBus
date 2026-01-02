@@ -16,7 +16,6 @@ type IconMap = {
   busIcon: L.Icon;
   busStopIcon: L.Icon;
   myLocationIcon: L.Icon;
-  findMyLocationIcon: L.Icon;
 };
 
 export function useIcons(): Partial<IconMap> {
@@ -55,12 +54,6 @@ export function useIcons(): Partial<IconMap> {
       ),
       myLocationIcon: createIcon(
         "/icons/my-location.svg",
-        [32, 32],
-        [16, 32],
-        [0, -30]
-      ),
-      findMyLocationIcon: createIcon(
-        "/icons/find-my-location.svg",
         [32, 32],
         [16, 32],
         [0, -30]

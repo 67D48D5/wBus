@@ -2,7 +2,8 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { Locate } from "lucide-react";
 
 import { ERROR_MESSAGES, UI_TEXT } from "@core/constants/locale";
 import { MAP_FLY_TO_DURATION, MY_LOCATION_ZOOM } from "@core/constants/env";
@@ -12,13 +13,8 @@ import { useIcons } from "@live/hooks/useIcons";
 
 export default function MyLocation() {
   const { map } = useBusContext();
-  const { myLocationIcon, findMyLocationIcon } = useIcons();
+  const { myLocationIcon } = useIcons();
   const [marker, setMarker] = useState<any>(null);
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   const handleClick = async () => {
     try {
@@ -68,14 +64,9 @@ export default function MyLocation() {
       onClick={handleClick}
       className="fixed bottom-6 right-6 z-30 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 hover:from-blue-500 hover:via-blue-600 hover:to-indigo-600 text-white p-4 rounded-full shadow-2xl hover:shadow-3xl hover:shadow-blue-400/60 transition-all duration-300 hover:scale-125 active:scale-95 border-2 border-white/30 backdrop-blur-sm drop-shadow-lg"
       title={UI_TEXT.FIND_MY_LOCATION}
+      aria-label={UI_TEXT.FIND_MY_LOCATION}
     >
-      {isClient && findMyLocationIcon && (
-        <img
-          src={findMyLocationIcon.options.iconUrl}
-          alt={UI_TEXT.FIND_MY_LOCATION}
-          className="w-6 h-6 brightness-0 invert"
-        />
-      )}
+      <Locate className="w-6 h-6" />
     </button>
   );
 }
