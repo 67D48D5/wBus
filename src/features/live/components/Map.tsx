@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import { MapContainer, TileLayer } from "react-leaflet";
 
 import {
@@ -16,6 +16,8 @@ import {
 } from "@core/constants/env";
 
 import MapProvider from "./MapWithProvider";
+
+import { useBusContext } from "@live/context/MapContext";
 
 import BusMarker from "@live/components/BusMarker";
 import BusStopMarker from "@live/components/BusStopMarker";
@@ -63,15 +65,15 @@ const RouteMarkers = React.memo(({
 RouteMarkers.displayName = 'RouteMarkers';
 
 export default function Map({ routeNames }: MapProps) {
-  const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
+  const { selectedRoute, setSelectedRoute } = useBusContext();
 
   const handlePopupOpen = useCallback((routeName: string) => {
     setSelectedRoute(routeName);
-  }, []);
+  }, [setSelectedRoute]);
 
   const handlePopupClose = useCallback(() => {
     setSelectedRoute(null);
-  }, []);
+  }, [setSelectedRoute]);
 
   // Memoize map options to prevent unnecessary re-renders
   const mapOptions = useMemo(() => ({

@@ -11,6 +11,8 @@ import type { Map } from "leaflet";
 type MapContextType = {
   map: Map | null;
   setMap: (map: Map | null) => void;
+  selectedRoute: string | null;
+  setSelectedRoute: (route: string | null) => void;
 };
 
 const MapContext = createContext<MapContextType | undefined>(undefined);
@@ -35,6 +37,7 @@ export function useBusContext(): MapContextType {
  */
 export function MapProvider({ children }: { children: React.ReactNode }) {
   const [map, setMap] = useState<Map | null>(null);
-  const value = useMemo(() => ({ map, setMap }), [map]);
+  const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
+  const value = useMemo(() => ({ map, setMap, selectedRoute, setSelectedRoute }), [map, selectedRoute]);
   return <MapContext.Provider value={value}>{children}</MapContext.Provider>;
 }

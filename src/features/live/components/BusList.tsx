@@ -33,8 +33,14 @@ type BusListProps = {
  * such as extracting route data collection into a separate component per route.
  */
 export default function BusList({ routeNames }: BusListProps) {
-  const { map } = useBusContext();
+  const { map, setSelectedRoute: setMapSelectedRoute } = useBusContext();
   const [selectedRoute, setSelectedRoute] = useState<string>(ALL_ROUTES);
+
+  // Update map polyline visibility based on dropdown selection
+  const handleRouteChange = useCallback((route: string) => {
+    setSelectedRoute(route);
+    setMapSelectedRoute(route === ALL_ROUTES ? null : route);
+  }, [setMapSelectedRoute]);
 
   // Call hooks unconditionally for known maximum number of routes (3)
   // Empty strings are handled gracefully - no API calls are made
@@ -96,7 +102,7 @@ export default function BusList({ routeNames }: BusListProps) {
           </h2>
           <select
             value={selectedRoute}
-            onChange={(e) => setSelectedRoute(e.target.value)}
+            onChange={(e) => handleRouteChange(e.target.value)}
             className="text-xs sm:text-sm bg-white/20 text-white border border-white/30 rounded-md px-1.5 py-0.5 sm:px-2 sm:py-1 focus:outline-none focus:ring-2 focus:ring-white/50 cursor-pointer hover:bg-white/30 transition-colors"
           >
             <option value={ALL_ROUTES} className="text-gray-800">{UI_TEXT.ALL_ROUTES}</option>
