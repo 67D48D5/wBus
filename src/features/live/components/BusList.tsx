@@ -2,15 +2,19 @@
 
 "use client";
 
-import React, { useMemo, useCallback } from "react";
+import React, { useMemo, useCallback, useState } from "react";
 
 import { useBusContext } from "@live/context/MapContext";
-import { getDirectionIcon } from "@live/utils/directionIcons";
+
 import { useSortedBusList } from "@live/hooks/useSortedBusList";
+
+import { getDirectionIcon } from "@live/utils/directionIcons";
 import { getBusErrorMessage, isWarningError } from "@live/utils/errorMessages";
 
 import { UI_TEXT, SCHEDULE_MESSAGES } from "@core/constants/locale";
 import { MAP_FLY_TO_DURATION } from "@core/constants/env";
+
+const ALL_ROUTES = "all";
 
 type BusListProps = {
   routeNames: string[];
@@ -30,6 +34,7 @@ type BusListProps = {
  */
 export default function BusList({ routeNames }: BusListProps) {
   const { map } = useBusContext();
+  const [selectedRoute, setSelectedRoute] = useState<string>(ALL_ROUTES);
 
   // Call hooks unconditionally for known maximum number of routes (3)
   // Empty strings are handled gracefully - no API calls are made
@@ -53,6 +58,14 @@ export default function BusList({ routeNames }: BusListProps) {
     );
   }, [allRoutesData]);
 
+  // Filter buses based on selected route
+  const filteredBuses = useMemo(() => {
+    if (selectedRoute === ALL_ROUTES) {
+      return allBuses;
+    }
+    return allBuses.filter(({ routeName }) => routeName === selectedRoute);
+  }, [allBuses, selectedRoute]);
+
   // Check if any route has errors with proper memoization
   const anyError = useMemo(() => {
     return allRoutesData.find((data) => data.error !== null)?.error || null;
@@ -61,7 +74,7 @@ export default function BusList({ routeNames }: BusListProps) {
   const errorMessage = getBusErrorMessage(anyError);
   const message = anyError ? errorMessage : UI_TEXT.LOADING_BUS_DATA;
 
-  const isNoData = allBuses.length === 0;
+  const isNoData = filteredBuses.length === 0;
   const isErrorState = isWarningError(anyError);
 
   // Stable callback for bus click handler
@@ -77,13 +90,27 @@ export default function BusList({ routeNames }: BusListProps) {
   return (
     <div className="fixed bottom-2 left-2 sm:bottom-4 sm:left-4 bg-white/98 backdrop-blur-md rounded-xl sm:rounded-2xl shadow-2xl w-56 sm:w-72 z-20 border border-gray-200/50 overflow-hidden transition-all duration-300 hover:shadow-blue-200/50">
       <div className="px-3 pt-3 pb-2 sm:px-5 sm:pt-5 sm:pb-3 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-t-xl sm:rounded-t-2xl">
-        <h2 className="text-sm sm:text-base font-bold text-white mb-1 sm:mb-2 flex items-center gap-2 tracking-tight">
-          {UI_TEXT.ALL_BUS_LIST}
-        </h2>
+        <div className="flex items-center justify-between mb-1 sm:mb-2">
+          <h2 className="text-sm sm:text-base font-bold text-white flex items-center gap-2 tracking-tight">
+            {selectedRoute === ALL_ROUTES ? UI_TEXT.ALL_BUS_LIST : UI_TEXT.ROUTE_BUS_LIST(selectedRoute)}
+          </h2>
+          <select
+            value={selectedRoute}
+            onChange={(e) => setSelectedRoute(e.target.value)}
+            className="text-xs sm:text-sm bg-white/20 text-white border border-white/30 rounded-md px-1.5 py-0.5 sm:px-2 sm:py-1 focus:outline-none focus:ring-2 focus:ring-white/50 cursor-pointer hover:bg-white/30 transition-colors"
+          >
+            <option value={ALL_ROUTES} className="text-gray-800">{UI_TEXT.ALL_ROUTES}</option>
+            {routeNames.filter(Boolean).map((routeName) => (
+              <option key={routeName} value={routeName} className="text-gray-800">
+                {routeName}{SCHEDULE_MESSAGES.ROUTE_SUFFIX}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="flex items-center gap-2">
           <div className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full animate-pulse ${isNoData ? 'bg-gray-300' : 'bg-green-400'}`}></div>
           <p className="text-xs sm:text-sm text-blue-50 font-medium">
-            {isNoData ? UI_TEXT.NO_BUSES_RUNNING : UI_TEXT.BUSES_RUNNING(allBuses.length)}
+            {isNoData ? UI_TEXT.NO_BUSES_RUNNING : UI_TEXT.BUSES_RUNNING(filteredBuses.length)}
           </p>
         </div>
       </div>
@@ -99,7 +126,7 @@ export default function BusList({ routeNames }: BusListProps) {
             {message}
           </li>
         ) : (
-          allBuses.map(({ bus, routeName, getDirection }) => {
+          filteredBuses.map(({ bus, routeName, getDirection }) => {
             const direction = bus.nodeid && bus.nodeord !== undefined
               ? getDirection(bus.nodeid, bus.nodeord)
               : null;

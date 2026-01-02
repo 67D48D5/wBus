@@ -129,6 +129,8 @@ export const UI_TEXT = {
 
     // Bus List UI
     ALL_BUS_LIST: '전체 버스 목록',
+    ROUTE_BUS_LIST: (routeName: string) => `${routeName}번 버스 목록`,
+    ALL_ROUTES: '전체 노선',
     BUSES_RUNNING: (count: number) => `${count}대 운행 중`,
     NO_BUSES_RUNNING: '운행 중인 버스 없음',
     LOADING_BUS_DATA: '버스 데이터를 불러오는 중...',
