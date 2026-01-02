@@ -4,6 +4,8 @@
 
 import { useMemo } from "react";
 
+import { ERROR_MESSAGES } from "@core/constants/locale";
+
 // Check if we are in a client environment
 const isClient = typeof window !== "undefined";
 
@@ -26,7 +28,7 @@ export function useIcons(): Partial<IconMap> {
     try {
       L = require("leaflet");
     } catch (error) {
-      console.error("Leaflet import error:", error);
+      console.error(ERROR_MESSAGES.LEAFLET_IMPORT_ERROR, error);
       return {};
     }
 

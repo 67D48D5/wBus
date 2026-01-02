@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 
-import { getBusStopLocationData } from "@live/api/getRealtimeData";
-import { getRouteInfo } from "@live/api/getRouteMap";
-
+import { ERROR_MESSAGES } from "@core/constants/locale";
 import { CacheManager } from "@core/cache/CacheManager";
 
-import { useBusContext } from "@live/context/MapContext";
+import { getRouteInfo } from "@live/api/getRouteMap";
+import { getBusStopLocationData } from "@live/api/getRealtimeData";
 
+import { useBusContext } from "@live/context/MapContext";
 import { getHaversineDistance } from "@live/utils/geoUtils";
 
 import type { BusStop } from "@live/models/data";
@@ -26,7 +26,7 @@ export function useBusStop(routeName: string) {
       try {
         const routeInfo = await getRouteInfo(routeName);
         if (!routeInfo) {
-          console.warn(`❌ No routeInfo found for ${routeName}`);
+          console.warn(ERROR_MESSAGES.NO_ROUTE_INFO_FOUND(routeName));
           return;
         }
 
@@ -41,7 +41,7 @@ export function useBusStop(routeName: string) {
 
         if (isMounted) setStops(data);
       } catch (err) {
-        console.error("❌ useBusStop fetch error:", err);
+        console.error(ERROR_MESSAGES.BUS_STOP_FETCH_ERROR, err);
       }
     };
 

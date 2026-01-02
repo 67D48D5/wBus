@@ -9,6 +9,8 @@ import { getDirectionIcon } from "@live/utils/directionIcons";
 import { useSortedBusList } from "@live/hooks/useSortedBusList";
 import { getBusErrorMessage, isWarningError } from "@live/utils/errorMessages";
 
+import { UI_TEXT, SCHEDULE_MESSAGES } from "@core/constants/locale";
+import { MAP_FLY_TO_DURATION } from "@core/constants/env";
 
 type BusListProps = {
   routeNames: string[];
@@ -57,7 +59,7 @@ export default function BusList({ routeNames }: BusListProps) {
   }, [allRoutesData]);
 
   const errorMessage = getBusErrorMessage(anyError);
-  const message = anyError ? errorMessage : "버스 데이터를 불러오는 중...";
+  const message = anyError ? errorMessage : UI_TEXT.LOADING_BUS_DATA;
 
   const isNoData = allBuses.length === 0;
   const isErrorState = isWarningError(anyError);
@@ -67,7 +69,7 @@ export default function BusList({ routeNames }: BusListProps) {
     if (map) {
       map.flyTo([lat, lng], map.getZoom(), {
         animate: true,
-        duration: 1.5,
+        duration: MAP_FLY_TO_DURATION,
       });
     }
   }, [map]);
@@ -76,12 +78,12 @@ export default function BusList({ routeNames }: BusListProps) {
     <div className="fixed bottom-2 left-2 sm:bottom-4 sm:left-4 bg-white/98 backdrop-blur-md rounded-xl sm:rounded-2xl shadow-2xl w-56 sm:w-72 z-20 border border-gray-200/50 overflow-hidden transition-all duration-300 hover:shadow-blue-200/50">
       <div className="px-3 pt-3 pb-2 sm:px-5 sm:pt-5 sm:pb-3 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-t-xl sm:rounded-t-2xl">
         <h2 className="text-sm sm:text-base font-bold text-white mb-1 sm:mb-2 flex items-center gap-2 tracking-tight">
-          전체 버스 목록
+          {UI_TEXT.ALL_BUS_LIST}
         </h2>
         <div className="flex items-center gap-2">
           <div className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full animate-pulse ${isNoData ? 'bg-gray-300' : 'bg-green-400'}`}></div>
           <p className="text-xs sm:text-sm text-blue-50 font-medium">
-            {isNoData ? "운행 중인 버스 없음" : `${allBuses.length}대 운행 중`}
+            {isNoData ? UI_TEXT.NO_BUSES_RUNNING : UI_TEXT.BUSES_RUNNING(allBuses.length)}
           </p>
         </div>
       </div>
@@ -113,7 +115,7 @@ export default function BusList({ routeNames }: BusListProps) {
                     {bus.vehicleno}
                   </span>
                   <span className="text-[10px] sm:text-[11px] font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full px-2 py-0.5 sm:px-2.5 sm:py-1 inline-block w-fit shadow-sm">
-                    {routeName}번
+                    {routeName}{SCHEDULE_MESSAGES.ROUTE_SUFFIX}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 text-gray-600 group-hover:text-gray-900 text-[10px] sm:text-xs text-right max-w-[100px] sm:max-w-[130px] font-medium transition-colors">

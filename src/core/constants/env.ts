@@ -48,6 +48,18 @@ export const BUSSTOP_MARKER_MIN_ZOOM =
 export const BUS_ANIMATION_DURATION =
   Number(process.env.NEXT_PUBLIC_BUS_ANIMATION_DURATION) || 4000;
 
+/** Duration for map fly-to animation in seconds */
+export const MAP_FLY_TO_DURATION =
+  Number(process.env.NEXT_PUBLIC_MAP_FLY_TO_DURATION) || 1.5;
+
+/** Zoom level when centering on user's location */
+export const MY_LOCATION_ZOOM =
+  Number(process.env.NEXT_PUBLIC_MY_LOCATION_ZOOM) || 17;
+
+/** Duration for splash screen fade-out animation in milliseconds */
+export const SPLASH_FADE_DURATION =
+  Number(process.env.NEXT_PUBLIC_SPLASH_FADE_DURATION) || 500;
+
 /**
  * Bus stop node IDs that should always be considered as upward direction
  * This is used for special cases where direction detection needs to be overridden

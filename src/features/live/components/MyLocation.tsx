@@ -4,6 +4,9 @@
 
 import { useState, useEffect } from "react";
 
+import { ERROR_MESSAGES, UI_TEXT } from "@core/constants/locale";
+import { MAP_FLY_TO_DURATION, MY_LOCATION_ZOOM } from "@core/constants/env";
+
 import { useBusContext } from "@live/context/MapContext";
 import { useIcons } from "@live/hooks/useIcons";
 
@@ -28,9 +31,9 @@ export default function MyLocation() {
 
           if (map) {
             // Move the map to the user's location
-            map.flyTo([latitude, longitude], 17, {
+            map.flyTo([latitude, longitude], MY_LOCATION_ZOOM, {
               animate: true,
-              duration: 1.5,
+              duration: MAP_FLY_TO_DURATION,
             });
 
             // If a marker already exists, remove it
@@ -44,7 +47,7 @@ export default function MyLocation() {
             })
               .addTo(map)
               .bindPopup(
-                `<b>📍 내 위치</b><br>위도: ${latitude}<br>경도: ${longitude}`
+                UI_TEXT.MY_LOCATION_POPUP(latitude, longitude)
               )
               .openPopup();
 
@@ -52,11 +55,11 @@ export default function MyLocation() {
           }
         },
         () => {
-          alert("🚨 위치 정보를 가져올 수 없습니다.");
+          alert(ERROR_MESSAGES.LOCATION_UNAVAILABLE);
         }
       );
     } catch (error) {
-      console.error("Leaflet import error:", error);
+      console.error(ERROR_MESSAGES.LEAFLET_IMPORT_ERROR, error);
     }
   };
 
@@ -64,12 +67,12 @@ export default function MyLocation() {
     <button
       onClick={handleClick}
       className="fixed bottom-6 right-6 z-30 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 hover:from-blue-500 hover:via-blue-600 hover:to-indigo-600 text-white p-4 rounded-full shadow-2xl hover:shadow-3xl hover:shadow-blue-400/60 transition-all duration-300 hover:scale-125 active:scale-95 border-2 border-white/30 backdrop-blur-sm drop-shadow-lg"
-      title="내 위치 찾기"
+      title={UI_TEXT.FIND_MY_LOCATION}
     >
       {isClient && findMyLocationIcon && (
         <img
           src={findMyLocationIcon.options.iconUrl}
-          alt="내 위치 찾기"
+          alt={UI_TEXT.FIND_MY_LOCATION}
           className="w-6 h-6 brightness-0 invert"
         />
       )}

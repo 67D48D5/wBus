@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useRef } from "react";
 
+import { ERROR_MESSAGES } from "@core/constants/locale";
+
 import { getRouteMap } from "@live/api/getRouteMap";
 
 /**
@@ -22,7 +24,7 @@ export function useRouteMap(): Record<string, string[]> | null {
         setData(map);
       })
       .catch((err) => {
-        console.error("Failed to fetch route map:", err);
+        console.error(ERROR_MESSAGES.ROUTE_MAP_FETCH_ERROR, err);
       });
   }, []);
 

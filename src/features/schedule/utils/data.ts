@@ -1,6 +1,7 @@
 // src/features/schedule/utils/data.ts
 
 import { DATA_SOURCE } from '@core/constants/env';
+import { ERROR_MESSAGES } from '@core/constants/locale';
 
 import { BusData } from '@schedule/models/bus';
 
@@ -26,7 +27,7 @@ async function fetchData<T>(pathParam: string, isRouteData: boolean = false): Pr
                 next: { revalidate: DATA_SOURCE.CACHE_REVALIDATE }
             });
 
-            if (!response.ok) throw new Error(`Remote fetch failed: ${response.status}`);
+            if (!response.ok) throw new Error(ERROR_MESSAGES.REMOTE_FETCH_FAILED(response.status));
 
             return await response.json() as T;
         } else {
@@ -38,7 +39,7 @@ async function fetchData<T>(pathParam: string, isRouteData: boolean = false): Pr
             return JSON.parse(fileContent) as T;
         }
     } catch (error) {
-        console.error(`Error fetching data from ${pathParam}:`, error);
+        console.error(ERROR_MESSAGES.DATA_FETCH_ERROR(pathParam), error);
         return null;
     }
 }

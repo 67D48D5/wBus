@@ -1,6 +1,7 @@
 // src/features/live/api/getRouteMap.ts
 
 import { CacheManager } from "@core/cache/CacheManager";
+import { ERROR_MESSAGES } from "@core/constants/locale";
 
 import type { RouteInfo } from "@live/models/data";
 
@@ -19,7 +20,7 @@ const routeMapCache = new CacheManager<RouteMapData>();
 export async function getRouteMap(): Promise<Record<string, string[]>> {
   const data = await routeMapCache.getOrFetch("routeMap", async () => {
     const res = await fetch("/data/routeMap.json");
-    if (!res.ok) throw new Error("🚫 Failed to fetch routeMap.json");
+    if (!res.ok) throw new Error(ERROR_MESSAGES.FAILED_TO_FETCH_ROUTE_MAP);
     return res.json() as Promise<RouteMapData>;
   });
   // Filter out routes with empty vehicle IDs (e.g., "Shuttle": [])
@@ -49,7 +50,7 @@ export async function getRouteInfo(
     const routeIds = map[routeName];
 
     if (!routeIds?.length) {
-      console.warn(`⚠️ routeName '${routeName}' not found in routeMap.json`);
+      console.warn(ERROR_MESSAGES.ROUTE_NOT_FOUND_IN_MAP(routeName));
       return null;
     }
 
@@ -59,7 +60,7 @@ export async function getRouteInfo(
       vehicleRouteIds: routeIds,
     };
   } catch (err) {
-    console.error("❌ getRouteInfo internal error:", err);
+    console.error(ERROR_MESSAGES.GET_ROUTE_INFO_ERROR, err);
     return null;
   }
 }

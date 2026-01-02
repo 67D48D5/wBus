@@ -1,6 +1,7 @@
 // src/features/live/services/BusPollingService.ts
 
 import { API_REFRESH_INTERVAL } from "@core/constants/env";
+import { ERROR_MESSAGES } from "@core/constants/locale";
 
 import { getBusLocationData } from "@live/api/getRealtimeData";
 import { getRouteMap } from "@live/api/getRouteMap";
@@ -101,7 +102,7 @@ export class BusPollingService {
       const vehicleIds = routeMap[routeName];
 
       if (!vehicleIds || vehicleIds.length === 0) {
-        throw new Error("ERR:INVALID_ROUTE");
+        throw new Error(ERROR_MESSAGES.ERR_INVALID_ROUTE);
       }
 
       const results = await Promise.allSettled(
@@ -114,7 +115,7 @@ export class BusPollingService {
       );
 
       if (fulfilled.length === 0) {
-        throw new Error("ERR:NETWORK");
+        throw new Error(ERROR_MESSAGES.ERR_NETWORK);
       }
 
       const buses = fulfilled.flatMap((r) => r.value);
@@ -130,7 +131,7 @@ export class BusPollingService {
         this.errorListeners[routeName]?.forEach((cb) => cb(null));
       }
     } catch (err: unknown) {
-      console.error("❌ Bus polling error:", err);
+      console.error(ERROR_MESSAGES.BUS_POLLING_ERROR, err);
       this.cache[routeName] = [];
       this.dataListeners[routeName]?.forEach((cb) => cb([]));
 

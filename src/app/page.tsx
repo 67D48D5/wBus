@@ -5,8 +5,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { MapPin } from 'lucide-react';
 
-import { METADATA, UI_TEXT, SITE_INFO } from '@core/constants/locale';
 import { COMMON } from '@core/constants/locale';
+import { METADATA, UI_TEXT, SITE_INFO } from '@core/constants/locale';
 
 import RouteCard from '@schedule/components/RouteCard';
 import { getAllRoutes } from '@schedule/utils/data';

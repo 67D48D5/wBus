@@ -10,30 +10,9 @@
 // ============================================================================
 
 export const COMMON = {
-    APP_NAME: 'wBus',
     APP_TITLE: 'wBus',
     LOADING: 'Loading...',
     RETRY: '다시 시도',
-    CONFIRM: '확인',
-    CANCEL: '취소',
-    CLOSE: '닫기',
-    BACK: '돌아가기',
-} as const;
-
-// ============================================================================
-// Direction Labels & Icons
-// ============================================================================
-
-export const DIRECTIONS = {
-    UP: '상행',
-    DOWN: '하행',
-    UNKNOWN: '방향 미상',
-} as const;
-
-export const DIRECTION_ICONS = {
-    UP: '⬆️',
-    DOWN: '⬇️',
-    UNKNOWN: '❓',
 } as const;
 
 // ============================================================================
@@ -41,11 +20,7 @@ export const DIRECTION_ICONS = {
 // ============================================================================
 
 export const TIME_LABELS = {
-    HOUR_SUFFIX: '시',
     MINUTE_SUFFIX: '분',
-    MINUTES_LEFT_SUFFIX: '분 후',
-    WITHIN_MINUTES: '분 이내',
-    ARRIVAL_FORMAT: (hours: string, minutes: string) => `${hours}시 ${minutes}분`,
     HOUR_ABBREV: 'h',
     MINUTE_ABBREV: 'm',
     IN_PREFIX: 'in',
@@ -53,14 +28,8 @@ export const TIME_LABELS = {
 
 export const SCHEDULE_MESSAGES = {
     ARRIVING_SOON: '곧 도착',
-    DEPARTING_SOON: '곧 출발',
     ONE_STOP_AWAY: '1정거장 전',
     STOPS_AWAY: (count: number) => `${count}정거장 전`,
-    NEXT_BUS: (minutes: number) => `다음 버스는 약 ${minutes}분 후 출발합니다.`,
-    NO_SCHEDULED_BUSES: '현재 출발 예정인 버스가 없습니다.',
-    NEXT_DEPARTURE_TIME: '가장 가까운 출발 시간',
-    NO_TIMETABLE_INFO: '시간표 정보가 없습니다.',
-    WAITING_BUS_DEPARTING: '대기 중인 버스가 곧 출발 합니다.',
     ROUTE_SUFFIX: '번',
 } as const;
 
@@ -86,6 +55,43 @@ export const ERROR_MESSAGES = {
     UNKNOWN: '⚠️ 알 수 없는 오류가 발생했습니다.',
     ERROR_OCCURRED: '문제가 발생했습니다',
     RESTART_APP: '앱을 다시 시작해주세요.',
+
+    // API & Network Errors
+    API_URL_NOT_SET: '❌ NEXT_PUBLIC_API_URL not set in environment variables.',
+    HTTP_ERROR: (status: number, text: string) => `🚨 HTTP ${status}: ${text}`,
+    REQUEST_FAILED: (message: string) => `❌ Request failed: ${message}.`,
+    UNKNOWN_NETWORK_ERROR: '❌ Unknown network error.',
+
+    // Data Fetching Errors
+    FAILED_TO_FETCH_ROUTE_MAP: '🚫 Failed to fetch routeMap.json',
+    POLYLINE_REQUEST_FAILED: (routeName: string) => `🚫 Polyline request failed: ${routeName}`,
+    REMOTE_FETCH_FAILED: (status: number) => `Remote fetch failed: ${status}`,
+    DATA_FETCH_ERROR: (path: string) => `Error fetching data from ${path}:`,
+
+    // Route & Stop Errors
+    ROUTE_NOT_FOUND_IN_MAP: (routeName: string) => `⚠️ routeName '${routeName}' not found in routeMap.json`,
+    NO_ROUTE_INFO_FOUND: (routeName: string) => `❌ No routeInfo found for ${routeName}`,
+    INVALID_NODEID: (nodeid: string) => `[useBusDirection] Invalid nodeid received: ${JSON.stringify(nodeid)}`,
+    NO_MATCHING_STOP: (nodeid: string) => `[useBusDirection] No matching stop found for nodeid: ${nodeid}`,
+
+    // Internal Errors
+    GET_ROUTE_INFO_ERROR: '❌ getRouteInfo internal error:',
+    BUS_POLLING_ERROR: '❌ Bus polling error:',
+    BUS_STOP_FETCH_ERROR: '❌ useBusStop fetch error:',
+    POLYLINE_FETCH_ERROR: '❌ Polyline fetch error:',
+    ROUTE_MAP_FETCH_ERROR: 'Failed to fetch route map:',
+
+    // Component Errors
+    USE_BUS_CONTEXT_ERROR: '`useBusContext` must be used within `MapProvider`',
+    LEAFLET_IMPORT_ERROR: 'Leaflet import error:',
+    ERROR_BOUNDARY_CAUGHT: 'ErrorBoundary caught an error:',
+
+    // User-facing Errors
+    LOCATION_UNAVAILABLE: '🚨 위치 정보를 가져올 수 없습니다.',
+
+    // Error Codes
+    ERR_INVALID_ROUTE: 'ERR:INVALID_ROUTE',
+    ERR_NETWORK: 'ERR:NETWORK',
 } as const;
 
 // ============================================================================
@@ -103,7 +109,6 @@ export const APP_MESSAGES = {
 export const SITE_INFO = {
     DESCRIPTION: '원주 시내버스 정보 서비스',
     SHORT_DESCRIPTION: '원주 시내버스 시간표 및 실시간 위치 정보 서비스',
-    FOOTER_TEXT: '원주시 시내버스 실시간 정보 제공',
 } as const;
 
 // ============================================================================
@@ -113,8 +118,6 @@ export const SITE_INFO = {
 export const UI_TEXT = {
     REAL_TIME_LOCATION: '실시간 버스 위치',
     REAL_TIME_LOCATION_DESC: '지도에서 버스 위치를 실시간으로 확인하세요',
-    SCHEDULE_INQUIRY: '시간표 조회',
-    SCHEDULE_INQUIRY_DESC: '노선별 버스 운행 시간표를 확인하세요',
     BACK_TO_HOME: '시간표 목록으로',
     TIMETABLE_SUFFIX: '버스 시간표',
     NOTES_TITLE: '※ 비고 사항',
@@ -123,6 +126,26 @@ export const UI_TEXT = {
     ROUTE_NOT_FOUND: '노선을 찾을 수 없습니다',
     NO_BUSES_TODAY: '운행 예정인 버스가 없습니다.',
     NO_BUSES_SYMBOL: '-',
+
+    // Bus List UI
+    ALL_BUS_LIST: '전체 버스 목록',
+    BUSES_RUNNING: (count: number) => `${count}대 운행 중`,
+    NO_BUSES_RUNNING: '운행 중인 버스 없음',
+    LOADING_BUS_DATA: '버스 데이터를 불러오는 중...',
+
+    // Bus List Toggle
+    SHOW_BUS_LIST: '버스 목록 보기',
+    HIDE_BUS_LIST: '버스 목록 숨기기',
+
+    // My Location
+    FIND_MY_LOCATION: '내 위치 찾기',
+    MY_LOCATION_POPUP: (lat: number, lng: number) =>
+        `<b>📍 내 위치</b><br>위도: ${lat}<br>경도: ${lng}`,
+
+    // Bus Marker & Details
+    BUS_ROUTE_LABEL: (routeName: string) => `${routeName}번 버스`,
+    VEHICLE_NUMBER: '차량번호',
+    CURRENT_LOCATION: '현재위치',
 } as const;
 
 // ============================================================================

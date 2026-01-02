@@ -1,6 +1,7 @@
 // src/core/api/fetchAPI.ts
 
 import { API_URL, APP_NAME } from "@core/constants/env";
+import { ERROR_MESSAGES } from "@core/constants/locale";
 
 // Set a delay function for retry logic
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -27,7 +28,7 @@ export async function fetchAPI<T = unknown>(
   retryDelay = 1000
 ): Promise<T> {
   if (API_URL === "NOT_SET") {
-    throw new Error("❌ NEXT_PUBLIC_API_URL not set in environment variables.");
+    throw new Error(ERROR_MESSAGES.API_URL_NOT_SET);
   }
 
   const url = `${API_URL}${endpoint}`;
@@ -44,7 +45,7 @@ export async function fetchAPI<T = unknown>(
       if (!response.ok) {
         const errorText = await response.text();
         throw new HttpError(
-          `🚨 HTTP ${response.status}: ${errorText}`,
+          ERROR_MESSAGES.HTTP_ERROR(response.status, errorText),
           response.status
         );
       }
@@ -58,12 +59,12 @@ export async function fetchAPI<T = unknown>(
           throw error;
         }
         const message = error instanceof Error ? error.message : String(error);
-        throw new Error(`❌ Request failed: ${message}.`);
+        throw new Error(ERROR_MESSAGES.REQUEST_FAILED(message));
       }
 
       await delay(retryDelay);
     }
   }
 
-  throw new Error("❌ Unknown network error.");
+  throw new Error(ERROR_MESSAGES.UNKNOWN_NETWORK_ERROR);
 }

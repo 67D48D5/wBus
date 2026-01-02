@@ -4,6 +4,7 @@ import { useMemo, useCallback } from "react";
 
 import { useBusStop } from "./useBusStop";
 
+import { ERROR_MESSAGES } from "@core/constants/locale";
 import { ALWAYS_UPWARD_NODE_IDS } from "@core/constants/env";
 
 import type { BusStop } from "@live/models/data";
@@ -88,7 +89,7 @@ export function useBusDirection(routeName: string) {
       if (!nodeid || typeof nodeid !== "string" || nodeid.trim() === "") {
         if (process.env.NODE_ENV !== "production") {
           console.warn(
-            `[useBusDirection] Invalid nodeid received: ${JSON.stringify(nodeid)}`
+            ERROR_MESSAGES.INVALID_NODEID(String(nodeid))
           );
         }
         return null;
@@ -108,7 +109,7 @@ export function useBusDirection(routeName: string) {
       if (!matchingStops || matchingStops.length === 0) {
         if (process.env.NODE_ENV !== "production") {
           console.warn(
-            `[useBusDirection] No matching stop found for nodeid: ${normalizedNodeid}`
+            ERROR_MESSAGES.NO_MATCHING_STOP(normalizedNodeid)
           );
         }
         return null;

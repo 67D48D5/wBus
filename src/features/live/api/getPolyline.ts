@@ -1,6 +1,7 @@
 // src/features/live/api/getPolyline.ts
 
 import { CacheManager } from "@core/cache/CacheManager";
+import { ERROR_MESSAGES } from "@core/constants/locale";
 
 import {
   getEuclideanDistance,
@@ -22,7 +23,7 @@ export async function getPolyline(routeName: string): Promise<GeoPolylineData> {
   return polylineCache.getOrFetch(routeName, async () => {
     const res = await fetch(`/data/polylines/${routeName}.geojson`);
     if (!res.ok) {
-      throw new Error(`🚫 Polyline request failed: ${routeName}`);
+      throw new Error(ERROR_MESSAGES.POLYLINE_REQUEST_FAILED(routeName));
     }
     return res.json() as Promise<GeoPolylineData>;
   });

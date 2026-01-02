@@ -7,6 +7,7 @@ import { Popup } from "react-leaflet";
 import L from "leaflet";
 
 import { BUS_ANIMATION_DURATION } from "@/core/constants/env";
+import { UI_TEXT } from "@core/constants/locale";
 
 import { useIcons } from "@live/hooks/useIcons";
 import { useBusData } from "@live/hooks/useBusData";
@@ -131,19 +132,19 @@ export default function BusMarker({
                       return <DirectionIcon className="w-4 h-4 sm:w-5 sm:h-5" />;
                     })()}
                     <span className="font-bold text-sm sm:text-base tracking-tight">
-                      {bus.routenm}번 버스
+                      {UI_TEXT.BUS_ROUTE_LABEL(bus.routenm)}
                     </span>
                   </div>
                 </div>
                 <div className="space-y-1.5 sm:space-y-2 px-0.5 sm:px-1">
                   <div className="flex items-center gap-1.5 sm:gap-2">
-                    <span className="text-[10px] sm:text-xs font-semibold text-gray-500 w-14 sm:w-16">차량번호</span>
+                    <span className="text-[10px] sm:text-xs font-semibold text-gray-500 w-14 sm:w-16">{UI_TEXT.VEHICLE_NUMBER}</span>
                     <span className="text-xs sm:text-sm font-bold text-gray-900 bg-gray-100 px-2 py-0.5 sm:px-3 sm:py-1 rounded-md">
                       {bus.vehicleno}
                     </span>
                   </div>
                   <div className="flex items-start gap-1.5 sm:gap-2">
-                    <span className="text-[10px] sm:text-xs font-semibold text-gray-500 w-14 sm:w-16 mt-0.5 sm:mt-1">현재위치</span>
+                    <span className="text-[10px] sm:text-xs font-semibold text-gray-500 w-14 sm:w-16 mt-0.5 sm:mt-1">{UI_TEXT.CURRENT_LOCATION}</span>
                     <span className="text-xs sm:text-sm text-gray-700 font-medium flex-1">
                       {bus.nodenm}
                     </span>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 
-import { APP_NAME, APP_SPLASH_MESSAGE } from "@core/constants/env";
+import { APP_NAME, APP_SPLASH_MESSAGE, SPLASH_FADE_DURATION } from "@core/constants/env";
 
 interface SplashProps {
   /** Controls the visibility of the splash screen */
@@ -19,7 +19,7 @@ interface SplashProps {
  */
 export default function Splash({
   isVisible,
-  duration = 500,
+  duration = SPLASH_FADE_DURATION,
   showLoader = true,
 }: SplashProps) {
   const [shouldRender, setShouldRender] = useState(isVisible);
