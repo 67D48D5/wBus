@@ -1,6 +1,8 @@
 // src/features/live/api/getPolyline.ts
 
 import { CacheManager } from "@core/cache/CacheManager";
+
+import { DATA_SOURCE } from "@core/constants/env";
 import { ERROR_MESSAGES } from "@core/constants/locale";
 
 import {
@@ -13,6 +15,16 @@ import { GeoPolylineData } from "@live/models/data";
 const polylineCache = new CacheManager<GeoPolylineData>();
 
 /**
+ * Build URL for polyline data based on remote/local mode
+ */
+function getPolylineUrl(routeName: string): string {
+  if (DATA_SOURCE.USE_REMOTE && DATA_SOURCE.BASE_URL) {
+    return `${DATA_SOURCE.BASE_URL}/${DATA_SOURCE.PATHS.POLYLINES}/${routeName}.geojson`;
+  }
+  return `/data/polylines/${routeName}.geojson`;
+}
+
+/**
  * Fetch {routeName}.geojson file and cache the result.
  *
  * @param routeName - routeName (ex: "30", "100", "200")
@@ -21,7 +33,7 @@ const polylineCache = new CacheManager<GeoPolylineData>();
  */
 export async function getPolyline(routeName: string): Promise<GeoPolylineData> {
   return polylineCache.getOrFetch(routeName, async () => {
-    const res = await fetch(`/data/polylines/${routeName}.geojson`);
+    const res = await fetch(getPolylineUrl(routeName));
     if (!res.ok) {
       throw new Error(ERROR_MESSAGES.POLYLINE_REQUEST_FAILED(routeName));
     }

@@ -96,9 +96,16 @@ export const LOCALE = {
 
 // Data Source Configuration
 export const DATA_SOURCE = {
-  // Change this to your S3 bucket URL or CDN URL
-  BASE_URL: process.env.NEXT_PUBLIC_DATA_URL || process.env.DATA_URL || '',
+  // Static data is served from API_URL with CloudFront routing patterns:
+  // - API_URL/routeMap.json
+  // - API_URL/polylines/*.geojson
+  // - API_URL/schedules/*.json
+  BASE_URL: API_URL !== 'NOT_SET' ? API_URL : '',
   USE_REMOTE: process.env.NEXT_PUBLIC_USE_REMOTE_DATA === 'true',
-  ROUTE_MAP_PATH: 'data/routeMap.json',
+  PATHS: {
+    ROUTE_MAP: 'routeMap.json',
+    POLYLINES: 'polylines',  // polylines/{routeId}.geojson
+    SCHEDULES: 'schedules',  // schedules/{routeId}.json
+  },
   CACHE_REVALIDATE: 3600, // 1 hour in seconds
 } as const;

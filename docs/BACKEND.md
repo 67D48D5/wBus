@@ -1,10 +1,37 @@
+# Backend
+
+This section provides an overview of the backend architecture and components used in the project.
+
+## Architecture
+
+### Live API Flow
+
+`ORIGIN -> API Gateway -> **CloudFront** -> Client`
+
+### Static Data Flow
+
+`S3 -> **CloudFront** -> Client`
+
+## Reference Settings for API Gateway
+
+```json
 {
   "openapi": "3.0.1",
   "info": {
-    "title": "vBus",
+    "title": "wBus",
     "description": "API Gateway for Visualized Bus Project",
-    "version": "2025-09-03 02:20:24UTC"
+    "version": "2026-01-02 00:00:00UTC"
   },
+  "servers": [
+    {
+      "url": "https://YOUR_API_ID.execute-api.ap-northeast-2.amazonaws.com/{basePath}",
+      "variables": {
+        "basePath": {
+          "default": ""
+        }
+      }
+    }
+  ],
   "paths": {
     "/getBusArrivalInfo/{busStopId}": {
       "get": {
@@ -14,20 +41,25 @@
           }
         },
         "x-amazon-apigateway-integration": {
+          "responseParameters": {
+            "200": {
+              "overwrite:header.Cache-Control": "public, max-age=3"
+            }
+          },
           "requestParameters": {
             "append:querystring.nodeId": "$request.path.busStopId",
             "append:querystring.numOfRows": "32",
             "append:querystring.pageNo": "1",
             "append:querystring._type": "json",
             "append:querystring.cityCode": "32020",
-            "append:querystring.serviceKey": "YOUR_API_KEY"
+            "append:querystring.serviceKey": "PASTE_YOUR_KEY"
           },
           "payloadFormatVersion": "1.0",
           "type": "http_proxy",
           "httpMethod": "GET",
           "uri": "http://apis.data.go.kr/1613000/ArvlInfoInqireService/getSttnAcctoArvlPrearngeInfoList",
           "connectionType": "INTERNET",
-          "timeoutInMillis": 30000
+          "timeoutInMillis": 12000
         }
       },
       "parameters": [
@@ -50,20 +82,25 @@
           }
         },
         "x-amazon-apigateway-integration": {
+          "responseParameters": {
+            "200": {
+              "overwrite:header.Cache-Control": "public, max-age=3"
+            }
+          },
           "requestParameters": {
             "append:querystring.numOfRows": "32",
             "append:querystring.pageNo": "1",
             "append:querystring._type": "json",
             "append:querystring.cityCode": "32020",
             "append:querystring.routeId": "$request.path.routeId",
-            "append:querystring.serviceKey": "YOUR_API_KEY"
+            "append:querystring.serviceKey": "PASTE_YOUR_KEY"
           },
           "payloadFormatVersion": "1.0",
           "type": "http_proxy",
           "httpMethod": "GET",
           "uri": "http://apis.data.go.kr/1613000/BusLcInfoInqireService/getRouteAcctoBusLcList",
           "connectionType": "INTERNET",
-          "timeoutInMillis": 30000
+          "timeoutInMillis": 12000
         }
       },
       "parameters": [
@@ -86,19 +123,25 @@
           }
         },
         "x-amazon-apigateway-integration": {
+          "responseParameters": {
+            "200": {
+              "overwrite:header.Cache-Control": "public, max-age=1200"
+            }
+          },
           "requestParameters": {
             "append:querystring.numOfRows": "512",
             "append:querystring.pageNo": "1",
             "append:querystring._type": "json",
             "append:querystring.cityCode": "32020",
             "append:querystring.routeId": "$request.path.routeId",
-            "append:querystring.serviceKey": "YOUR_API_KEY"
+            "append:querystring.serviceKey": "PASTE_YOUR_KEY"
           },
           "payloadFormatVersion": "1.0",
           "type": "http_proxy",
           "httpMethod": "GET",
           "uri": "http://apis.data.go.kr/1613000/BusRouteInfoInqireService/getRouteAcctoThrghSttnList",
-          "connectionType": "INTERNET"
+          "connectionType": "INTERNET",
+          "timeoutInMillis": 12000
         }
       },
       "parameters": [
@@ -121,12 +164,15 @@
     "allowHeaders": [
       "*"
     ],
-    "maxAge": 0,
-    "allowCredentials": false,
+    "exposeHeaders": [
+      "date"
+    ],
+    "maxAge": 300,
+    "allowCredentials": true,
     "allowOrigins": [
-      "http://localhost:3000",
       "https://wbus.vercel.app"
     ]
   },
   "x-amazon-apigateway-importexport-version": "1.0"
 }
+```

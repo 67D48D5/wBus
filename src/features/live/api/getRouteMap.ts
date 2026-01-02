@@ -1,6 +1,8 @@
 // src/features/live/api/getRouteMap.ts
 
 import { CacheManager } from "@core/cache/CacheManager";
+
+import { DATA_SOURCE } from "@core/constants/env";
 import { ERROR_MESSAGES } from "@core/constants/locale";
 
 import type { RouteInfo } from "@live/models/data";
@@ -13,13 +15,23 @@ interface RouteMapData {
 const routeMapCache = new CacheManager<RouteMapData>();
 
 /**
+ * Build URL for route map based on remote/local mode
+ */
+function getRouteMapUrl(): string {
+  if (DATA_SOURCE.USE_REMOTE && DATA_SOURCE.BASE_URL) {
+    return `${DATA_SOURCE.BASE_URL}/${DATA_SOURCE.PATHS.ROUTE_MAP}`;
+  }
+  return "/data/routeMap.json";
+}
+
+/**
  * Fetches and caches the routeMap.json data.
  * This function ensures only one fetch request is made even if called multiple times.
  * @returns A promise that resolves to a map of route names to vehicle IDs (excludes empty routes)
  */
 export async function getRouteMap(): Promise<Record<string, string[]>> {
   const data = await routeMapCache.getOrFetch("routeMap", async () => {
-    const res = await fetch("/data/routeMap.json");
+    const res = await fetch(getRouteMapUrl());
     if (!res.ok) throw new Error(ERROR_MESSAGES.FAILED_TO_FETCH_ROUTE_MAP);
     return res.json() as Promise<RouteMapData>;
   });

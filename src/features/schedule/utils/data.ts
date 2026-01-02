@@ -14,16 +14,28 @@ let routeListCache: BusData[] | null = null;
 let availableRouteIds: string[] | null = null;
 
 /**
+ * Build URL/path for data based on remote/local mode
+ */
+function getDataPath(pathParam: string, isRouteData: boolean): { isRemote: boolean; path: string } {
+    if (DATA_SOURCE.USE_REMOTE && DATA_SOURCE.BASE_URL) {
+        // Remote: cloudfront.net/schedules/{routeId}.json or cloudfront.net/routeMap.json
+        const remotePath = isRouteData ? `${DATA_SOURCE.PATHS.SCHEDULES}/${pathParam}` : pathParam;
+        return { isRemote: true, path: `${DATA_SOURCE.BASE_URL}/${remotePath}` };
+    }
+    // Local: public/data/schedules/{routeId}.json or public/data/routeMap.json
+    const subDir = isRouteData ? 'data/schedules' : 'data';
+    return { isRemote: false, path: path.join(process.cwd(), 'public', subDir, pathParam) };
+}
+
+/**
  * Fetch data from remote URL or local fallback
  */
 async function fetchData<T>(pathParam: string, isRouteData: boolean = false): Promise<T | null> {
     try {
-        if (DATA_SOURCE.USE_REMOTE && DATA_SOURCE.BASE_URL) {
-            // Fetch from remote (S3, CDN, etc.)
-            // S3 structure: scheduleRouteMap.json at root, route data under data/schedules/
-            const remotePath = isRouteData ? `data/schedules/${pathParam}` : pathParam;
-            const url = `${DATA_SOURCE.BASE_URL}/${remotePath}`;
-            const response = await fetch(url, {
+        const { isRemote, path: dataPath } = getDataPath(pathParam, isRouteData);
+
+        if (isRemote) {
+            const response = await fetch(dataPath, {
                 next: { revalidate: DATA_SOURCE.CACHE_REVALIDATE }
             });
 
@@ -31,11 +43,7 @@ async function fetchData<T>(pathParam: string, isRouteData: boolean = false): Pr
 
             return await response.json() as T;
         } else {
-            // Local structure: scheduleRouteMap.json in public/, route data in public/data/schedules/
-            const subDir = isRouteData ? 'data/schedules' : '';
-            const filePath = path.join(process.cwd(), 'public', subDir, pathParam);
-            const fileContent = await fs.readFile(filePath, 'utf8');
-
+            const fileContent = await fs.readFile(dataPath, 'utf8');
             return JSON.parse(fileContent) as T;
         }
     } catch (error) {
@@ -52,7 +60,7 @@ async function getAvailableRouteIds(): Promise<string[]> {
         return availableRouteIds;
     }
 
-    const routeMap = await fetchData<{ routes: Record<string, string[]> }>(DATA_SOURCE.ROUTE_MAP_PATH, false);
+    const routeMap = await fetchData<{ routes: Record<string, string[]> }>(DATA_SOURCE.PATHS.ROUTE_MAP, false);
 
     if (routeMap?.routes) {
         availableRouteIds = Object.keys(routeMap.routes);
