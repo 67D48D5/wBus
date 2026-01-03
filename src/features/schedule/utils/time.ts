@@ -47,7 +47,7 @@ export function timeToMinutes(timeStr: string): number {
 /**
  * Find the nearest upcoming bus time for a given route
  */
-export function getNearestBusTime(busData: BusData): { time: string; minutes: number } | null {
+export function getNearestBusTime(busData: BusData): { time: string; minutes: number; destination: string } | null {
     // Check for general schedule first, then fall back to day-specific schedule
     const schedule = busData.schedule.general || busData.schedule[getCurrentDayType()];
 
@@ -56,14 +56,14 @@ export function getNearestBusTime(busData: BusData): { time: string; minutes: nu
     const currentMinutes = getCurrentMinutes();
     const MINUTES_PER_DAY = 1440; // 24 * 60
     let minDifference = Infinity;
-    let nearestTime = null;
+    let nearestTime: { time: string; minutes: number; destination: string } | null = null;
 
     // Iterate through all hours and minutes to find the next bus
     for (const [hour, hourlySchedule] of Object.entries(schedule)) {
         const hourNum = parseInt(hour, 10);
         const hourMinutes = hourNum * 60;
 
-        for (const busTimes of Object.values(hourlySchedule)) {
+        for (const [destination, busTimes] of Object.entries(hourlySchedule)) {
             for (const { minute } of busTimes) {
                 const busMinutes = hourMinutes + parseInt(minute, 10);
 
@@ -74,7 +74,7 @@ export function getNearestBusTime(busData: BusData): { time: string; minutes: nu
 
                 if (difference < minDifference) {
                     minDifference = difference;
-                    nearestTime = { time: `${hour}:${minute}`, minutes: difference };
+                    nearestTime = { time: `${hour}:${minute}`, minutes: difference, destination };
                 }
             }
         }

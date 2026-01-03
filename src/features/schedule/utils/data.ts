@@ -8,10 +8,20 @@ import { BusData } from '@schedule/models/bus';
 import { promises as fs } from 'fs';
 import path from 'path';
 
+// Notice type definition
+export interface Notice {
+    id: string;
+    type: 'info' | 'warning' | 'urgent';
+    title: string;
+    message: string;
+    date: string;
+}
+
 // Cache for parsed bus data
 const dataCache = new Map<string, BusData>();
 let routeListCache: BusData[] | null = null;
 let availableRouteIds: string[] | null = null;
+let noticeCache: Notice[] | null = null;
 
 /**
  * Build URL for remote data or local file path
@@ -132,4 +142,22 @@ export async function getAllRouteIds(): Promise<string[]> {
 export async function routeExists(routeId: string): Promise<boolean> {
     const data = await getRouteData(routeId);
     return data !== null;
+}
+
+/**
+ * Get notices from notice.json
+ */
+export async function getNotices(): Promise<Notice[]> {
+    if (noticeCache) {
+        return noticeCache;
+    }
+
+    const data = await fetchData<{ notices: Notice[] }>('notice.json', false);
+
+    if (data?.notices) {
+        noticeCache = data.notices;
+        return noticeCache;
+    }
+
+    return [];
 }

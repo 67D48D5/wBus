@@ -170,5 +170,31 @@ export const FEATURED_STOPS_LABELS = {
 
 export const METADATA = {
     TITLE: 'wBus',
-    DESCRIPTION: '원주 시내버스 시간표 및 실시간 위치 정보 서비스',
+    DESCRIPTION: '시내버스 시간표 및 실시간 위치 정보 서비스',
+} as const;
+
+// ============================================================================
+// Footer
+// ============================================================================
+
+export const FOOTER = {
+    COPYRIGHT: '© 2026 wBus',
+    DESCRIPTION: '시내버스 정보 서비스',
+    LINKS: [
+        { label: '이용약관', href: '#' },
+        { label: '개인정보처리방침', href: '#' },
+    ],
+    DISCLAIMER: '본 서비스는 참고용이며, 실제 운행 정보와 다를 수 있습니다.',
+} as const;
+
+// ============================================================================
+// Notice Section
+// ============================================================================
+
+export const NOTICE = {
+    SECTION_TITLE: '공지사항',
+    NO_NOTICES: '공지사항이 없습니다.',
+    TYPE_INFO: 'info',
+    TYPE_WARNING: 'warning',
+    TYPE_URGENT: 'urgent',
 } as const;
