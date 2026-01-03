@@ -5,26 +5,23 @@ import { ERROR_MESSAGES } from '@core/constants/locale';
 
 import { BusData } from '@schedule/models/bus';
 
-import { promises as fs } from 'fs';
-import path from 'path';
-
 // Cache for parsed bus data
 const dataCache = new Map<string, BusData>();
 let routeListCache: BusData[] | null = null;
 let availableRouteIds: string[] | null = null;
 
 /**
- * Build URL/path for data based on remote/local mode
+ * Build URL for data based on remote/local mode
  */
-function getDataPath(pathParam: string, isRouteData: boolean): { isRemote: boolean; path: string } {
+function getDataUrl(pathParam: string, isRouteData: boolean): string {
     if (DATA_SOURCE.USE_REMOTE && DATA_SOURCE.BASE_URL) {
         // Remote: cloudfront.net/schedules/{routeId}.json or cloudfront.net/routeMap.json
         const remotePath = isRouteData ? `${DATA_SOURCE.PATHS.SCHEDULES}/${pathParam}` : pathParam;
-        return { isRemote: true, path: `${DATA_SOURCE.BASE_URL}/${remotePath}` };
+        return `${DATA_SOURCE.BASE_URL}/${remotePath}`;
     }
-    // Local: public/data/schedules/{routeId}.json or public/data/routeMap.json
+    // Local: /data/schedules/{routeId}.json or /data/routeMap.json
     const subDir = isRouteData ? 'data/schedules' : 'data';
-    return { isRemote: false, path: path.join(process.cwd(), 'public', subDir, pathParam) };
+    return `/${subDir}/${pathParam}`;
 }
 
 /**
@@ -32,20 +29,14 @@ function getDataPath(pathParam: string, isRouteData: boolean): { isRemote: boole
  */
 async function fetchData<T>(pathParam: string, isRouteData: boolean = false): Promise<T | null> {
     try {
-        const { isRemote, path: dataPath } = getDataPath(pathParam, isRouteData);
+        const url = getDataUrl(pathParam, isRouteData);
+        const response = await fetch(url, {
+            next: { revalidate: DATA_SOURCE.CACHE_REVALIDATE }
+        });
 
-        if (isRemote) {
-            const response = await fetch(dataPath, {
-                next: { revalidate: DATA_SOURCE.CACHE_REVALIDATE }
-            });
+        if (!response.ok) throw new Error(ERROR_MESSAGES.REMOTE_FETCH_FAILED(response.status));
 
-            if (!response.ok) throw new Error(ERROR_MESSAGES.REMOTE_FETCH_FAILED(response.status));
-
-            return await response.json() as T;
-        } else {
-            const fileContent = await fs.readFile(dataPath, 'utf8');
-            return JSON.parse(fileContent) as T;
-        }
+        return await response.json() as T;
     } catch (error) {
         console.error(ERROR_MESSAGES.DATA_FETCH_ERROR(pathParam), error);
         return null;
