@@ -5,38 +5,48 @@ import { ERROR_MESSAGES } from '@core/constants/locale';
 
 import { BusData } from '@schedule/models/bus';
 
+import { promises as fs } from 'fs';
+import path from 'path';
+
 // Cache for parsed bus data
 const dataCache = new Map<string, BusData>();
 let routeListCache: BusData[] | null = null;
 let availableRouteIds: string[] | null = null;
 
 /**
- * Build URL for data based on remote/local mode
+ * Build URL for remote data or local file path
  */
-function getDataUrl(pathParam: string, isRouteData: boolean): string {
+function getDataSource(pathParam: string, isRouteData: boolean): { isRemote: boolean; location: string } {
     if (DATA_SOURCE.USE_REMOTE && DATA_SOURCE.BASE_URL) {
         // Remote: cloudfront.net/schedules/{routeId}.json or cloudfront.net/routeMap.json
         const remotePath = isRouteData ? `${DATA_SOURCE.PATHS.SCHEDULES}/${pathParam}` : pathParam;
-        return `${DATA_SOURCE.BASE_URL}/${remotePath}`;
+        return { isRemote: true, location: `${DATA_SOURCE.BASE_URL}/${remotePath}` };
     }
-    // Local: /data/schedules/{routeId}.json or /data/routeMap.json
+    // Local: public/data/schedules/{routeId}.json or public/data/routeMap.json
     const subDir = isRouteData ? 'data/schedules' : 'data';
-    return `/${subDir}/${pathParam}`;
+    return { isRemote: false, location: path.join(process.cwd(), 'public', subDir, pathParam) };
 }
 
 /**
- * Fetch data from remote URL or local fallback
+ * Fetch data from remote URL or read from local file system
  */
 async function fetchData<T>(pathParam: string, isRouteData: boolean = false): Promise<T | null> {
     try {
-        const url = getDataUrl(pathParam, isRouteData);
-        const response = await fetch(url, {
-            next: { revalidate: DATA_SOURCE.CACHE_REVALIDATE }
-        });
+        const { isRemote, location } = getDataSource(pathParam, isRouteData);
 
-        if (!response.ok) throw new Error(ERROR_MESSAGES.REMOTE_FETCH_FAILED(response.status));
+        if (isRemote) {
+            const response = await fetch(location, {
+                next: { revalidate: DATA_SOURCE.CACHE_REVALIDATE }
+            });
 
-        return await response.json() as T;
+            if (!response.ok) throw new Error(ERROR_MESSAGES.REMOTE_FETCH_FAILED(response.status));
+
+            return await response.json() as T;
+        } else {
+            // Server-side: read directly from file system
+            const fileContent = await fs.readFile(location, 'utf8');
+            return JSON.parse(fileContent) as T;
+        }
     } catch (error) {
         console.error(ERROR_MESSAGES.DATA_FETCH_ERROR(pathParam), error);
         return null;
