@@ -1,4 +1,4 @@
-# Backend
+# Polly
 
 This section provides an overview of the backend architecture and components used in the project.
 
@@ -6,11 +6,11 @@ This section provides an overview of the backend architecture and components use
 
 ### Live API Flow
 
-`ORIGIN -> API Gateway -> **CloudFront** -> Client`
+`ORIGIN -> API Gateway -> CloudFront -> Client`
 
 ### Static Data Flow
 
-`S3 -> **CloudFront** -> Client`
+`S3 -> CloudFront -> Client`
 
 ## Reference Settings for API Gateway
 
@@ -125,7 +125,7 @@ This section provides an overview of the backend architecture and components use
         "x-amazon-apigateway-integration": {
           "responseParameters": {
             "200": {
-              "overwrite:header.Cache-Control": "public, max-age=1200"
+              "overwrite:header.Cache-Control": "public, max-age=3"
             }
           },
           "requestParameters": {
