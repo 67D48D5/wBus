@@ -57,7 +57,25 @@ class BusRouteProcessor:
                 f"{self.tago_url}/{endpoint}", params=params, timeout=10
             )
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+
+            # Validate response structure
+            if isinstance(data, str):
+                print(
+                    f"    [TAGO API Error] Unexpected response type (string): {data[:200]}"
+                )
+                return None
+            if not isinstance(data, dict):
+                print(f"    [TAGO API Error] Unexpected response type: {type(data)}")
+                return None
+
+            return data
+        except requests.exceptions.RequestException as e:
+            print(f"    [TAGO API Error] Request failed: {e}")
+            return None
+        except ValueError as e:
+            print(f"    [TAGO API Error] Invalid JSON response: {e}")
+            return None
         except Exception as e:
             print(f"    [TAGO API Error] {e}")
             return None
@@ -72,14 +90,35 @@ class BusRouteProcessor:
         params = {"cityCode": self.city_code, "numOfRows": 2000, "pageNo": 1}
         data = self._call_api("getRouteNoList", params)
 
-        if not data or "item" not in data["response"]["body"]["items"]:
-            print("  No routes found.")
+        if not data:
+            print("  ✗ No data returned from API.")
             return []
 
-        items = data["response"]["body"]["items"]["item"]
-        routes = items if isinstance(items, list) else [items]
-        print(f"  Found {len(routes)} routes.")
-        return routes
+        try:
+            if "response" not in data:
+                print(
+                    f"  ✗ Invalid response structure. Keys: {list(data.keys()) if isinstance(data, dict) else 'Not a dict'}"
+                )
+                return []
+
+            response = data["response"]
+            if "body" not in response or "items" not in response["body"]:
+                print("  ✗ Unexpected API response structure.")
+                return []
+
+            items = response["body"]["items"].get("item", [])
+            routes = items if isinstance(items, list) else [items] if items else []
+
+            if not routes:
+                print("  ✗ No routes found.")
+                return []
+
+            print(f"  ✓ Found {len(routes)} routes.")
+            return routes
+        except (KeyError, TypeError) as e:
+            print(f"  ✗ Error parsing API response: {e}")
+            print(f"  Response: {str(data)[:500]}")
+            return []
 
     def save_route_geojson(self, route_id, route_no):
         """Fetch station list for a route and save as GeoJSON."""
@@ -90,57 +129,73 @@ class BusRouteProcessor:
         }
         data = self._call_api("getRouteAcctoThrghSttnList", params)
 
-        if not data or "item" not in data["response"]["body"]["items"]:
-            print(f"    No stations found for route {route_no}")
+        if not data:
+            print(f"    ✗ No data returned for route {route_no}")
             return None
 
-        items = data["response"]["body"]["items"]["item"]
-        if isinstance(items, dict):
-            items = [items]
+        try:
+            if (
+                "response" not in data
+                or "body" not in data["response"]
+                or "items" not in data["response"]["body"]
+            ):
+                print(f"    ✗ No stations found for route {route_no}")
+                return None
 
-        # Sort by node order and separate by direction
-        items.sort(key=lambda x: int(x["nodeord"]))
+            items = data["response"]["body"]["items"].get("item", [])
+            if not items:
+                print(f"    ✗ No stations found for route {route_no}")
+                return None
 
-        up_coords = [
-            [float(i["gpslong"]), float(i["gpslati"])]
-            for i in items
-            if str(i["updowncd"]) == "0"
-        ]
-        down_coords = [
-            [float(i["gpslong"]), float(i["gpslati"])]
-            for i in items
-            if str(i["updowncd"]) == "1"
-        ]
+            if isinstance(items, dict):
+                items = [items]
 
-        features = []
-        if up_coords:
-            features.append(
-                {
-                    "type": "Feature",
-                    "properties": {"dir": "up"},
-                    "geometry": {"type": "LineString", "coordinates": up_coords},
-                }
-            )
-        if down_coords:
-            features.append(
-                {
-                    "type": "Feature",
-                    "properties": {"dir": "down"},
-                    "geometry": {"type": "LineString", "coordinates": down_coords},
-                }
-            )
+            # Sort by node order and separate by direction
+            items.sort(key=lambda x: int(x["nodeord"]))
 
-        if not features:
-            print(f"    No coordinates found for route {route_no}")
+            up_coords = [
+                [float(i["gpslong"]), float(i["gpslati"])]
+                for i in items
+                if str(i["updowncd"]) == "0"
+            ]
+            down_coords = [
+                [float(i["gpslong"]), float(i["gpslati"])]
+                for i in items
+                if str(i["updowncd"]) == "1"
+            ]
+
+            features = []
+            if up_coords:
+                features.append(
+                    {
+                        "type": "Feature",
+                        "properties": {"dir": "up"},
+                        "geometry": {"type": "LineString", "coordinates": up_coords},
+                    }
+                )
+            if down_coords:
+                features.append(
+                    {
+                        "type": "Feature",
+                        "properties": {"dir": "down"},
+                        "geometry": {"type": "LineString", "coordinates": down_coords},
+                    }
+                )
+
+            if not features:
+                print(f"    ✗ No coordinates found for route {route_no}")
+                return None
+
+            geojson = {"type": "FeatureCollection", "features": features}
+
+            file_path = self.raw_routes_dir / f"{route_no}_{route_id}.geojson"
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(geojson, f, ensure_ascii=False)
+
+            return file_path
+        except (KeyError, TypeError, ValueError) as e:
+            print(f"    ✗ Error processing route {route_no}: {e}")
             return None
-
-        geojson = {"type": "FeatureCollection", "features": features}
-
-        file_path = self.raw_routes_dir / f"{route_no}_{route_id}.geojson"
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(geojson, f, ensure_ascii=False)
-
-        return file_path
 
     def collect_all_routes(self):
         """Collect all routes or specific route and save as GeoJSON files."""
@@ -302,14 +357,29 @@ class BusRouteProcessor:
         }
 
         try:
-            response = requests.get(url, params=params)
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
             data = response.json()
 
-            if data["response"]["header"]["resultCode"] != "00":
-                print(f"  API error: {data['response']['header']['resultMsg']}")
+            if not isinstance(data, dict):
+                print(f"  ✗ Unexpected response type: {type(data)}")
                 return None
 
-            items = data["response"]["body"]["items"]["item"]
+            if "response" not in data or "header" not in data["response"]:
+                print("  ✗ Invalid response structure")
+                return None
+
+            if data["response"]["header"]["resultCode"] != "00":
+                print(
+                    f"  ✗ API error: {data['response']['header'].get('resultMsg', 'Unknown error')}"
+                )
+                return None
+
+            items = data["response"]["body"]["items"].get("item", [])
+            if not items:
+                print("  ✗ No routes found")
+                return None
+
             if isinstance(items, dict):
                 items = [items]
 
@@ -343,8 +413,14 @@ class BusRouteProcessor:
             print(f"  ✓ Route mapping saved to {self.mapping_file}")
             return final_json
 
+        except requests.exceptions.RequestException as e:
+            print(f"  ✗ Request failed: {e}")
+            return None
+        except (KeyError, TypeError, ValueError) as e:
+            print(f"  ✗ Error parsing response: {e}")
+            return None
         except Exception as e:
-            print(f"  [Error] Failed to generate route mapping: {e}")
+            print(f"  ✗ Failed to generate route mapping: {e}")
             return None
 
     # ==================== Main Execution ====================
