@@ -44,7 +44,6 @@ class BusRouteProcessor:
         self.raw_routes_dir = self.output_base_dir / "raw_routes"
         self.snapped_routes_dir = self.output_base_dir / "snapped_routes"
         self.mapping_file = self.output_base_dir / "routeMap.json"
-        self.stops_file = self.output_base_dir / "stationMap.json"
         self.all_stops = {}
 
         # Create directories
@@ -131,10 +130,17 @@ class BusRouteProcessor:
                         route_mapping[no].append(rid)
 
                 sorted_routes = dict(sorted(route_mapping.items(), key=lambda x: x[0]))
-                final_json = {
-                    "lastUpdated": datetime.now().strftime("%Y-%m-%d"),
-                    "routes": sorted_routes,
-                }
+
+                final_json = {}
+                if self.mapping_file.exists():
+                    try:
+                        with open(self.mapping_file, "r", encoding="utf-8") as f:
+                            final_json = json.load(f)
+                    except Exception:
+                        pass
+
+                final_json["lastUpdated"] = datetime.now().strftime("%Y-%m-%d")
+                final_json["routes"] = sorted_routes
                 final_json["routes"]["Shuttle"] = []
 
                 with open(self.mapping_file, "w", encoding="utf-8") as f:
@@ -185,7 +191,6 @@ class BusRouteProcessor:
                 if nid and nid not in self.all_stops:
                     try:
                         self.all_stops[nid] = {
-                            "nodeid": nid,
                             "nodenm": item.get("nodenm"),
                             "gpslati": float(item.get("gpslati")),
                             "gpslong": float(item.get("gpslong")),
@@ -244,33 +249,31 @@ class BusRouteProcessor:
             return None
 
     def save_stops_json(self):
-        """Save collected bus stop information to a JSON file."""
+        """Save collected bus stop information to routeMap.json."""
         if not self.all_stops:
             return
 
         # Load existing data to merge if available
-        final_stops = {}
-        if self.stops_file.exists():
+        data = {}
+        if self.mapping_file.exists():
             try:
-                with open(self.stops_file, "r", encoding="utf-8") as f:
-                    existing_data = json.load(f)
-                    final_stops = existing_data.get("stops", {})
+                with open(self.mapping_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
             except Exception:
                 pass
 
+        final_stops = data.get("stops", {})
         # Update with new stops
         final_stops.update(self.all_stops)
 
-        output_data = {
-            "lastUpdated": datetime.now().strftime("%Y-%m-%d"),
-            "totalStops": len(final_stops),
-            "stops": dict(sorted(final_stops.items())),
-        }
+        data["lastUpdated"] = datetime.now().strftime("%Y-%m-%d")
+        data["totalStops"] = len(final_stops)
+        data["stops"] = dict(sorted(final_stops.items()))
 
         try:
-            with open(self.stops_file, "w", encoding="utf-8") as f:
-                json.dump(output_data, f, ensure_ascii=False, indent=2)
-            print(f"  ✓ Station mapping saved to {self.stops_file}")
+            with open(self.mapping_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            print(f"  ✓ Station mapping saved to {self.mapping_file}")
         except Exception as e:
             print(f"  ✗ Failed to save station mapping: {e}")
 
@@ -480,7 +483,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--stationMap",
         action="store_true",
-        help="Only generate stationMap.json and skip route snapping",
+        help="Only update station data in routeMap.json and skip route snapping",
     )
 
     args = parser.parse_args()
