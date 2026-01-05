@@ -262,13 +262,12 @@ class BusRouteProcessor:
             except Exception:
                 pass
 
-        final_stops = data.get("stops", {})
+        final_stops = data.get("stations", {})
         # Update with new stops
         final_stops.update(self.all_stops)
 
         data["lastUpdated"] = datetime.now().strftime("%Y-%m-%d")
-        data["totalStops"] = len(final_stops)
-        data["stops"] = dict(sorted(final_stops.items()))
+        data["stations"] = dict(sorted(final_stops.items()))
 
         try:
             with open(self.mapping_file, "w", encoding="utf-8") as f:
