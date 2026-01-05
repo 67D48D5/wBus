@@ -58,6 +58,9 @@ async function fetchData<T>(pathParam: string, isRouteData: boolean = false): Pr
             return JSON.parse(fileContent) as T;
         }
     } catch (error) {
+        if ((error as any).code === 'ENOENT') {
+            return null;
+        }
         console.error(ERROR_MESSAGES.DATA_FETCH_ERROR(pathParam), error);
         return null;
     }
