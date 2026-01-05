@@ -41,7 +41,7 @@ export type ArrivalInfo = {
 // Polyline
 export type GeoFeature = {
   type: "Feature";
-  properties: { linkId: number; linkOrd: number; updnDir: string };
+  properties: { dir: "up" | "down" } | { linkId: number; linkOrd: number; updnDir: string };
   geometry: { type: "LineString"; coordinates: [number, number][] };
 };
 

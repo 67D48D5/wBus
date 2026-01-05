@@ -55,8 +55,15 @@ export function transformPolyline(data: GeoPolylineData) {
     const coords = feature.geometry.coordinates.map(
       ([lng, lat]) => [lat, lng] as [number, number]
     );
-    if (feature.properties.updnDir === "1") upPolyline.push(coords);
-    else if (feature.properties.updnDir === "0") downPolyline.push(coords);
+
+    const props = feature.properties as any;
+
+    // Support both new scheme (dir: "up"/"down") and legacy scheme (updnDir: "1"/"0")
+    if (props.dir === "up" || props.updnDir === "1") {
+      upPolyline.push(coords);
+    } else if (props.dir === "down" || props.updnDir === "0") {
+      downPolyline.push(coords);
+    }
   });
 
   return { upPolyline, downPolyline };
