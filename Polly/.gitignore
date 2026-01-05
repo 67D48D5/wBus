@@ -3,3 +3,6 @@
 # Ignore output files
 *.geojson
 *.json
+
+# Ignore `private` directory
+.private
