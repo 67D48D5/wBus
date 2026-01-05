@@ -83,8 +83,8 @@ class BusRouteProcessor:
     # ==================== Phase 1: Data Collection ====================
 
     def get_all_routes(self):
-        """Fetch all route IDs and numbers for the city."""
-        print("\n[Phase 1: Data Collection]")
+        """Fetch all route IDs, generate mapping file, and return route list."""
+        print("\n[Phase 1: Data Collection & Mapping]")
         print("Fetching all routes from the city...")
 
         params = {"cityCode": self.city_code, "numOfRows": 2000, "pageNo": 1}
@@ -114,6 +114,33 @@ class BusRouteProcessor:
                 return []
 
             print(f"  ✓ Found {len(routes)} routes.")
+
+            # Generate route mapping
+            try:
+                route_mapping = {}
+                for item in routes:
+                    no = str(item["routeno"])
+                    rid = str(item["routeid"])
+
+                    if no not in route_mapping:
+                        route_mapping[no] = []
+
+                    if rid not in route_mapping[no]:
+                        route_mapping[no].append(rid)
+
+                sorted_routes = dict(sorted(route_mapping.items(), key=lambda x: x[0]))
+                final_json = {
+                    "lastUpdated": datetime.now().strftime("%Y-%m-%d"),
+                    "routes": sorted_routes,
+                }
+                final_json["routes"]["Shuttle"] = []
+
+                with open(self.mapping_file, "w", encoding="utf-8") as f:
+                    json.dump(final_json, f, ensure_ascii=False, indent=2)
+                print(f"  ✓ Route mapping saved to {self.mapping_file}")
+            except Exception as e:
+                print(f"  ✗ Failed to save route mapping: {e}")
+
             return routes
         except (KeyError, TypeError) as e:
             print(f"  ✗ Error parsing API response: {e}")
@@ -293,7 +320,6 @@ class BusRouteProcessor:
         print(f"Processing {len(files)} route file(s)...")
 
         for file_path in files:
-            route_no = file_path.stem.split("_")[0]
             print(f"\n  Processing {file_path.name}...")
 
             try:
@@ -340,89 +366,6 @@ class BusRouteProcessor:
 
         print(f"\n✓ All routes snapped and saved in {self.snapped_routes_dir}")
 
-    # ==================== Phase 3: Route Mapping ====================
-
-    def generate_route_mapping(self):
-        """Generate the route mapping JSON file."""
-        print("\n[Phase 3: Generating Route Mapping]")
-        print("Fetching route mapping data...")
-
-        url = f"{self.tago_url}/getRouteNoList"
-        params = {
-            "serviceKey": self.service_key,
-            "cityCode": self.city_code,
-            "numOfRows": 2000,
-            "pageNo": 1,
-            "_type": "json",
-        }
-
-        try:
-            response = requests.get(url, params=params, timeout=10)
-            response.raise_for_status()
-            data = response.json()
-
-            if not isinstance(data, dict):
-                print(f"  ✗ Unexpected response type: {type(data)}")
-                return None
-
-            if "response" not in data or "header" not in data["response"]:
-                print("  ✗ Invalid response structure")
-                return None
-
-            if data["response"]["header"]["resultCode"] != "00":
-                print(
-                    f"  ✗ API error: {data['response']['header'].get('resultMsg', 'Unknown error')}"
-                )
-                return None
-
-            items = data["response"]["body"]["items"].get("item", [])
-            if not items:
-                print("  ✗ No routes found")
-                return None
-
-            if isinstance(items, dict):
-                items = [items]
-
-            # Group by route number
-            route_mapping = {}
-            for item in items:
-                no = str(item["routeno"])
-                rid = str(item["routeid"])
-
-                if no not in route_mapping:
-                    route_mapping[no] = []
-
-                if rid not in route_mapping[no]:
-                    route_mapping[no].append(rid)
-
-            # Sort by route number
-            sorted_routes = dict(sorted(route_mapping.items(), key=lambda x: x[0]))
-
-            # Add shuttle routes if needed
-            final_json = {
-                "lastUpdated": datetime.now().strftime("%Y-%m-%d"),
-                "routes": sorted_routes,
-            }
-
-            # Optional: Add shuttle buses manually
-            final_json["routes"]["Shuttle"] = []
-
-            with open(self.mapping_file, "w", encoding="utf-8") as f:
-                json.dump(final_json, f, ensure_ascii=False, indent=2)
-
-            print(f"  ✓ Route mapping saved to {self.mapping_file}")
-            return final_json
-
-        except requests.exceptions.RequestException as e:
-            print(f"  ✗ Request failed: {e}")
-            return None
-        except (KeyError, TypeError, ValueError) as e:
-            print(f"  ✗ Error parsing response: {e}")
-            return None
-        except Exception as e:
-            print(f"  ✗ Failed to generate route mapping: {e}")
-            return None
-
     # ==================== Main Execution ====================
 
     def run_full_pipeline(self):
@@ -441,9 +384,6 @@ class BusRouteProcessor:
 
             # Phase 2: Snap routes through OSRM
             self.snap_all_routes()
-
-            # Phase 3: Generate route mapping
-            self.generate_route_mapping()
 
             print("\n" + "=" * 60)
             print("✓ Pipeline completed successfully!")
