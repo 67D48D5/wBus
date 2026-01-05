@@ -183,12 +183,12 @@ class BusRouteProcessor:
             up_coords = [
                 [float(i["gpslong"]), float(i["gpslati"])]
                 for i in items
-                if str(i["updowncd"]) == "0"
+                if str(i["updowncd"]) == "1"
             ]
             down_coords = [
                 [float(i["gpslong"]), float(i["gpslati"])]
                 for i in items
-                if str(i["updowncd"]) == "1"
+                if str(i["updowncd"]) == "0"
             ]
 
             features = []
