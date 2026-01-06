@@ -74,10 +74,10 @@ async function getAvailableRouteIds(): Promise<string[]> {
         return availableRouteIds;
     }
 
-    const routeMap = await fetchData<{ routes: Record<string, string[]> }>(DATA_SOURCE.PATHS.ROUTE_MAP, false);
+    const routeMap = await fetchData<{ route_numbers: Record<string, string[]> }>(DATA_SOURCE.PATHS.ROUTE_MAP, false);
 
-    if (routeMap?.routes) {
-        availableRouteIds = Object.keys(routeMap.routes);
+    if (routeMap?.route_numbers) {
+        availableRouteIds = Object.keys(routeMap.route_numbers);
         return availableRouteIds;
     }
 
