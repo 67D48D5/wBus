@@ -7,6 +7,8 @@ import { useBusStop } from "./useBusStop";
 import { ERROR_MESSAGES } from "@core/constants/locale";
 import { ALWAYS_UPWARD_NODE_IDS } from "@core/constants/env";
 
+import { getRouteDetails } from "@live/api/getRouteMap";
+
 import type { BusStop } from "@live/models/data";
 
 /** Direction codes for bus routes */
@@ -141,4 +143,41 @@ export function useStopExists(routeName: string) {
     if (!nodeid || typeof nodeid !== "string") return false;
     return stopSet.has(nodeid.trim());
   }, [stopSet]);
+}
+
+/**
+ * Helper function to get direction from route_details using routeid and nodeord.
+ * This is a standalone async function that uses the new routeMap schema.
+ * 
+ * @param routeid - The route ID from realtime bus data (e.g., "WJB251000068")
+ * @param nodeord - The current node order from realtime bus data
+ * @returns Direction code (1 = up, 0 = down) or null if unable to determine
+ * 
+ * @example
+ * const direction = await getDirectionFromRouteDetails(bus.routeid, bus.nodeord);
+ */
+export async function getDirectionFromRouteDetails(
+  routeid: string,
+  nodeord: number
+): Promise<DirectionCode> {
+  try {
+    const routeDetail = await getRouteDetails(routeid);
+
+    if (!routeDetail || !routeDetail.sequence) {
+      return null;
+    }
+
+    // Find the stop in the sequence with matching nodeord
+    const stopInfo = routeDetail.sequence.find(s => s.nodeord === nodeord);
+
+    if (stopInfo) {
+      // updowncd: 0 = down/하행, 1 = up/상행
+      return stopInfo.updowncd === 0 ? Direction.DOWN : Direction.UP;
+    }
+
+    return null;
+  } catch (err) {
+    console.error(ERROR_MESSAGES.GET_ROUTE_INFO_ERROR(routeid), err);
+    return null;
+  }
 }

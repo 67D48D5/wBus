@@ -7,6 +7,18 @@ export type RouteInfo = {
   vehicleRouteIds: string[]; // 실시간 버스 위치 요청 시 사용하는 ID 목록
 };
 
+// Route Detail Sequence Item
+export type SequenceItem = {
+  nodeord: number;
+  nodeid: string;
+  updowncd: number;
+};
+
+// Route Detail from routeMap
+export type RouteDetail = {
+  sequence: SequenceItem[];
+};
+
 // Bus Stop Info
 export type BusStop = {
   gpslati: number;
@@ -27,6 +39,7 @@ export type BusItem = {
   nodenm: string;
   nodeid: string;
   nodeord: number;
+  routeid?: string; // 버스의 route ID
 };
 
 // Bus Stop Arrival Info

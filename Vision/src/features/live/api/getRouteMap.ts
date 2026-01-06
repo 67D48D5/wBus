@@ -5,12 +5,12 @@ import { CacheManager } from "@core/cache/CacheManager";
 import { DATA_SOURCE } from "@core/constants/env";
 import { ERROR_MESSAGES } from "@core/constants/locale";
 
-import type { BusStop, RouteInfo } from "@live/models/data";
+import type { BusStop, RouteInfo, RouteDetail } from "@live/models/data";
 
 interface RouteMapData {
   lastUpdated: string;
   route_numbers: Record<string, string[]>;
-  route_details: Record<string, any>;
+  route_details: Record<string, RouteDetail>;
 }
 
 interface StationData {
@@ -100,4 +100,20 @@ export async function getRouteInfo(
     console.error(ERROR_MESSAGES.GET_ROUTE_INFO_ERROR, err);
     return null;
   }
+}
+
+/**
+ * Fetches route detail information including sequence data.
+ * @param routeId - The ID of the route (e.g., "WJB251000068")
+ * @returns A promise that resolves to RouteDetail or null if not found
+ */
+export async function getRouteDetails(
+  routeId: string
+): Promise<RouteDetail | null> {
+  const data = await routeMapCache.getOrFetch("routeMap", async () => {
+    const res = await fetch(getRouteMapUrl());
+    if (!res.ok) throw new Error(ERROR_MESSAGES.FAILED_TO_FETCH_ROUTE_MAP);
+    return res.json() as Promise<RouteMapData>;
+  });
+  return data.route_details[routeId] || null;
 }
