@@ -44,7 +44,10 @@ class BusRouteProcessor:
         self.raw_routes_dir = self.output_base_dir / "raw_routes"
         self.snapped_routes_dir = self.output_base_dir / "snapped_routes"
         self.mapping_file = self.output_base_dir / "routeMap.json"
-        self.all_stops = {}
+
+        # Data holders
+        self.all_stops = {}  # Station Master
+        self.route_details = {}  # Route Details
 
         # Create directories
         self.raw_routes_dir.mkdir(parents=True, exist_ok=True)
@@ -185,18 +188,45 @@ class BusRouteProcessor:
             if isinstance(items, dict):
                 items = [items]
 
-            # Collect stop information
+            # Sort by node order
+            items.sort(key=lambda x: int(x["nodeord"]))
+
+            # Prepare route details
+            current_sequence = []
+
             for item in items:
                 nid = str(item.get("nodeid"))
-                if nid and nid not in self.all_stops:
+                if not nid:
+                    continue
+
+                # Update master stop list
+                if nid not in self.all_stops:
                     try:
                         self.all_stops[nid] = {
                             "nodenm": item.get("nodenm"),
+                            "nodeno": int(item.get("nodeno", 0)),
                             "gpslati": float(item.get("gpslati")),
                             "gpslong": float(item.get("gpslong")),
                         }
                     except (ValueError, TypeError):
-                        continue
+                        pass
+
+                # Add to current route sequence
+                try:
+                    current_sequence.append(
+                        {
+                            "nodeid": nid,
+                            "nodeord": int(item.get("nodeord")),
+                            "updowncd": int(item.get("updowncd", 0)),
+                        }
+                    )
+                except (ValueError, TypeError):
+                    continue
+
+            self.route_details[route_id] = {
+                "routeno": str(route_no),
+                "sequence": current_sequence,
+            }
 
             if not save_file:
                 return None
@@ -248,31 +278,36 @@ class BusRouteProcessor:
             print(f"    ✗ Error processing route {route_no}: {e}")
             return None
 
-    def save_stops_json(self):
+    def save_route_map_json(self, routes_list):
         """Save collected bus stop information to routeMap.json."""
         if not self.all_stops:
             return
 
         # Load existing data to merge if available
-        data = {}
-        if self.mapping_file.exists():
-            try:
-                with open(self.mapping_file, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-            except Exception:
-                pass
+        route_mapping = {}
+        for r in routes_list:
+            no = str(r["routeno"])
+            rid = str(r["routeid"])
+            if no not in route_mapping:
+                route_mapping[no] = []
+            if rid not in route_mapping[no]:
+                route_mapping[no].append(rid)
 
-        final_stops = data.get("stations", {})
-        # Update with new stops
-        final_stops.update(self.all_stops)
-
-        data["lastUpdated"] = datetime.now().strftime("%Y-%m-%d")
-        data["stations"] = dict(sorted(final_stops.items()))
+        final_data = {
+            "lastUpdated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "route_numbers": dict(sorted(route_mapping.items())),
+            "route_details": self.route_details,
+            "stations": dict(sorted(self.all_stops.items())),
+        }
 
         try:
             with open(self.mapping_file, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
+                json.dump(final_data, f, ensure_ascii=False, indent=2)
+
+            print(f"  ✓ Total Stations: {len(self.all_stops)}")
+            print(f"  ✓ Total Routes: {len(self.route_details)}")
             print(f"  ✓ Station mapping saved to {self.mapping_file}")
+            print()
         except Exception as e:
             print(f"  ✗ Failed to save station mapping: {e}")
 
@@ -291,16 +326,18 @@ class BusRouteProcessor:
 
         msg = "Collecting" if save_files else "Scanning"
         suffix = " as GeoJSON..." if save_files else " for stations..."
+
         print(f"{msg} {len(routes)} route(s){suffix}")
+
         for i, route in enumerate(routes):
             route_id = route["routeid"]
             route_no = route["routeno"]
             print(f"  [{i+1}/{len(routes)}] Processing route {route_no}...")
             self.save_route_geojson(route_id, route_no, save_file=save_files)
-            time.sleep(0.5)  # Rate limiting
+            time.sleep(0.3)  # Rate limiting
 
-        self.save_stops_json()
-        print(f"✓ Routes collected in {self.raw_routes_dir}")
+        self.save_route_map_json(routes)
+        print(f"  ✓ Routes collected in {self.raw_routes_dir}")
 
     # ==================== Phase 2: Route Snapping ====================
 
