@@ -35,7 +35,7 @@ export const MAP_DEFAULT_POSITION = (() => {
 })();
 
 export const MAP_DEFAULT_ZOOM =
-  Number(process.env.NEXT_PUBLIC_MAP_DEFAULT_ZOOM) || 12;
+  Number(process.env.NEXT_PUBLIC_MAP_DEFAULT_ZOOM) || 16;
 export const MAP_MIN_ZOOM =
   Number(process.env.NEXT_PUBLIC_MAP_MIN_ZOOM) || 12;
 export const MAP_MAX_ZOOM =
