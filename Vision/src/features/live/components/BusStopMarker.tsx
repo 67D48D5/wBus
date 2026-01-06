@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { MapPinned } from "lucide-react";
 import { Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 
@@ -10,6 +10,8 @@ import { BUSSTOP_MARKER_MIN_ZOOM } from "@core/constants/env";
 
 import { useIcons } from "@live/hooks/useIcons";
 import { useBusStop } from "@live/hooks/useBusStop";
+
+import { filterStopsByViewport } from "@live/utils/stopFiltering";
 
 import BusStopPopup from "./BusStopPopup";
 
@@ -24,24 +26,39 @@ export default function BusStopMarker({ routeName }: Props) {
 
   const map = useMap();
   const [zoom, setZoom] = useState(map.getZoom());
+  const [bounds, setBounds] = useState(map.getBounds());
 
   useMapEvents({
     zoomend: () => {
       setZoom(map.getZoom());
+      setBounds(map.getBounds());
+    },
+    moveend: () => {
+      setBounds(map.getBounds());
     },
   });
 
-  // Render nothing if the zoom level is below the threshold
-  if (zoom < BUSSTOP_MARKER_MIN_ZOOM) {
-    return null;
-  }
+  // Filter stops by viewport and zoom level for performance
+  const visibleStops = useMemo(
+    () => {
+      if (zoom < BUSSTOP_MARKER_MIN_ZOOM) {
+        return [];
+      }
+      return filterStopsByViewport(stops, bounds, zoom);
+    },
+    [stops, bounds, zoom]
+  );
+
+  console.log(`[BusStopMarker] Route: ${routeName}, Zoom: ${zoom}, Total stops: ${stops.length}, Visible: ${visibleStops.length}`);
 
   return (
     <>
-      {stops.map((stop) => {
+      {visibleStops.map((stop, index) => {
+        // Use nodeid + updowncd as primary key, fallback to index for unique identification
+        const key = stop.nodeid ? `${stop.nodeid}-${stop.updowncd}` : `stop-${index}`;
         return (
           <Marker
-            key={`${stop.nodeid}-${stop.updowncd}`}
+            key={key}
             position={[stop.gpslati, stop.gpslong]}
             icon={busStopIcon}
             eventHandlers={{

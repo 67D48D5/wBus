@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 
-import { ERROR_MESSAGES } from "@core/constants/locale";
 import { CacheManager } from "@core/cache/CacheManager";
+import { ERROR_MESSAGES } from "@core/constants/locale";
 
 import { getRouteInfo } from "@live/api/getRouteMap";
-import { getBusStopLocationData } from "@live/api/getRealtimeData";
+import { getBusStopLocationData } from "@live/api/getRouteMap";
 
 import { useBusContext } from "@live/context/MapContext";
 import { getHaversineDistance } from "@live/utils/geoUtils";
@@ -30,16 +30,16 @@ export function useBusStop(routeName: string) {
           return;
         }
 
-        const repRouteId = routeInfo.representativeRouteId;
-
-        const data = await stopCache.getOrFetch(repRouteId, async () => {
-          const fetchedData = await getBusStopLocationData(repRouteId);
+        // Get all stops and sort by nodeord (all stops are available globally)
+        const allStops = await stopCache.getOrFetch("Stations", async () => {
+          const fetchedData = await getBusStopLocationData();
           return fetchedData.sort(
             (a: BusStop, b: BusStop) => a.nodeord - b.nodeord
           );
         });
 
-        if (isMounted) setStops(data);
+        console.log(`[useBusStop] Route "${routeName}" loaded with ${allStops.length} stops`);
+        if (isMounted) setStops(allStops);
       } catch (err) {
         console.error(ERROR_MESSAGES.BUS_STOP_FETCH_ERROR, err);
       }

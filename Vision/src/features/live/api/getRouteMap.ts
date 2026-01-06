@@ -5,14 +5,19 @@ import { CacheManager } from "@core/cache/CacheManager";
 import { DATA_SOURCE } from "@core/constants/env";
 import { ERROR_MESSAGES } from "@core/constants/locale";
 
-import type { RouteInfo } from "@live/models/data";
+import type { BusStop, RouteInfo } from "@live/models/data";
 
 interface RouteMapData {
   lastUpdated: string;
   routes: Record<string, string[]>;
 }
 
+interface StationData {
+  stations: Record<string, BusStop>;
+}
+
 const routeMapCache = new CacheManager<RouteMapData>();
+const stationCache = new CacheManager<StationData>();
 
 /**
  * Build URL for route map based on remote/local mode
@@ -39,6 +44,25 @@ export async function getRouteMap(): Promise<Record<string, string[]>> {
   return Object.fromEntries(
     Object.entries(data.routes).filter(([, ids]) => ids.length > 0)
   );
+}
+
+/**
+ * Fetches bus stop location data for a city bus route from `routeMap.json`.
+ * This data is cached to minimize redundant fetch requests.
+ * Maps the station key (nodeid) from the object key to the nodeid property.
+ * @returns A promise that resolves to an array of bus stop items
+ */
+export async function getBusStopLocationData(): Promise<BusStop[]> {
+  const data = await stationCache.getOrFetch("Stations", async () => {
+    const res = await fetch(getRouteMapUrl());
+    if (!res.ok) throw new Error(ERROR_MESSAGES.FAILED_TO_FETCH_ROUTE_MAP);
+    return res.json() as Promise<StationData>;
+  });
+  // Map the station key (nodeid) from object keys to the nodeid property
+  return Object.entries(data.stations).map(([nodeid, station]) => ({
+    ...station,
+    nodeid,
+  }));
 }
 
 /**

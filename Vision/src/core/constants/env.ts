@@ -42,7 +42,7 @@ export const MAP_MAX_ZOOM =
   Number(process.env.NEXT_PUBLIC_MAP_MAX_ZOOM) || 19;
 
 export const BUSSTOP_MARKER_MIN_ZOOM =
-  Number(process.env.NEXT_PUBLIC_BUSSTOP_MARKER_MIN_ZOOM) || 15;
+  Number(process.env.NEXT_PUBLIC_BUSSTOP_MARKER_MIN_ZOOM) || 16;
 
 /** Duration of bus marker animation in milliseconds. Longer = smoother but more lag behind real-time data */
 export const BUS_ANIMATION_DURATION =
