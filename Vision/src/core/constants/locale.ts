@@ -50,35 +50,35 @@ export const ARRIVAL_MESSAGES = {
 
 export const ERROR_MESSAGES = {
     NONE_RUNNING: '운행이 종료되었습니다.',
-    NETWORK: '⚠️ 네트워크 오류가 발생했습니다.',
-    INVALID_ROUTE: '⚠️ 유효하지 않은 노선입니다.',
-    UNKNOWN: '⚠️ 알 수 없는 오류가 발생했습니다.',
+    NETWORK: '네트워크 오류가 발생했습니다.',
+    INVALID_ROUTE: '유효하지 않은 노선입니다.',
+    UNKNOWN: '알 수 없는 오류가 발생했습니다.',
     ERROR_OCCURRED: '문제가 발생했습니다',
     RESTART_APP: '앱을 다시 시작해주세요.',
 
     // API & Network Errors
-    API_URL_NOT_SET: '❌ NEXT_PUBLIC_API_URL not set in environment variables.',
-    HTTP_ERROR: (status: number, text: string) => `🚨 HTTP ${status}: ${text}`,
-    REQUEST_FAILED: (message: string) => `❌ Request failed: ${message}.`,
-    UNKNOWN_NETWORK_ERROR: '❌ Unknown network error.',
+    API_URL_NOT_SET: '[API_URL_NOT_SET] NEXT_PUBLIC_API_URL not set in environment variables.',
+    HTTP_ERROR: (status: number, text: string) => `[HTTP Error] HTTP ${status}: ${text}`,
+    REQUEST_FAILED: (message: string) => `[REQUEST_FAILED] Request failed: ${message}.`,
+    UNKNOWN_NETWORK_ERROR: '[UNKNOWN_NETWORK_ERROR] Unknown network error.',
 
     // Data Fetching Errors
-    FAILED_TO_FETCH_ROUTE_MAP: '🚫 Failed to fetch routeMap.json',
-    POLYLINE_REQUEST_FAILED: (routeName: string) => `🚫 Polyline request failed: ${routeName}`,
-    REMOTE_FETCH_FAILED: (status: number) => `Remote fetch failed: ${status}`,
-    DATA_FETCH_ERROR: (path: string) => `Error fetching data from ${path}:`,
+    FAILED_TO_FETCH_ROUTE_MAP: '[FAILED_TO_FETCH_ROUTE_MAP] Failed to fetch routeMap.json',
+    POLYLINE_REQUEST_FAILED: (routeName: string) => `[POLYLINE_REQUEST_FAILED] Polyline request failed: ${routeName}`,
+    REMOTE_FETCH_FAILED: (status: number) => `[REMOTE_FETCH_FAILED] Remote fetch failed: ${status}`,
+    DATA_FETCH_ERROR: (path: string) => `[DATA_FETCH_ERROR] Error fetching data from ${path}:`,
 
     // Route & Stop Errors
-    ROUTE_NOT_FOUND_IN_MAP: (routeName: string) => `⚠️ routeName '${routeName}' not found in routeMap.json`,
-    NO_ROUTE_INFO_FOUND: (routeName: string) => `❌ No routeInfo found for ${routeName}`,
+    ROUTE_NOT_FOUND_IN_MAP: (routeName: string) => `[ROUTE_NOT_FOUND_IN_MAP] Route with routeName '${routeName}' not found in routeMap.json`,
+    NO_ROUTE_INFO_FOUND: (routeName: string) => `[NO_ROUTE_INFO_FOUND] No routeInfo found for ${routeName}`,
     INVALID_NODEID: (nodeid: string) => `[useBusDirection] Invalid nodeid received: ${JSON.stringify(nodeid)}`,
     NO_MATCHING_STOP: (nodeid: string) => `[useBusDirection] No matching stop found for nodeid: ${nodeid}`,
 
     // Internal Errors
-    GET_ROUTE_INFO_ERROR: '❌ getRouteInfo internal error:',
-    BUS_POLLING_ERROR: '❌ Bus polling error:',
-    BUS_STOP_FETCH_ERROR: '❌ useBusStop fetch error:',
-    POLYLINE_FETCH_ERROR: '❌ Polyline fetch error:',
+    GET_ROUTE_INFO_ERROR: (routeId: string) => `[getDirectionFromRouteDetails] Error for routeid ${routeId}:`,
+    BUS_POLLING_ERROR: 'Bus polling error:',
+    BUS_STOP_FETCH_ERROR: 'useBusStop fetch error:',
+    POLYLINE_FETCH_ERROR: 'Polyline fetch error:',
     ROUTE_MAP_FETCH_ERROR: 'Failed to fetch route map:',
 
     // Component Errors
