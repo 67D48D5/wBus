@@ -30,7 +30,7 @@ export function useBusStop(routeName: string) {
           return;
         }
 
-        // Get all stops and sort by nodeord (all stops are available globally)
+        // Get all stops once (global cache key)
         const allStops = await stopCache.getOrFetch("Stations", async () => {
           const fetchedData = await getBusStopLocationData();
           return fetchedData.sort(
@@ -38,8 +38,19 @@ export function useBusStop(routeName: string) {
           );
         });
 
-        console.log(`[useBusStop] Route "${routeName}" loaded with ${allStops.length} stops`);
-        if (isMounted) setStops(allStops);
+        // Try to filter by vehicleRouteIds if they match any stops
+        const routeVehicleIds = new Set(routeInfo.vehicleRouteIds);
+        const filteredByRoute = allStops.filter(
+          (stop) => stop.nodeid && routeVehicleIds.has(stop.nodeid)
+        );
+
+        // If we got stops matching the route IDs, use them; otherwise use all stops
+        // This handles the case where vehicleRouteIds are actual station IDs for some routes
+        // but not for others
+        const stopsToUse = filteredByRoute.length > 0 ? filteredByRoute : allStops;
+
+        console.log(`[useBusStop] Route "${routeName}": vehicleIds=${routeInfo.vehicleRouteIds.length}, matched=${filteredByRoute.length}, using=${stopsToUse.length} stops`);
+        if (isMounted) setStops(stopsToUse);
       } catch (err) {
         console.error(ERROR_MESSAGES.BUS_STOP_FETCH_ERROR, err);
       }

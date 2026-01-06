@@ -18,14 +18,20 @@ export const useSortedBusList = (routeName: string) => {
         [stops]
     );
 
+    // Filter out buses at stops that don't exist in our database
+    const validBuses = useMemo(
+        () => mapList.filter((bus) => stopMap.has(bus.nodeid)),
+        [mapList, stopMap]
+    );
+
     const sortedList = useMemo(() => {
-        if (!closestOrd) return mapList;
-        return [...mapList].sort((a, b) => {
+        if (!closestOrd) return validBuses;
+        return [...validBuses].sort((a, b) => {
             const ordA = stopMap.get(a.nodeid) ?? Infinity;
             const ordB = stopMap.get(b.nodeid) ?? Infinity;
             return Math.abs(ordA - closestOrd) - Math.abs(ordB - closestOrd);
         });
-    }, [mapList, stopMap, closestOrd]);
+    }, [validBuses, stopMap, closestOrd]);
 
     return { sortedList, getDirection, error };
 };

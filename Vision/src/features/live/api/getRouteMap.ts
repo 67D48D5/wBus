@@ -9,7 +9,8 @@ import type { BusStop, RouteInfo } from "@live/models/data";
 
 interface RouteMapData {
   lastUpdated: string;
-  routes: Record<string, string[]>;
+  route_numbers: Record<string, string[]>;
+  route_details: Record<string, any>;
 }
 
 interface StationData {
@@ -42,7 +43,7 @@ export async function getRouteMap(): Promise<Record<string, string[]>> {
   });
   // Filter out routes with empty vehicle IDs (e.g., "Shuttle": [])
   return Object.fromEntries(
-    Object.entries(data.routes).filter(([, ids]) => ids.length > 0)
+    Object.entries(data.route_numbers).filter(([, ids]) => ids.length > 0)
   );
 }
 

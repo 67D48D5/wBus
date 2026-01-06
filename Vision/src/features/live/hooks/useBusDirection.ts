@@ -10,9 +10,10 @@ import { ALWAYS_UPWARD_NODE_IDS } from "@core/constants/env";
 import type { BusStop } from "@live/models/data";
 
 /** Direction codes for bus routes */
+// Normalize to 1 (up) and 0 (down) to match icon expectations
 export const Direction = {
   UP: 1,
-  DOWN: 2,
+  DOWN: 0,
 } as const;
 
 export type DirectionCode = (typeof Direction)[keyof typeof Direction] | null;
@@ -81,17 +82,12 @@ export function useBusDirection(routeName: string) {
    *
    * @param nodeid - The unique identifier of the bus stop
    * @param nodeord - The order/sequence number of the stop in the route
-   * @returns Direction code (1 = up, 2 = down) or null if unable to determine
+   * @returns Direction code (1 = up, 0 = down) or null if unable to determine
    */
   const getDirection = useCallback(
     (nodeid: string | null | undefined, nodeord: number): DirectionCode => {
       // Validate nodeid input
       if (!nodeid || typeof nodeid !== "string" || nodeid.trim() === "") {
-        if (process.env.NODE_ENV !== "production") {
-          console.warn(
-            ERROR_MESSAGES.INVALID_NODEID(String(nodeid))
-          );
-        }
         return null;
       }
 
@@ -105,27 +101,44 @@ export function useBusDirection(routeName: string) {
       // Look up matching stops from the pre-built map
       const matchingStops = stopLookupMap.get(normalizedNodeid);
 
-      // No matching stops found
+      // No matching stops found - silently return null for buses on stops not in our data
       if (!matchingStops || matchingStops.length === 0) {
-        if (process.env.NODE_ENV !== "production") {
-          console.warn(
-            ERROR_MESSAGES.NO_MATCHING_STOP(normalizedNodeid)
-          );
-        }
         return null;
       }
 
+      const normalize = (updowncd: number): DirectionCode =>
+        updowncd === 0 ? Direction.DOWN : Direction.UP;
+
       // Single match - return directly
       if (matchingStops.length === 1) {
-        return matchingStops[0].updowncd as DirectionCode;
+        return normalize(matchingStops[0].updowncd);
       }
 
       // Multiple matches - find the closest one by nodeord
       const closestStop = findClosestStop(matchingStops, nodeord);
-      return closestStop.updowncd as DirectionCode;
+      return normalize(closestStop.updowncd);
     },
     [stopLookupMap, findClosestStop]
   );
 
   return getDirection;
+}
+
+/**
+ * Check if a stop exists in the current route's stop data
+ * Useful for filtering out buses at stops that aren't in our database
+ * @param routeName - The name of the bus route
+ * @returns A function that checks if a nodeid exists
+ */
+export function useStopExists(routeName: string) {
+  const stops = useBusStop(routeName);
+
+  const stopSet = useMemo(() => {
+    return new Set(stops.map((stop) => stop.nodeid));
+  }, [stops]);
+
+  return useCallback((nodeid: string | null | undefined): boolean => {
+    if (!nodeid || typeof nodeid !== "string") return false;
+    return stopSet.has(nodeid.trim());
+  }, [stopSet]);
 }
