@@ -7,7 +7,7 @@ import { Polyline } from "react-leaflet";
 
 import { getRouteInfo } from "@live/api/getRouteMap";
 
-import { usePolyline } from "@live/hooks/usePolyline";
+import { useMultiPolyline } from "@live/hooks/useMultiPolyline";
 import { useBusLocationData } from "@live/hooks/useBusLocation";
 
 type Props = {
@@ -16,34 +16,27 @@ type Props = {
 
 /**
  * Calculate the opacity for each polyline segment based on its index.
- * If no buses are running, it returns a lower opacity.
  *
  * @param idx Current polyline index
  * @param total Total number of polylines
- * @param isInactive No buses are running
  * @returns Computed opacity value
  */
-function computeOpacity(
-  idx: number,
-  total: number,
-  isInactive: boolean
-): number {
-  const dynamicOpacity = Math.max(1 - idx / total, 0.2);
-  return isInactive ? 0.3 : dynamicOpacity;
+function computeOpacity(idx: number, total: number): number {
+  return Math.max(1 - idx / total, 0.2);
 }
 
 export default function BusRoutePolyline({ routeName }: Props) {
   const { data: busList } = useBusLocationData(routeName);
-  const [fallbackRouteId, setFallbackRouteId] = useState<string | null>(null);
+  const [routeIds, setRouteIds] = useState<string[]>([]);
 
-  // Preload representative route ID for the route in case no live bus data is available
+  // Load all routeIds for this route
   useEffect(() => {
     let isMounted = true;
 
     getRouteInfo(routeName)
       .then((info) => {
         if (!isMounted) return;
-        setFallbackRouteId(info?.representativeRouteId ?? null);
+        setRouteIds(info?.vehicleRouteIds ?? []);
       })
       .catch((error) => console.error(error));
 
@@ -52,45 +45,94 @@ export default function BusRoutePolyline({ routeName }: Props) {
     };
   }, [routeName]);
 
+  // Determine active routeId from live bus data, with fallback to first available routeId
   const activeRouteId = useMemo(() => {
+    // Prefer live bus data
     const liveRouteId = busList.find((bus) => bus.routeid)?.routeid ?? null;
-    return liveRouteId ?? fallbackRouteId;
-  }, [busList, fallbackRouteId]);
+    if (liveRouteId) return liveRouteId;
 
-  const { upPolyline, downPolyline } = usePolyline(routeName, activeRouteId);
+    // Fallback to first routeId if no buses are running
+    return routeIds.length > 0 ? routeIds[0] : null;
+  }, [busList, routeIds]);
+
+  const {
+    activeUpSegments,
+    inactiveUpSegments,
+    activeDownSegments,
+    inactiveDownSegments,
+  } = useMultiPolyline(routeName, routeIds, activeRouteId);
 
   // If there are no buses running, set inactive state
   const isInactive = busList.length === 0;
 
-  const commonPathOptions = useMemo(() => ({
-    weight: 5,
-    dashArray: isInactive ? "8, 4" : undefined,
-    lineCap: "round" as const,
-    lineJoin: "round" as const,
-  }), [isInactive]);
+  const activePathOptions = useMemo(
+    () => ({
+      weight: 6,
+      dashArray: isInactive ? "8, 4" : undefined,
+      lineCap: "round" as const,
+      lineJoin: "round" as const,
+    }),
+    [isInactive]
+  );
+
+  const inactivePathOptions = useMemo(
+    () => ({
+      weight: 3,
+      dashArray: "6, 6",
+      lineCap: "round" as const,
+      lineJoin: "round" as const,
+    }),
+    []
+  );
 
   return (
     <>
-      {upPolyline.map((coords, idx) => (
+      {/* Inactive (alternative) routes - lighter and dashed */}
+      {inactiveUpSegments.map((segment, idx) => (
         <Polyline
-          key={`up-${idx}`}
-          positions={coords}
+          key={`inactive-up-${segment.routeIds.join("-")}-${idx}`}
+          positions={segment.coords}
           pathOptions={{
-            ...commonPathOptions,
-            color: "#3b82f6",
-            opacity: computeOpacity(idx, upPolyline.length, isInactive),
+            ...inactivePathOptions,
+            color: "#93c5fd",
+            opacity: 0.25,
           }}
         />
       ))}
 
-      {downPolyline.map((coords, idx) => (
+      {inactiveDownSegments.map((segment, idx) => (
         <Polyline
-          key={`down-${idx}`}
-          positions={coords}
+          key={`inactive-down-${segment.routeIds.join("-")}-${idx}`}
+          positions={segment.coords}
           pathOptions={{
-            ...commonPathOptions,
+            ...inactivePathOptions,
+            color: "#fca5a5",
+            opacity: 0.25,
+          }}
+        />
+      ))}
+
+      {/* Active route - prominent and solid */}
+      {activeUpSegments.map((segment, idx) => (
+        <Polyline
+          key={`active-up-${segment.routeIds.join("-")}-${idx}`}
+          positions={segment.coords}
+          pathOptions={{
+            ...activePathOptions,
+            color: "#3b82f6",
+            opacity: computeOpacity(idx, activeUpSegments.length),
+          }}
+        />
+      ))}
+
+      {activeDownSegments.map((segment, idx) => (
+        <Polyline
+          key={`active-down-${segment.routeIds.join("-")}-${idx}`}
+          positions={segment.coords}
+          pathOptions={{
+            ...activePathOptions,
             color: "#ef4444",
-            opacity: computeOpacity(idx, downPolyline.length, isInactive),
+            opacity: computeOpacity(idx, activeDownSegments.length),
           }}
         />
       ))}
