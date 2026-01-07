@@ -99,10 +99,10 @@ export const LOCALE = {
 // Data Source Configuration
 export const DATA_SOURCE = {
   // Static data is served from API_URL with CloudFront routing patterns:
-  // - API_URL/routeMap.json
-  // - API_URL/polylines/*.geojson
-  // - API_URL/schedules/*.json
-  BASE_URL: LIVE_API_URL !== 'NOT_SET' ? LIVE_API_URL : '',
+  // - STATIC_API_URL/routeMap.json
+  // - STATIC_API_URL/polylines/*.geojson
+  // - STATIC_API_URL/schedules/*.json
+  BASE_URL: STATIC_API_URL !== 'NOT_SET' ? STATIC_API_URL : '',
   USE_REMOTE: process.env.NEXT_PUBLIC_USE_REMOTE_STATIC_DATA === 'true',
   PATHS: {
     ROUTE_MAP: 'routeMap.json',
