@@ -28,63 +28,92 @@ let availableRouteIds: string[] | null = null;
 let noticeCache: Notice[] | null = null;
 
 /**
- * Build URL for remote data or local file path
+ * Build URL for schedule data
  */
-function getDataSource(pathParam: string, isRouteData: boolean): { isRemote: boolean; location: string } {
+function getScheduleDataSource(routeId: string): { isRemote: boolean; location: string } {
     if (DATA_SOURCE.USE_REMOTE && DATA_SOURCE.BASE_URL) {
-        // Remote: cloudfront.net/schedules/{routeId}.json or cloudfront.net/routeMap.json
-        const remotePath = isRouteData ? `${DATA_SOURCE.PATHS.SCHEDULES}/${pathParam}` : pathParam;
-        return { isRemote: true, location: `${DATA_SOURCE.BASE_URL}/${remotePath}` };
+        // Remote: cloudfront.net/schedules/{routeId}.json
+        return { isRemote: true, location: `${DATA_SOURCE.BASE_URL}/${DATA_SOURCE.PATHS.SCHEDULES}/${routeId}.json` };
     }
-    // Local: public/data/schedules/{routeId}.json or public/data/routeMap.json
-    const subDir = isRouteData ? 'data/schedules' : 'data';
-    return { isRemote: false, location: path.join(process.cwd(), 'public', subDir, pathParam) };
+    // Local: public/data/schedules/{routeId}.json
+    return { isRemote: false, location: path.join(process.cwd(), 'public/data/schedules', `${routeId}.json`) };
 }
 
 /**
- * Fetch data from remote URL or read from local file system
+ * Fetch schedule data from remote URL or read from local file system
  */
-async function fetchData<T>(pathParam: string, isRouteData: boolean = false): Promise<T | null> {
+async function fetchScheduleData(routeId: string): Promise<BusData | null> {
     try {
-        const { isRemote, location } = getDataSource(pathParam, isRouteData);
+        const { isRemote, location } = getScheduleDataSource(routeId);
 
         if (isRemote) {
-            return await fetchAPI<T>(location, {
+            return await fetchAPI<BusData>(location, {
                 baseUrl: '', // location is already a full URL
                 init: { next: { revalidate: DATA_SOURCE.CACHE_REVALIDATE } }
             });
         } else {
             // Server-side: read directly from file system
             const fileContent = await fs.readFile(location, 'utf8');
-            return JSON.parse(fileContent) as T;
+            return JSON.parse(fileContent) as BusData;
         }
     } catch (error) {
         if ((error as any).code === 'ENOENT') {
             return null;
         }
-        console.error(ERROR_MESSAGES.DATA_FETCH_ERROR(pathParam), error);
+        console.error(ERROR_MESSAGES.DATA_FETCH_ERROR(routeId), error);
         return null;
     }
 }
 
 /**
- * Get available route IDs from route map
+ * Get available route IDs by scanning schedules directory
  */
 async function getAvailableRouteIds(): Promise<string[]> {
     if (availableRouteIds) {
         return availableRouteIds;
     }
 
-    const routeMap = await fetchData<{ route_numbers: Record<string, string[]> }>(DATA_SOURCE.PATHS.ROUTE_MAP, false);
+    try {
+        const schedulesDir = path.join(process.cwd(), 'public/data/schedules');
+        const files = await fs.readdir(schedulesDir);
 
-    if (routeMap?.route_numbers) {
-        availableRouteIds = Object.keys(routeMap.route_numbers);
+        availableRouteIds = files
+            .filter(file => file.endsWith('.json') && file !== '.keep')
+            .map(file => file.replace('.json', ''));
+
+        return availableRouteIds;
+    } catch (error) {
+        console.error('Error reading schedules directory:', error);
+        availableRouteIds = [];
         return availableRouteIds;
     }
+}
 
-    // Fallback to empty array
-    availableRouteIds = [];
-    return availableRouteIds;
+/**
+ * Fetch notice data
+ */
+async function fetchNoticeData(): Promise<{ notices: Notice[] } | null> {
+    try {
+        const location = DATA_SOURCE.USE_REMOTE && DATA_SOURCE.BASE_URL
+            ? `${DATA_SOURCE.BASE_URL}/notice.json`
+            : path.join(process.cwd(), 'public/data', 'notice.json');
+
+        if (DATA_SOURCE.USE_REMOTE && DATA_SOURCE.BASE_URL) {
+            return await fetchAPI<{ notices: Notice[] }>(location, {
+                baseUrl: '',
+                init: { next: { revalidate: DATA_SOURCE.CACHE_REVALIDATE } }
+            });
+        } else {
+            const fileContent = await fs.readFile(location, 'utf8');
+            return JSON.parse(fileContent) as { notices: Notice[] };
+        }
+    } catch (error) {
+        if ((error as any).code === 'ENOENT') {
+            return null;
+        }
+        console.error(ERROR_MESSAGES.DATA_FETCH_ERROR('notice.json'), error);
+        return null;
+    }
 }
 
 /**
@@ -95,13 +124,7 @@ export async function getRouteData(routeId: string): Promise<BusData | null> {
         return dataCache.get(routeId)!;
     }
 
-    // Validate route ID exists in route map before fetching
-    const validRoutes = await getAvailableRouteIds();
-    if (!validRoutes.includes(routeId)) {
-        return null;
-    }
-
-    const data = await fetchData<BusData>(`${routeId}.json`, true);
+    const data = await fetchScheduleData(routeId);
 
     if (data) {
         dataCache.set(routeId, data);
@@ -156,7 +179,7 @@ export async function getNotices(): Promise<Notice[]> {
         return noticeCache;
     }
 
-    const data = await fetchData<{ notices: Notice[] }>('notice.json', false);
+    const data = await fetchNoticeData();
 
     if (data?.notices) {
         noticeCache = data.notices;
