@@ -66,7 +66,7 @@ export const SPLASH_FADE_DURATION =
  */
 export const ALWAYS_UPWARD_NODE_IDS =
   process.env.NEXT_PUBLIC_ALWAYS_UPWARD_NODE_IDS?.split(",") || [
-    "WJB251036041",
+    "",
   ];
 
 // Day types - Configuration
