@@ -17,25 +17,27 @@ const polylineCache = new CacheManager<GeoPolylineData>();
 /**
  * Build URL for polyline data based on remote/local mode
  */
-function getPolylineUrl(routeName: string): string {
+function getPolylineUrl(routeKey: string): string {
   if (DATA_SOURCE.USE_REMOTE && DATA_SOURCE.BASE_URL) {
-    return `${DATA_SOURCE.BASE_URL}/${DATA_SOURCE.PATHS.POLYLINES}/${routeName}.geojson`;
+    return `${DATA_SOURCE.BASE_URL}/${DATA_SOURCE.PATHS.POLYLINES}/${routeKey}.geojson`;
   }
-  return `/data/polylines/${routeName}.geojson`;
+  return `/data/polylines/${routeKey}.geojson`;
 }
 
 /**
- * Fetch {routeName}.geojson file and cache the result.
+ * Fetch the polyline geojson file for the provided key and cache the result.
+ * The key should follow the naming scheme `${routeName}_${routeId}` to target
+ * a specific route variant (falls back to `${routeName}` if no ID is provided).
  *
- * @param routeName - routeName (ex: "30", "100", "200")
+ * @param routeKey - filename-friendly key (ex: "30_WJB251000068")
  * @returns {Promise<GeoPolylineData>} - GeoJSON Data
  * @throws {Error} - If the fetch fails or the response is not ok
  */
-export async function getPolyline(routeName: string): Promise<GeoPolylineData> {
-  return polylineCache.getOrFetch(routeName, async () => {
-    const res = await fetch(getPolylineUrl(routeName));
+export async function getPolyline(routeKey: string): Promise<GeoPolylineData> {
+  return polylineCache.getOrFetch(routeKey, async () => {
+    const res = await fetch(getPolylineUrl(routeKey));
     if (!res.ok) {
-      throw new Error(ERROR_MESSAGES.POLYLINE_REQUEST_FAILED(routeName));
+      throw new Error(ERROR_MESSAGES.POLYLINE_REQUEST_FAILED(routeKey));
     }
     return res.json() as Promise<GeoPolylineData>;
   });

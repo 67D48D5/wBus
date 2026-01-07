@@ -1,6 +1,6 @@
 // src/features/live/hooks/usePolyline.ts
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { ERROR_MESSAGES } from "@core/constants/locale";
 
@@ -8,14 +8,26 @@ import { getPolyline, transformPolyline } from "@live/api/getPolyline";
 
 import type { GeoPolylineData } from "@live/models/data";
 
-export function usePolyline(routeName: string) {
+function buildRouteKey(routeName: string, routeId?: string | null) {
+  if (!routeName || !routeId) return null;
+  return `${routeName}_${routeId}`;
+}
+
+export function usePolyline(routeName: string, routeId?: string | null) {
   const [data, setData] = useState<GeoPolylineData | null>(null);
+  const routeKey = useMemo(() => buildRouteKey(routeName, routeId), [routeId, routeName]);
 
   useEffect(() => {
-    getPolyline(routeName)
+    if (!routeKey) {
+      setData(null);
+      return;
+    }
+
+    setData(null);
+    getPolyline(routeKey)
       .then((json) => setData(json))
       .catch((error) => console.error(ERROR_MESSAGES.POLYLINE_FETCH_ERROR, error));
-  }, [routeName]);
+  }, [routeKey]);
 
   const { upPolyline, downPolyline } = useMemo(() => {
     if (!data) return { upPolyline: [], downPolyline: [] };

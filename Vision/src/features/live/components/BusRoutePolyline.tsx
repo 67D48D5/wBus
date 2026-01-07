@@ -2,8 +2,10 @@
 
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { Polyline } from "react-leaflet";
 
+import { getRouteInfo } from "@live/api/getRouteMap";
 import { usePolyline } from "@live/hooks/usePolyline";
 import { useBusLocationData } from "@live/hooks/useBusLocation";
 
@@ -30,8 +32,31 @@ function computeOpacity(
 }
 
 export default function BusRoutePolyline({ routeName }: Props) {
-  const { upPolyline, downPolyline } = usePolyline(routeName);
   const { data: busList } = useBusLocationData(routeName);
+  const [fallbackRouteId, setFallbackRouteId] = useState<string | null>(null);
+
+  // Preload representative route ID for the route in case no live bus data is available
+  useEffect(() => {
+    let isMounted = true;
+
+    getRouteInfo(routeName)
+      .then((info) => {
+        if (!isMounted) return;
+        setFallbackRouteId(info?.representativeRouteId ?? null);
+      })
+      .catch((error) => console.error(error));
+
+    return () => {
+      isMounted = false;
+    };
+  }, [routeName]);
+
+  const activeRouteId = useMemo(() => {
+    const liveRouteId = busList.find((bus) => bus.routeid)?.routeid ?? null;
+    return liveRouteId ?? fallbackRouteId;
+  }, [busList, fallbackRouteId]);
+
+  const { upPolyline, downPolyline } = usePolyline(routeName, activeRouteId);
 
   // If there are no buses running, set inactive state
   const isInactive = busList.length === 0;
