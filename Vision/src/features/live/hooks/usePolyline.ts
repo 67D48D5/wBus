@@ -25,7 +25,10 @@ export function usePolyline(routeName: string, routeId?: string | null) {
 
     setData(null);
     getPolyline(routeKey)
-      .then((json) => setData(json))
+      .then((json) => {
+        // json can be null if polyline file is not found (404)
+        setData(json);
+      })
       .catch((error) => console.error(ERROR_MESSAGES.POLYLINE_FETCH_ERROR, error));
   }, [routeKey]);
 

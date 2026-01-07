@@ -1,6 +1,6 @@
 // src/features/live/api/getPolyline.ts
 
-import { fetchAPI } from "@core/api/fetchAPI";
+import { fetchAPI, HttpError } from "@core/api/fetchAPI";
 import { CacheManager } from "@core/cache/CacheManager";
 
 import { DATA_SOURCE } from "@core/constants/env";
@@ -12,7 +12,7 @@ import {
 } from "@live/utils/geoUtils";
 import { GeoPolylineData } from "@live/models/data";
 
-const polylineCache = new CacheManager<GeoPolylineData>();
+const polylineCache = new CacheManager<GeoPolylineData | null>();
 
 /**
  * Build URL for polyline data based on remote/local mode
@@ -30,12 +30,20 @@ function getPolylineUrl(routeKey: string): string {
  * a specific route variant (falls back to `${routeName}` if no ID is provided).
  *
  * @param routeKey - filename-friendly key (ex: "30_WJB251000068")
- * @returns {Promise<GeoPolylineData>} - GeoJSON Data
- * @throws {Error} - If the fetch fails or the response is not ok
+ * @returns {Promise<GeoPolylineData | null>} - GeoJSON Data or null if not found
  */
-export async function getPolyline(routeKey: string): Promise<GeoPolylineData> {
+export async function getPolyline(routeKey: string): Promise<GeoPolylineData | null> {
   return polylineCache.getOrFetch(routeKey, async () => {
-    return fetchAPI<GeoPolylineData>(getPolylineUrl(routeKey), { baseUrl: "" });
+    try {
+      return await fetchAPI<GeoPolylineData>(getPolylineUrl(routeKey), { baseUrl: "" });
+    } catch (error) {
+      // Gracefully handle missing polyline files (404 errors)
+      if (error instanceof HttpError && error.status === 404) {
+        console.warn(`Polyline file not found: ${routeKey}`);
+        return null;
+      }
+      throw error;
+    }
   });
 }
 
