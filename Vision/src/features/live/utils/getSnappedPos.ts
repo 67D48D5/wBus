@@ -39,7 +39,7 @@ function calculateDistance(
  */
 export function getSnappedPosition(
   bus: BusItem,
-  getDirection: (nodeid: string, nodeord: number) => number | null,
+  getDirection: (nodeid: string, nodeord: number, routeid?: string | null) => number | null,
   upPolyline: LatLngTuple[],
   downPolyline: LatLngTuple[]
 ): {
@@ -50,7 +50,7 @@ export function getSnappedPosition(
   const { gpslati, gpslong, nodeid } = bus;
   const nodeord = Number(bus.nodeord); // if nodeord is a string, convert to number
 
-  const direction = getDirection(nodeid, nodeord) ?? 0;
+  const direction = getDirection(nodeid, nodeord, bus.routeid) ?? 0;
 
   const polyline = (
     direction === 1 ? upPolyline : downPolyline

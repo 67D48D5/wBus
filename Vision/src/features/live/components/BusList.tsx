@@ -139,7 +139,7 @@ export default function BusList({ routeNames }: BusListProps) {
         ) : (
           filteredBuses.map(({ bus, routeName, getDirection }) => {
             const direction = bus.nodeid && bus.nodeord !== undefined
-              ? getDirection(bus.nodeid, bus.nodeord)
+              ? getDirection(bus.nodeid, bus.nodeord, bus.routeid)
               : null;
 
             return (

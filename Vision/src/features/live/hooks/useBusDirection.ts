@@ -1,15 +1,13 @@
 // src/features/live/hooks/useBusDirection.ts
 
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useEffect, useState } from "react";
 
 import { useBusStop } from "./useBusStop";
 
 import { ERROR_MESSAGES } from "@core/constants/locale";
 import { ALWAYS_UPWARD_NODE_IDS } from "@core/constants/env";
 
-import { getRouteDetails } from "@live/api/getRouteMap";
-
-import type { BusStop } from "@live/models/data";
+import { getRouteDetails, getRouteInfo } from "@live/api/getRouteMap";
 
 /** Direction codes for bus routes */
 // Normalize to 1 (up) and 0 (down) to match icon expectations
@@ -22,8 +20,10 @@ export type DirectionCode = (typeof Direction)[keyof typeof Direction] | null;
 
 const ALWAYS_UPWARD_NODEIDS = new Set(ALWAYS_UPWARD_NODE_IDS);
 
-/** Type for the direction lookup map: nodeid -> array of matching stops */
-type StopLookupMap = Map<string, BusStop[]>;
+type SequenceLookupMap = Map<
+  string,
+  Array<{ routeid: string; nodeord: number; updowncd: number }>
+>;
 
 /**
  * Custom hook that provides a function to determine the direction (up/down) of a bus
@@ -34,62 +34,86 @@ type StopLookupMap = Map<string, BusStop[]>;
  *
  * @example
  * const getDirection = useBusDirection("30");
- * const direction = getDirection("WJB251000001", 5); // Returns 1 (up) or 2 (down)
+ * const direction = getDirection("WJB251000001", 5); // Returns 1 (up) or 0 (down)
  */
 export function useBusDirection(routeName: string) {
-  const stops = useBusStop(routeName);
+  const [routeSequences, setRouteSequences] = useState<
+    Array<{ routeid: string; sequence: { nodeid: string; nodeord: number; updowncd: number }[] }>
+  >([]);
 
-  /**
-   * Build a lookup map for O(1) access by nodeid.
-   * Groups all stops by their nodeid for efficient matching.
-   */
-  const stopLookupMap = useMemo((): StopLookupMap => {
-    const map = new Map<string, BusStop[]>();
-    for (const stop of stops) {
-      const existing = map.get(stop.nodeid);
-      if (existing) {
-        existing.push(stop);
-      } else {
-        map.set(stop.nodeid, [stop]);
+  // Preload route details for the selected route (uses routeMap.json)
+  useEffect(() => {
+    let isMounted = true;
+
+    const load = async () => {
+      try {
+        const routeInfo = await getRouteInfo(routeName);
+        if (!routeInfo) {
+          if (isMounted) setRouteSequences([]);
+          return;
+        }
+
+        const details = await Promise.all(
+          routeInfo.vehicleRouteIds.map(async (routeid) => {
+            const detail = await getRouteDetails(routeid);
+            return detail ? { routeid, sequence: detail.sequence } : null;
+          })
+        );
+
+        if (isMounted) {
+          setRouteSequences(details.filter(Boolean) as Array<{ routeid: string; sequence: { nodeid: string; nodeord: number; updowncd: number }[] }>);
+        }
+      } catch (err) {
+        console.error(ERROR_MESSAGES.GET_ROUTE_INFO_ERROR(routeName), err);
+        if (isMounted) setRouteSequences([]);
+      }
+    };
+
+    load();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [routeName]);
+
+  // Build lookup: nodeid -> possible sequences (scoped to this route's IDs)
+  const sequenceLookupMap = useMemo<SequenceLookupMap>(() => {
+    const map: SequenceLookupMap = new Map();
+
+    for (const { routeid, sequence } of routeSequences) {
+      for (const { nodeid, nodeord, updowncd } of sequence) {
+        const existing = map.get(nodeid) ?? [];
+        existing.push({ routeid, nodeord, updowncd });
+        map.set(nodeid, existing);
       }
     }
+
     return map;
-  }, [stops]);
+  }, [routeSequences]);
 
-  /**
-   * Find the closest stop from a list of matching stops based on nodeord.
-   * When distances are equal, prefers the stop that comes earlier in route order.
-   */
-  const findClosestStop = useCallback(
-    (matchingStops: BusStop[], targetNodeord: number): BusStop => {
-      return matchingStops.reduce((prev, curr) => {
-        const prevDist = Math.abs(prev.nodeord - targetNodeord);
-        const currDist = Math.abs(curr.nodeord - targetNodeord);
-
-        if (currDist < prevDist) {
-          return curr;
-        }
-        // Tie-breaker: prefer the stop with lower nodeord (earlier in route)
-        if (currDist === prevDist && curr.nodeord < prev.nodeord) {
-          return curr;
-        }
-        return prev;
-      });
-    },
-    []
-  );
+  const activeRouteIds = useMemo(() => new Set(routeSequences.map(({ routeid }) => routeid)), [routeSequences]);
 
   /**
    * Returns the up/down direction code for a bus stop based on its ID and order in the route.
    *
    * @param nodeid - The unique identifier of the bus stop
    * @param nodeord - The order/sequence number of the stop in the route
+   * @param routeid - Optional route ID from realtime data (helps disambiguate shared stops)
    * @returns Direction code (1 = up, 0 = down) or null if unable to determine
    */
   const getDirection = useCallback(
-    (nodeid: string | null | undefined, nodeord: number): DirectionCode => {
+    (
+      nodeid: string | null | undefined,
+      nodeord: number,
+      routeid?: string | null
+    ): DirectionCode => {
       // Validate nodeid input
       if (!nodeid || typeof nodeid !== "string" || nodeid.trim() === "") {
+        return null;
+      }
+
+      const normalizedNodeord = Number(nodeord);
+      if (!Number.isFinite(normalizedNodeord)) {
         return null;
       }
 
@@ -100,27 +124,38 @@ export function useBusDirection(routeName: string) {
         return Direction.UP;
       }
 
-      // Look up matching stops from the pre-built map
-      const matchingStops = stopLookupMap.get(normalizedNodeid);
-
-      // No matching stops found - silently return null for buses on stops not in our data
-      if (!matchingStops || matchingStops.length === 0) {
-        return null;
-      }
-
       const normalize = (updowncd: number): DirectionCode =>
         updowncd === 0 ? Direction.DOWN : Direction.UP;
 
-      // Single match - return directly
-      if (matchingStops.length === 1) {
-        return normalize(matchingStops[0].updowncd);
+      const candidates = sequenceLookupMap.get(normalizedNodeid);
+
+      if (!candidates || candidates.length === 0) {
+        return null;
       }
 
-      // Multiple matches - find the closest one by nodeord
-      const closestStop = findClosestStop(matchingStops, nodeord);
-      return normalize(closestStop.updowncd);
+      // Prefer candidates that match the routeid we received from realtime data
+      const scopedCandidates = routeid
+        ? candidates.filter((c) => c.routeid === routeid)
+        : candidates.filter((c) => activeRouteIds.has(c.routeid));
+
+      const pool = scopedCandidates.length > 0 ? scopedCandidates : candidates;
+
+      // First try exact nodeord match, otherwise choose the closest by distance (tie -> lower nodeord)
+      const exact = pool.find((c) => c.nodeord === normalizedNodeord);
+      const chosen =
+        exact ||
+        pool.reduce((best, curr) => {
+          const bestDist = Math.abs(best.nodeord - normalizedNodeord);
+          const currDist = Math.abs(curr.nodeord - normalizedNodeord);
+
+          if (currDist < bestDist) return curr;
+          if (currDist === bestDist && curr.nodeord < best.nodeord) return curr;
+          return best;
+        }, pool[0]);
+
+      return chosen ? normalize(chosen.updowncd) : null;
     },
-    [stopLookupMap, findClosestStop]
+    [activeRouteIds, sequenceLookupMap]
   );
 
   return getDirection;
