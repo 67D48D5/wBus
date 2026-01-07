@@ -21,7 +21,7 @@ const DEFAULT_ROUTE = "30";
  * Displays real-time bus location information on a map for all routes.
  */
 export default function MapPage() {
-    const [isSplashVisible, setIsSplashVisible] = useState(false);
+    const [isSplashVisible, setIsSplashVisible] = useState(true);
     const [selectedRoute, setSelectedRoute] = useState<string>(() => {
         // Initialize from localStorage if available
         if (typeof window !== "undefined") {
@@ -56,10 +56,10 @@ export default function MapPage() {
     useEffect(() => {
         const initializeApp = async () => {
             // Initialize app, fetch initial data
-            await new Promise((resolve) => setTimeout(resolve, 500));
-
-            // Wait minimum display time for splash screen (300ms)
             await new Promise((resolve) => setTimeout(resolve, 300));
+
+            // Wait minimum display time for splash screen (200ms)
+            await new Promise((resolve) => setTimeout(resolve, 200));
 
             setIsSplashVisible(false);
         };
