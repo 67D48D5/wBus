@@ -1,6 +1,6 @@
 // src/features/live/services/BusPollingService.ts
 
-import { API_REFRESH_INTERVAL } from "@core/constants/env";
+import { LIVE_API_REFRESH_INTERVAL } from "@core/constants/env";
 import { ERROR_MESSAGES } from "@core/constants/locale";
 
 import { getBusLocationData } from "@live/api/getRealtimeData";
@@ -162,7 +162,7 @@ export class BusPollingService {
     fetchFn();
 
     // Set up polling interval
-    this.intervals[routeName] = setInterval(fetchFn, API_REFRESH_INTERVAL);
+    this.intervals[routeName] = setInterval(fetchFn, LIVE_API_REFRESH_INTERVAL);
 
     // Visibility listener - refresh data when page becomes visible
     const onVisible = () => {

@@ -7,7 +7,7 @@ import { Navigation } from 'lucide-react';
 
 import { UI_TEXT, COMMON, TIME_LABELS } from '@core/constants/locale';
 
-import { BusData } from '@schedule/models/bus';
+import { BusData } from '@schedule/models/schedule';
 import { getNearestBusTime } from '@schedule/utils/time';
 
 function NextBusTime({ data }: { data: BusData }) {

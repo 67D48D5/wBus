@@ -11,7 +11,6 @@ import Splash from "@live/components/MapSplash";
 import MapNavBar from "@live/components/MapNavBar";
 import MapWrapper from "@live/components/MapWrapper";
 import BusList from "@live/components/BusList";
-import BusListToggle from "@live/components/BusListToggle";
 import MyLocation from "@live/components/MyLocation";
 
 /**
@@ -20,7 +19,8 @@ import MyLocation from "@live/components/MyLocation";
  */
 export default function MapPage() {
     const [isSplashVisible, setIsSplashVisible] = useState(true);
-    const [isBusListVisible, setIsBusListVisible] = useState(false);
+    const [selectedRoute, setSelectedRoute] = useState<string>("30");
+
     const routeMap = useRouteMap();
     const allRoutes = useMemo(() => routeMap ? Object.keys(routeMap) : [], [routeMap]);
 
@@ -39,18 +39,16 @@ export default function MapPage() {
         initializeApp();
     }, []);
 
-    // Effect to start bus polling for all routes
+    // Effect to start bus polling for selected route only
     useEffect(() => {
-        if (allRoutes.length === 0) return;
+        if (!selectedRoute) return;
 
-        const cleanupFunctions = allRoutes.map((routeName) =>
-            busPollingService.startPolling(routeName)
-        );
+        const cleanup = busPollingService.startPolling(selectedRoute);
 
         return () => {
-            cleanupFunctions.forEach((cleanup) => cleanup());
+            cleanup();
         };
-    }, [allRoutes]);
+    }, [selectedRoute]);
 
     return (
         <>
@@ -58,16 +56,17 @@ export default function MapPage() {
             <div className="flex flex-col w-full h-[100dvh]">
                 <MapNavBar />
                 <div className="relative flex-1 overflow-hidden">
-                    {allRoutes.length > 0 && (
+                    {selectedRoute && (
                         <>
-                            <MapWrapper routeNames={allRoutes} />
-                            {isBusListVisible && <BusList routeNames={allRoutes} />}
+                            <MapWrapper routeNames={[selectedRoute]} />
+                            <BusList
+                                routeNames={[selectedRoute]}
+                                allRoutes={allRoutes}
+                                selectedRoute={selectedRoute}
+                                onRouteChange={setSelectedRoute}
+                            />
                         </>
                     )}
-                    <BusListToggle
-                        isVisible={isBusListVisible}
-                        onToggle={() => setIsBusListVisible((prev) => !prev)}
-                    />
                     <MyLocation />
                 </div>
             </div>

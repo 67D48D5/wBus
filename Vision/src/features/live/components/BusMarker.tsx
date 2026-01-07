@@ -6,7 +6,7 @@ import { useMemo } from "react";
 import { Popup } from "react-leaflet";
 import L from "leaflet";
 
-import { BUS_ANIMATION_DURATION } from "@/core/constants/env";
+import { BUS_ANIMATION_DURATION } from "@core/constants/env";
 import { UI_TEXT } from "@core/constants/locale";
 
 import { useIcons } from "@live/hooks/useIcons";

@@ -1,9 +1,11 @@
-// src/features/schedule/utils/data.ts
+// src/features/schedule/api/getScheduleData.ts
+
+import { fetchAPI } from '@core/api/fetchAPI';
 
 import { DATA_SOURCE } from '@core/constants/env';
 import { ERROR_MESSAGES } from '@core/constants/locale';
 
-import { BusData } from '@schedule/models/bus';
+import { BusData } from '@schedule/models/schedule';
 
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -19,6 +21,8 @@ export interface Notice {
 
 // Cache for parsed bus data
 const dataCache = new Map<string, BusData>();
+
+// Cache for route list
 let routeListCache: BusData[] | null = null;
 let availableRouteIds: string[] | null = null;
 let noticeCache: Notice[] | null = null;
@@ -45,13 +49,10 @@ async function fetchData<T>(pathParam: string, isRouteData: boolean = false): Pr
         const { isRemote, location } = getDataSource(pathParam, isRouteData);
 
         if (isRemote) {
-            const response = await fetch(location, {
-                next: { revalidate: DATA_SOURCE.CACHE_REVALIDATE }
+            return await fetchAPI<T>(location, {
+                baseUrl: '', // location is already a full URL
+                init: { next: { revalidate: DATA_SOURCE.CACHE_REVALIDATE } }
             });
-
-            if (!response.ok) throw new Error(ERROR_MESSAGES.REMOTE_FETCH_FAILED(response.status));
-
-            return await response.json() as T;
         } else {
             // Server-side: read directly from file system
             const fileContent = await fs.readFile(location, 'utf8');

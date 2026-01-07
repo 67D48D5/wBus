@@ -1,5 +1,6 @@
 // src/features/live/api/getRouteMap.ts
 
+import { fetchAPI } from "@core/api/fetchAPI";
 import { CacheManager } from "@core/cache/CacheManager";
 
 import { DATA_SOURCE } from "@core/constants/env";
@@ -37,9 +38,7 @@ function getRouteMapUrl(): string {
  */
 export async function getRouteMap(): Promise<Record<string, string[]>> {
   const data = await routeMapCache.getOrFetch("routeMap", async () => {
-    const res = await fetch(getRouteMapUrl());
-    if (!res.ok) throw new Error(ERROR_MESSAGES.FAILED_TO_FETCH_ROUTE_MAP);
-    return res.json() as Promise<RouteMapData>;
+    return fetchAPI<RouteMapData>(getRouteMapUrl(), { baseUrl: "" });
   });
   // Filter out routes with empty vehicle IDs (e.g., "Shuttle": [])
   return Object.fromEntries(
@@ -55,9 +54,7 @@ export async function getRouteMap(): Promise<Record<string, string[]>> {
  */
 export async function getBusStopLocationData(): Promise<BusStop[]> {
   const data = await stationCache.getOrFetch("Stations", async () => {
-    const res = await fetch(getRouteMapUrl());
-    if (!res.ok) throw new Error(ERROR_MESSAGES.FAILED_TO_FETCH_ROUTE_MAP);
-    return res.json() as Promise<StationData>;
+    return fetchAPI<StationData>(getRouteMapUrl(), { baseUrl: "" });
   });
   // Map the station key (nodeid) from object keys to the nodeid property
   return Object.entries(data.stations).map(([nodeid, station]) => ({
@@ -111,9 +108,7 @@ export async function getRouteDetails(
   routeId: string
 ): Promise<RouteDetail | null> {
   const data = await routeMapCache.getOrFetch("routeMap", async () => {
-    const res = await fetch(getRouteMapUrl());
-    if (!res.ok) throw new Error(ERROR_MESSAGES.FAILED_TO_FETCH_ROUTE_MAP);
-    return res.json() as Promise<RouteMapData>;
+    return fetchAPI<RouteMapData>(getRouteMapUrl(), { baseUrl: "" });
   });
   return data.route_details[routeId] || null;
 }

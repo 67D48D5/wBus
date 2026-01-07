@@ -7,7 +7,7 @@ import { Bus } from 'lucide-react';
 
 import NextBusTime from './NextBusTime';
 
-import { BusData } from '@schedule/models/bus';
+import { BusData } from '@schedule/models/schedule';
 
 interface RouteCardProps {
     routeId: string;

@@ -57,7 +57,7 @@ export const ERROR_MESSAGES = {
     RESTART_APP: '앱을 다시 시작해주세요.',
 
     // API & Network Errors
-    API_URL_NOT_SET: '[API_URL_NOT_SET] `NEXT_PUBLIC_LIVE_API_URL` not set in environment variables.',
+    API_URL_NOT_SET: (apiName: string) => `[API_URL_NOT_SET] \`NEXT_PUBLIC_${apiName}\` not set in environment variables.`,
     HTTP_ERROR: (status: number, text: string) => `[HTTP Error] HTTP ${status}: ${text}`,
     REQUEST_FAILED: (message: string) => `[REQUEST_FAILED] Request failed: ${message}.`,
     UNKNOWN_NETWORK_ERROR: '[UNKNOWN_NETWORK_ERROR] Unknown network error.',

@@ -7,7 +7,7 @@ import { useState, useMemo, useEffect, memo } from "react";
 import { DAY_TYPES, DayType } from "@core/constants/env";
 import { UI_TEXT, DAY_TYPE_LABELS, FEATURED_STOPS_LABELS } from "@core/constants/locale";
 
-import { BusData, BusTime } from "@schedule/models/bus";
+import { BusData, BusTime } from "@schedule/models/schedule";
 
 /**
  * Get the localized label for a featured stops key

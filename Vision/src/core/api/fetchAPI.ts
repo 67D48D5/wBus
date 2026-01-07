@@ -1,6 +1,6 @@
 // src/core/api/fetchAPI.ts
 
-import { API_URL, APP_NAME } from "@core/constants/env";
+import { LIVE_API_URL, STATIC_API_URL, APP_NAME } from "@core/constants/env";
 import { ERROR_MESSAGES } from "@core/constants/locale";
 
 // Set a delay function for retry logic
@@ -19,26 +19,41 @@ export class HttpError extends Error {
 /**
  * API Fetch Function (GET)
  * @param endpoint ex: `/getBusLocation/34`
- * @param retries Max retries (default: 3)
- * @param retryDelay Retry Interval (ms, default: 1000)
+ * @param options Fetch options (retries, retryDelay, isStatic)
  */
 export async function fetchAPI<T = unknown>(
   endpoint: string,
-  retries = 3,
-  retryDelay = 1000
+  options: {
+    retries?: number;
+    retryDelay?: number;
+    isStatic?: boolean;
+    baseUrl?: string;
+    init?: RequestInit;
+  } = {}
 ): Promise<T> {
-  if (API_URL === "NOT_SET") {
-    throw new Error(ERROR_MESSAGES.API_URL_NOT_SET);
+  const { retries = 3, retryDelay = 1000, isStatic = false, baseUrl: customBaseUrl, init } = options;
+
+  if (customBaseUrl === undefined) {
+    if (!isStatic && LIVE_API_URL === "NOT_SET") {
+      throw new Error(ERROR_MESSAGES.API_URL_NOT_SET("LIVE_API_URL"));
+    }
+
+    if (isStatic && STATIC_API_URL === "NOT_SET") {
+      throw new Error(ERROR_MESSAGES.API_URL_NOT_SET("STATIC_API_URL"));
+    }
   }
 
-  const url = `${API_URL}${endpoint}`;
+  const baseUrl = customBaseUrl ?? (isStatic ? STATIC_API_URL : LIVE_API_URL);
+  const url = `${baseUrl}${endpoint}`;
 
   for (let i = 0; i < retries; i++) {
     try {
       const response = await fetch(url, {
+        ...init,
         method: "GET",
         headers: {
           Client: APP_NAME,
+          ...(init?.headers ?? {}),
         },
       });
 

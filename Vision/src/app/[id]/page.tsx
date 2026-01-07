@@ -3,7 +3,7 @@
 import { UI_TEXT, FOOTER } from '@core/constants/locale';
 
 import TimetableView from '@schedule/components/TimetableView';
-import { getAllRouteIds, getRouteData } from '@schedule/utils/data';
+import { getAllRouteIds, getRouteData } from '@schedule/api/getScheduleData';
 
 import Link from 'next/link';
 import { notFound } from 'next/navigation';

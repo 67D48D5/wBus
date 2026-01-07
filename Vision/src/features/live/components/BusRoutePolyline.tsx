@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Polyline } from "react-leaflet";
 
 import { getRouteInfo } from "@live/api/getRouteMap";
+
 import { usePolyline } from "@live/hooks/usePolyline";
 import { useBusLocationData } from "@live/hooks/useBusLocation";
 
@@ -61,43 +62,38 @@ export default function BusRoutePolyline({ routeName }: Props) {
   // If there are no buses running, set inactive state
   const isInactive = busList.length === 0;
 
+  const commonPathOptions = useMemo(() => ({
+    weight: 5,
+    dashArray: isInactive ? "8, 4" : undefined,
+    lineCap: "round" as const,
+    lineJoin: "round" as const,
+  }), [isInactive]);
+
   return (
     <>
-      {upPolyline.map((coords, idx) => {
-        const opacity = computeOpacity(idx, upPolyline.length, isInactive);
-        return (
-          <Polyline
-            key={`up-${idx}`}
-            positions={coords}
-            pathOptions={{
-              color: "#3b82f6",
-              weight: 5,
-              dashArray: isInactive ? "8, 4" : undefined,
-              opacity,
-              lineCap: "round",
-              lineJoin: "round",
-            }}
-          />
-        );
-      })}
+      {upPolyline.map((coords, idx) => (
+        <Polyline
+          key={`up-${idx}`}
+          positions={coords}
+          pathOptions={{
+            ...commonPathOptions,
+            color: "#3b82f6",
+            opacity: computeOpacity(idx, upPolyline.length, isInactive),
+          }}
+        />
+      ))}
 
-      {downPolyline.map((coords, idx) => {
-        const opacity = computeOpacity(idx, downPolyline.length, isInactive);
-        return (
-          <Polyline
-            key={`down-${idx}`}
-            positions={coords}
-            pathOptions={{
-              color: "#ef4444",
-              weight: 5,
-              dashArray: isInactive ? "8, 4" : undefined,
-              opacity,
-              lineCap: "round",
-              lineJoin: "round",
-            }}
-          />
-        );
-      })}
+      {downPolyline.map((coords, idx) => (
+        <Polyline
+          key={`down-${idx}`}
+          positions={coords}
+          pathOptions={{
+            ...commonPathOptions,
+            color: "#ef4444",
+            opacity: computeOpacity(idx, downPolyline.length, isInactive),
+          }}
+        />
+      ))}
     </>
   );
 }

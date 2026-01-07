@@ -4,7 +4,7 @@
 
 import { useRef, useState, useEffect } from "react";
 
-import { BUS_ANIMATION_DURATION } from "@/core/constants/env";
+import { BUS_ANIMATION_DURATION } from "@core/constants/env";
 
 import type { LatLngTuple } from "leaflet";
 

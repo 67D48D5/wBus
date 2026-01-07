@@ -32,12 +32,10 @@ type MapProps = {
  */
 const RouteMarkers = React.memo(({
   routeName,
-  selectedRoute,
   onPopupOpen,
   onPopupClose
 }: {
   routeName: string;
-  selectedRoute: string | null;
   onPopupOpen: (routeName: string) => void;
   onPopupClose: () => void;
 }) => (
@@ -48,15 +46,12 @@ const RouteMarkers = React.memo(({
       onPopupClose={onPopupClose}
     />
     <BusStopMarker routeName={routeName} />
-    {selectedRoute === routeName && (
-      <BusRoutePolyline routeName={routeName} />
-    )}
+    <BusRoutePolyline routeName={routeName} />
   </>
 ), (prevProps, nextProps) => {
   // Custom comparison to prevent unnecessary re-renders
   return (
     prevProps.routeName === nextProps.routeName &&
-    prevProps.selectedRoute === nextProps.selectedRoute &&
     prevProps.onPopupOpen === nextProps.onPopupOpen &&
     prevProps.onPopupClose === nextProps.onPopupClose
   );
@@ -65,7 +60,7 @@ const RouteMarkers = React.memo(({
 RouteMarkers.displayName = 'RouteMarkers';
 
 export default function Map({ routeNames }: MapProps) {
-  const { selectedRoute, setSelectedRoute } = useBusContext();
+  const { setSelectedRoute } = useBusContext();
 
   const handlePopupOpen = useCallback((routeName: string) => {
     setSelectedRoute(routeName);
@@ -97,7 +92,6 @@ export default function Map({ routeNames }: MapProps) {
           <RouteMarkers
             key={routeName}
             routeName={routeName}
-            selectedRoute={selectedRoute}
             onPopupOpen={handlePopupOpen}
             onPopupClose={handlePopupClose}
           />

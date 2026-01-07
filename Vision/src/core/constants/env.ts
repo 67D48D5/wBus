@@ -7,9 +7,11 @@ export const APP_SPLASH_MESSAGE =
   process.env.NEXT_PUBLIC_APP_SPLASH_MESSAGE ||
   APP_MESSAGES.LOADING_INFO;
 
-export const API_URL = process.env.NEXT_PUBLIC_LIVE_API_URL || "NOT_SET";
-export const API_REFRESH_INTERVAL =
-  Number(process.env.NEXT_PUBLIC_API_REFRESH_INTERVAL) || 3000;
+export const STATIC_API_URL = process.env.NEXT_PUBLIC_STATIC_API_URL || "NOT_SET";
+
+export const LIVE_API_URL = process.env.NEXT_PUBLIC_LIVE_API_URL || "NOT_SET";
+export const LIVE_API_REFRESH_INTERVAL =
+  Number(process.env.NEXT_PUBLIC_LIVE_API_REFRESH_INTERVAL) || 3000;
 
 export const MAP_URL =
   process.env.NEXT_PUBLIC_MAP_URL ||
@@ -29,13 +31,13 @@ export const MAP_MAX_BOUNDS = (() => {
 
 export const MAP_DEFAULT_POSITION = (() => {
   const raw =
-    process.env.NEXT_PUBLIC_MAP_DEFAULT_POSITION || "37.28115,127.901946";
+    process.env.NEXT_PUBLIC_MAP_DEFAULT_POSITION || "37.3421,127.91976";
   const [lat, lng] = raw.split(",").map(Number);
   return [lat, lng] as [number, number];
 })();
 
 export const MAP_DEFAULT_ZOOM =
-  Number(process.env.NEXT_PUBLIC_MAP_DEFAULT_ZOOM) || 16;
+  Number(process.env.NEXT_PUBLIC_MAP_DEFAULT_ZOOM) || 13;
 export const MAP_MIN_ZOOM =
   Number(process.env.NEXT_PUBLIC_MAP_MIN_ZOOM) || 12;
 export const MAP_MAX_ZOOM =
@@ -100,7 +102,7 @@ export const DATA_SOURCE = {
   // - API_URL/routeMap.json
   // - API_URL/polylines/*.geojson
   // - API_URL/schedules/*.json
-  BASE_URL: API_URL !== 'NOT_SET' ? API_URL : '',
+  BASE_URL: LIVE_API_URL !== 'NOT_SET' ? LIVE_API_URL : '',
   USE_REMOTE: process.env.NEXT_PUBLIC_USE_REMOTE_STATIC_DATA === 'true',
   PATHS: {
     ROUTE_MAP: 'routeMap.json',

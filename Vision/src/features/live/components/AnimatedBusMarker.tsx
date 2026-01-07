@@ -5,7 +5,7 @@
 import type { LatLngTuple } from "leaflet";
 import type L from "leaflet";
 
-import { BUS_ANIMATION_DURATION } from "@/core/constants/env";
+import { BUS_ANIMATION_DURATION } from "@core/constants/env";
 
 import RotatedMarker from "@live/components/RotatedMarker";
 import { useAnimatedPosition } from "@live/hooks/useAnimatedPosition";

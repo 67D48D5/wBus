@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 
-import { API_REFRESH_INTERVAL } from "@core/constants/env";
+import { LIVE_API_REFRESH_INTERVAL } from "@core/constants/env";
 import { ARRIVAL_MESSAGES } from "@core/constants/locale";
 
 import { getBusArrivalInfoData } from "@live/api/getRealtimeData";
@@ -54,7 +54,7 @@ export function useBusArrivalInfo(busStopId: string | null) {
     fetchData();
 
     // Start a new timer for periodic fetches
-    timerRef.current = setInterval(fetchData, API_REFRESH_INTERVAL);
+    timerRef.current = setInterval(fetchData, LIVE_API_REFRESH_INTERVAL);
 
     // Cleanup on unmount or busStopId change
     return () => {
