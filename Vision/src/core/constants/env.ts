@@ -7,7 +7,7 @@ export const APP_SPLASH_MESSAGE =
   process.env.NEXT_PUBLIC_APP_SPLASH_MESSAGE ||
   APP_MESSAGES.LOADING_INFO;
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || "NOT_SET";
+export const API_URL = process.env.NEXT_PUBLIC_LIVE_API_URL || "NOT_SET";
 export const API_REFRESH_INTERVAL =
   Number(process.env.NEXT_PUBLIC_API_REFRESH_INTERVAL) || 3000;
 
