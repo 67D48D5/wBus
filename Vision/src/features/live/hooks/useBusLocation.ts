@@ -21,15 +21,14 @@ export function useBusLocationData(routeName: string): {
   useEffect(() => {
     if (!routeName) return;
 
-    // Remove all cached data for other routes
-    busPollingService.clearOtherCaches(routeName);
-
     // Subscribe to bus location updates
     const unsubscribe = busPollingService.subscribe(
       routeName,
       (data) => {
         setBusList(data);
         setError(null);
+        // Only clear other caches after we have data for the new route
+        busPollingService.clearOtherCaches(routeName);
       },
       (err) => {
         setError(err);

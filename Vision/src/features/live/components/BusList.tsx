@@ -36,11 +36,14 @@ const RouteDataCollector = React.memo(({
   const data = useSortedBusList(routeName);
 
   useEffect(() => {
+    // Immediately update with current data, even if empty
     onDataUpdate(routeName, data);
   }, [routeName, data, onDataUpdate]);
 
   return null;
 });
+
+RouteDataCollector.displayName = 'RouteDataCollector';
 
 /**
  * Displays a list of buses for all routes with real-time location updates.
@@ -52,6 +55,8 @@ export default function BusList({ routeNames, allRoutes, selectedRoute, onRouteC
 
   // Update selected route
   const handleRouteChange = useCallback((route: string) => {
+    // Clear old route data immediately when switching
+    setRoutesData({});
     onRouteChange(route);
   }, [onRouteChange]);
 

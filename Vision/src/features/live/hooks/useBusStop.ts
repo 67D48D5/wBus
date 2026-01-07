@@ -14,9 +14,13 @@ import { getHaversineDistance } from "@live/utils/geoUtils";
 import type { BusStop } from "@live/models/data";
 
 const stopCache = new CacheManager<BusStop[]>();
+const routeStopsCache = new CacheManager<BusStop[]>();
 
 export function useBusStop(routeName: string) {
-  const [stops, setStops] = useState<BusStop[]>([]);
+  const [stops, setStops] = useState<BusStop[]>(() => {
+    // Initialize with cached data if available to prevent flash of empty state
+    return routeStopsCache.get(routeName) ?? [];
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -24,6 +28,12 @@ export function useBusStop(routeName: string) {
 
     const load = async () => {
       try {
+        // Check cache first and use it immediately
+        const cachedStops = routeStopsCache.get(routeName);
+        if (cachedStops) {
+          if (isMounted) setStops(cachedStops);
+        }
+
         const routeInfo = await getRouteInfo(routeName);
         if (!routeInfo) {
           console.warn(ERROR_MESSAGES.NO_ROUTE_INFO_FOUND(routeName));
@@ -48,6 +58,9 @@ export function useBusStop(routeName: string) {
         // This handles the case where vehicleRouteIds are actual station IDs for some routes
         // but not for others
         const stopsToUse = filteredByRoute.length > 0 ? filteredByRoute : allStops;
+
+        // Cache the stops for this route
+        routeStopsCache.set(routeName, stopsToUse);
 
         console.log(`[useBusStop] Route "${routeName}": vehicleIds=${routeInfo.vehicleRouteIds.length}, matched=${filteredByRoute.length}, using=${stopsToUse.length} stops`);
         if (isMounted) setStops(stopsToUse);
