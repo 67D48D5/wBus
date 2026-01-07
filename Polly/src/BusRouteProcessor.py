@@ -306,7 +306,6 @@ class BusRouteProcessor:
             print(f"  ✓ Total Stations: {len(self.all_stops)}")
             print(f"  ✓ Total Routes: {len(self.route_details)}")
             print(f"  ✓ Station mapping saved to {self.mapping_file}")
-            print()
         except Exception as e:
             print(f"  ✗ Failed to save station mapping: {e}")
 
@@ -323,7 +322,7 @@ class BusRouteProcessor:
                 print(f"  ✗ Route {self.specific_route} not found.")
                 return
 
-        msg = "Collecting" if save_files else "Scanning"
+        msg = "  Collecting" if save_files else "  Scanning"
         suffix = " as GeoJSON..." if save_files else " for stations..."
 
         print(f"{msg} {len(routes)} route(s){suffix}")
