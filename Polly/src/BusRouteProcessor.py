@@ -143,8 +143,7 @@ class BusRouteProcessor:
                         pass
 
                 final_json["lastUpdated"] = datetime.now().strftime("%Y-%m-%d")
-                final_json["routes"] = sorted_routes
-                final_json["routes"]["Shuttle"] = []
+                final_json["route_numbers"] = sorted_routes
 
                 with open(self.mapping_file, "w", encoding="utf-8") as f:
                     json.dump(final_json, f, ensure_ascii=False, indent=2)
