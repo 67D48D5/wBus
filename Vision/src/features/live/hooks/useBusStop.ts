@@ -94,24 +94,39 @@ export function useClosestStopOrd(routeName: string): number | null {
   useEffect(() => {
     if (!map || stops.length === 0) return;
 
-    const updateClosest = () => {
-      const { lat, lng } = map.getCenter();
-      const closestStop = stops.reduce((prev, curr) => {
-        const prevDistance = getHaversineDistance(lat, lng, prev.gpslati, prev.gpslong);
-        const currDistance = getHaversineDistance(lat, lng, curr.gpslati, curr.gpslong);
-        return currDistance < prevDistance ? curr : prev;
-      }, stops[0]);
+    let isUnmounted = false;
 
-      setClosestOrd(closestStop.nodeord);
+    const updateClosest = () => {
+      // Leaflet throws if getCenter runs before the map is fully ready; guard with a try/catch
+      try {
+        const { lat, lng } = map.getCenter();
+        const closestStop = stops.reduce((prev, curr) => {
+          const prevDistance = getHaversineDistance(lat, lng, prev.gpslati, prev.gpslong);
+          const currDistance = getHaversineDistance(lat, lng, curr.gpslati, curr.gpslong);
+          return currDistance < prevDistance ? curr : prev;
+        }, stops[0]);
+
+        if (!isUnmounted) {
+          setClosestOrd(closestStop.nodeord);
+        }
+      } catch (err) {
+        console.warn("[useClosestStopOrd] Unable to read map center yet", err);
+      }
     };
 
-    // First update when the hook is called
-    updateClosest();
+    const attachListeners = () => {
+      // First update when the hook is called
+      updateClosest();
 
-    // Update closest stop when the map is moved
-    map.on("moveend", updateClosest);
+      // Update closest stop when the map is moved
+      map.on("moveend", updateClosest);
+    };
+
+    // Ensure the map is fully initialized before calling getCenter to avoid _leaflet_pos errors
+    map.whenReady(attachListeners);
 
     return () => {
+      isUnmounted = true;
       map.off("moveend", updateClosest);
     };
   }, [map, stops]);
