@@ -18,7 +18,7 @@ import MyLocation from "@live/components/MyLocation";
  * Displays real-time bus location information on a map for all routes.
  */
 export default function MapPage() {
-    const [isSplashVisible, setIsSplashVisible] = useState(true);
+    const [isSplashVisible, setIsSplashVisible] = useState(false);
     const [selectedRoute, setSelectedRoute] = useState<string>("30");
 
     const routeMap = useRouteMap();
