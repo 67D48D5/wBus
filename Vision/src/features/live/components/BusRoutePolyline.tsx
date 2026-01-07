@@ -9,6 +9,7 @@ import { getRouteInfo } from "@live/api/getRouteMap";
 
 import { useMultiPolyline } from "@live/hooks/useMultiPolyline";
 import { useBusLocationData } from "@live/hooks/useBusLocation";
+import { useRoutePreference } from "@live/hooks/useRoutePreference";
 
 type Props = {
   routeName: string;
@@ -45,22 +46,24 @@ export default function BusRoutePolyline({ routeName }: Props) {
     };
   }, [routeName]);
 
-  // Determine active routeId from live bus data, with fallback to first available routeId
-  const activeRouteId = useMemo(() => {
-    // Prefer live bus data
-    const liveRouteId = busList.find((bus) => bus.routeid)?.routeid ?? null;
-    if (liveRouteId) return liveRouteId;
+  // Get live routeId from running buses
+  const liveRouteId = useMemo(() => {
+    return busList.find((bus) => bus.routeid)?.routeid ?? null;
+  }, [busList]);
 
-    // Fallback to first routeId if no buses are running
-    return routeIds.length > 0 ? routeIds[0] : null;
-  }, [busList, routeIds]);
+  // Use preference hook to manage user's selected routeId with localStorage
+  const {
+    selectedRouteId,
+    updateSelectedRouteId,
+    availableRouteIds,
+  } = useRoutePreference(routeName, routeIds, liveRouteId);
 
   const {
     activeUpSegments,
     inactiveUpSegments,
     activeDownSegments,
     inactiveDownSegments,
-  } = useMultiPolyline(routeName, routeIds, activeRouteId);
+  } = useMultiPolyline(routeName, routeIds, selectedRouteId);
 
   // If there are no buses running, set inactive state
   const isInactive = busList.length === 0;
@@ -87,6 +90,49 @@ export default function BusRoutePolyline({ routeName }: Props) {
 
   return (
     <>
+      {/* Route variant selector - show if there are multiple variants */}
+      {availableRouteIds.length > 1 && selectedRouteId && (
+        <div
+          style={{
+            position: "absolute",
+            top: "10px",
+            right: "10px",
+            zIndex: 1000,
+            backgroundColor: "white",
+            padding: "8px 12px",
+            borderRadius: "4px",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+          }}
+        >
+          <label
+            style={{
+              fontSize: "12px",
+              color: "#666",
+              marginRight: "8px",
+            }}
+          >
+            노선 ID:
+          </label>
+          <select
+            value={selectedRouteId}
+            onChange={(e) => updateSelectedRouteId(e.target.value)}
+            style={{
+              padding: "4px 8px",
+              borderRadius: "3px",
+              border: "1px solid #ddd",
+              fontSize: "12px",
+              cursor: "pointer",
+            }}
+          >
+            {availableRouteIds.map((routeId) => (
+              <option key={routeId} value={routeId}>
+                {routeId}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* Inactive (alternative) routes - lighter and dashed */}
       {inactiveUpSegments.map((segment, idx) => (
         <Polyline
