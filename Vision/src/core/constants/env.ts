@@ -101,7 +101,7 @@ export const DATA_SOURCE = {
   // - API_URL/polylines/*.geojson
   // - API_URL/schedules/*.json
   BASE_URL: API_URL !== 'NOT_SET' ? API_URL : '',
-  USE_REMOTE: process.env.NEXT_PUBLIC_USE_REMOTE_DATA === 'true',
+  USE_REMOTE: process.env.NEXT_PUBLIC_USE_REMOTE_STATIC_DATA === 'true',
   PATHS: {
     ROUTE_MAP: 'routeMap.json',
     POLYLINES: 'polylines',  // polylines/{routeId}.geojson
