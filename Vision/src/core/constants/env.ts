@@ -2,12 +2,19 @@
 
 import { APP_MESSAGES } from "./locale";
 
+const parseBooleanEnv = (value: string | undefined, defaultValue = false) => {
+  if (value === undefined) return defaultValue;
+  return ["true", "1", "yes", "y", "on"].includes(value.trim().toLowerCase());
+};
+
 export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "wBus";
 export const APP_SPLASH_MESSAGE =
   process.env.NEXT_PUBLIC_APP_SPLASH_MESSAGE ||
   APP_MESSAGES.LOADING_INFO;
 
-export const STATIC_API_URL = process.env.NEXT_PUBLIC_STATIC_API_URL || "NOT_SET";
+const rawStaticApiUrl = process.env.NEXT_PUBLIC_STATIC_API_URL || "NOT_SET";
+
+export const STATIC_API_URL = rawStaticApiUrl;
 
 export const LIVE_API_URL = process.env.NEXT_PUBLIC_LIVE_API_URL || "NOT_SET";
 export const LIVE_API_REFRESH_INTERVAL =
@@ -97,13 +104,22 @@ export const LOCALE = {
 } as const;
 
 // Data Source Configuration
+const STATIC_BASE_URL = rawStaticApiUrl !== "NOT_SET"
+  ? rawStaticApiUrl.replace(/\/+$/, "") // normalize to avoid trailing slashes
+  : "";
+
+const USE_REMOTE_STATIC_DATA = parseBooleanEnv(
+  process.env.NEXT_PUBLIC_USE_REMOTE_STATIC_DATA,
+  STATIC_BASE_URL.length > 0
+);
+
 export const DATA_SOURCE = {
   // Static data is served from API_URL with CloudFront routing patterns:
   // - STATIC_API_URL/routeMap.json
   // - STATIC_API_URL/polylines/*.geojson
   // - STATIC_API_URL/schedules/*.json
-  BASE_URL: STATIC_API_URL !== 'NOT_SET' ? STATIC_API_URL : '',
-  USE_REMOTE: process.env.NEXT_PUBLIC_USE_REMOTE_STATIC_DATA === 'true',
+  BASE_URL: STATIC_BASE_URL,
+  USE_REMOTE: USE_REMOTE_STATIC_DATA,
   PATHS: {
     ROUTE_MAP: 'routeMap.json',
     POLYLINES: 'polylines',  // polylines/{routeId}.geojson
