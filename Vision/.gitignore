@@ -45,3 +45,7 @@ next-env.d.ts
 # exmaple files
 !.env.example
 !.env.local.example
+
+# dummy data
+/public/data/**/*.json
+/public/data/**/*.geojson
