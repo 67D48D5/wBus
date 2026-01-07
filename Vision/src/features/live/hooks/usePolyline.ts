@@ -8,14 +8,9 @@ import { getPolyline, transformPolyline } from "@live/api/getPolyline";
 
 import type { GeoPolylineData } from "@live/models/data";
 
-function buildRouteKey(routeName: string, routeId?: string | null) {
-  if (!routeName || !routeId) return null;
-  return `${routeName}_${routeId}`;
-}
-
 export function usePolyline(routeName: string, routeId?: string | null) {
   const [data, setData] = useState<GeoPolylineData | null>(null);
-  const routeKey = useMemo(() => buildRouteKey(routeName, routeId), [routeId, routeName]);
+  const routeKey = useMemo(() => routeId, [routeId]);
 
   useEffect(() => {
     if (!routeKey) {

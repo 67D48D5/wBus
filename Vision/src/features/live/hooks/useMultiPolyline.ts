@@ -33,7 +33,7 @@ export function useMultiPolyline(
 
         // Load all polylines in parallel
         const loadPromises = routeIds.map(async (routeId) => {
-            const routeKey = `${routeName}_${routeId}`;
+            const routeKey = `${routeId}`;
             try {
                 const data = await getPolyline(routeKey);
                 return { routeId, data };

@@ -26,7 +26,7 @@ function getPolylineUrl(routeKey: string): string {
 
 /**
  * Fetch the polyline geojson file for the provided key and cache the result.
- * The key should follow the naming scheme `${routeName}_${routeId}` to target
+ * The key should follow the naming scheme `${routeId}` to target
  * a specific route variant (falls back to `${routeName}` if no ID is provided).
  *
  * @param routeKey - filename-friendly key (ex: "30_WJB251000068")

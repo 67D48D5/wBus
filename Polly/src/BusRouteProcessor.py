@@ -410,7 +410,8 @@ class BusRouteProcessor:
         print(f"Processing {len(files)} route file(s)...")
 
         for file_path in files:
-            print(f"\n  Processing {file_path.name}...")
+            clean_name = file_path.name.split("_", 1)[-1]
+            print(f"\n  Processing {file_path.name} -> {clean_name}...")
 
             try:
                 with open(file_path, "r", encoding="utf-8") as f:
@@ -433,7 +434,7 @@ class BusRouteProcessor:
                         }
                     )
 
-                output_path = self.snapped_routes_dir / file_path.name
+                output_path = self.snapped_routes_dir / clean_name
 
                 # Merge with existing data if present
                 if output_path.exists():
