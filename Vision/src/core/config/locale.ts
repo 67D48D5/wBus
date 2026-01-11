@@ -1,4 +1,4 @@
-// src/core/constants/locale.ts
+// src/core/config/locale.ts
 
 /**
  * Centralized locale strings for the entire application
@@ -63,13 +63,13 @@ export const ERROR_MESSAGES = {
     UNKNOWN_NETWORK_ERROR: '[UNKNOWN_NETWORK_ERROR] Unknown network error.',
 
     // Data Fetching Errors
-    FAILED_TO_FETCH_ROUTE_MAP: '[FAILED_TO_FETCH_ROUTE_MAP] Failed to fetch routeMap.json',
+    FAILED_TO_FETCH_ROUTE_MAP: '[FAILED_TO_FETCH_ROUTE_MAP] Failed to fetch RouteMap.json',
     POLYLINE_REQUEST_FAILED: (routeName: string) => `[POLYLINE_REQUEST_FAILED] Polyline request failed: ${routeName}`,
     REMOTE_FETCH_FAILED: (status: number) => `[REMOTE_FETCH_FAILED] Remote fetch failed: ${status}`,
     DATA_FETCH_ERROR: (path: string) => `[DATA_FETCH_ERROR] Error fetching data from ${path}:`,
 
     // Route & Stop Errors
-    ROUTE_NOT_FOUND_IN_MAP: (routeName: string) => `[ROUTE_NOT_FOUND_IN_MAP] Route with routeName '${routeName}' not found in routeMap.json`,
+    ROUTE_NOT_FOUND_IN_MAP: (routeName: string) => `[ROUTE_NOT_FOUND_IN_MAP] Route with routeName '${routeName}' not found in RouteMap.json`,
     NO_ROUTE_INFO_FOUND: (routeName: string) => `[NO_ROUTE_INFO_FOUND] No routeInfo found for ${routeName}`,
     INVALID_NODEID: (nodeid: string) => `[useBusDirection] Invalid nodeid received: ${JSON.stringify(nodeid)}`,
     NO_MATCHING_STOP: (nodeid: string) => `[useBusDirection] No matching stop found for nodeid: ${nodeid}`,
