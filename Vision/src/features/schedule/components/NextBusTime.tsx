@@ -5,9 +5,9 @@
 import { memo, useState, useEffect } from 'react';
 import { Navigation } from 'lucide-react';
 
-import { UI_TEXT, COMMON, TIME_LABELS } from '@core/constants/locale';
+import { UI_TEXT, COMMON, TIME_LABELS } from '@core/config/locale';
 
-import { BusData } from '@schedule/models/schedule';
+import { BusData } from '@core/domain/schedule';
 import { getNearestBusTime } from '@schedule/utils/time';
 
 function NextBusTime({ data }: { data: BusData }) {

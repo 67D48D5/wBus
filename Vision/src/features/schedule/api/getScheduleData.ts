@@ -1,11 +1,11 @@
 // src/features/schedule/api/getScheduleData.ts
 
-import { fetchAPI } from '@core/api/fetchAPI';
+import { fetchAPI } from '@core/network/fetchAPI';
 
-import { DATA_SOURCE } from '@core/constants/env';
-import { ERROR_MESSAGES } from '@core/constants/locale';
+import { API_CONFIG } from '@core/config/env';
+import { ERROR_MESSAGES } from '@core/config/locale';
 
-import { BusData } from '@schedule/models/schedule';
+import { BusData } from '@core/domain/schedule';
 
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -31,9 +31,9 @@ let noticeCache: Notice[] | null = null;
  * Build URL for schedule data
  */
 function getScheduleDataSource(routeId: string): { isRemote: boolean; location: string } {
-    if (DATA_SOURCE.USE_REMOTE && DATA_SOURCE.BASE_URL) {
+    if (API_CONFIG.STATIC.USE_REMOTE && API_CONFIG.STATIC.BASE_URL) {
         // Remote: cloudfront.net/schedules/{routeId}.json
-        return { isRemote: true, location: `${DATA_SOURCE.BASE_URL}/${DATA_SOURCE.PATHS.SCHEDULES}/${routeId}.json` };
+        return { isRemote: true, location: `${API_CONFIG.STATIC.BASE_URL}/${API_CONFIG.STATIC.PATHS.SCHEDULES}/${routeId}.json` };
     }
     // Local: public/data/schedules/{routeId}.json
     return { isRemote: false, location: path.join(process.cwd(), 'public/data/schedules', `${routeId}.json`) };
@@ -49,7 +49,7 @@ async function fetchScheduleData(routeId: string): Promise<BusData | null> {
         if (isRemote) {
             return await fetchAPI<BusData>(location, {
                 baseUrl: '', // location is already a full URL
-                init: { next: { revalidate: DATA_SOURCE.CACHE_REVALIDATE } }
+                init: { next: { revalidate: API_CONFIG.STATIC.CACHE_REVALIDATE } }
             });
         } else {
             // Server-side: read directly from file system
@@ -94,14 +94,14 @@ async function getAvailableRouteIds(): Promise<string[]> {
  */
 async function fetchNoticeData(): Promise<{ notices: Notice[] } | null> {
     try {
-        const location = DATA_SOURCE.USE_REMOTE && DATA_SOURCE.BASE_URL
-            ? `${DATA_SOURCE.BASE_URL}/notice.json`
+        const location = API_CONFIG.STATIC.USE_REMOTE && API_CONFIG.STATIC.BASE_URL
+            ? `${API_CONFIG.STATIC.BASE_URL}/notice.json`
             : path.join(process.cwd(), 'public/data', 'notice.json');
 
-        if (DATA_SOURCE.USE_REMOTE && DATA_SOURCE.BASE_URL) {
+        if (API_CONFIG.STATIC.USE_REMOTE && API_CONFIG.STATIC.BASE_URL) {
             return await fetchAPI<{ notices: Notice[] }>(location, {
                 baseUrl: '',
-                init: { next: { revalidate: DATA_SOURCE.CACHE_REVALIDATE } }
+                init: { next: { revalidate: API_CONFIG.STATIC.CACHE_REVALIDATE } }
             });
         } else {
             const fileContent = await fs.readFile(location, 'utf8');

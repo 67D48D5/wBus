@@ -5,9 +5,8 @@ import Link from 'next/link';
 import { memo } from 'react';
 import { Bus } from 'lucide-react';
 
-import NextBusTime from './NextBusTime';
-
-import { BusData } from '@schedule/models/schedule';
+import NextBusTime from '@schedule/components/NextBusTime';
+import { BusData } from '@core/domain/schedule';
 
 interface RouteCardProps {
     routeId: string;
@@ -47,4 +46,3 @@ function RouteCard({ routeId, routeName, description, busData, basePath = '' }: 
 }
 
 export default memo(RouteCard);
-
