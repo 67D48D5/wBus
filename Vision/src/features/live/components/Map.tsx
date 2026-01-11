@@ -5,13 +5,11 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import "@maplibre/maplibre-gl-leaflet";
-import React, { useCallback, useMemo, useEffect } from "react";
+import React, { useCallback, useMemo, useEffect, useRef } from "react";
 import { MapContainer, useMap, ZoomControl } from "react-leaflet";
 import L from "leaflet";
 
-import {
-  MAP_SETTINGS,
-} from "@core/config/env";
+import { MAP_SETTINGS } from "@core/config/env";
 
 import { getMapStyle } from "@live/api/getStaticData";
 import { useBusContext } from "@live/context/MapContext";
@@ -55,32 +53,49 @@ const RouteMarkers = React.memo(({
   );
 });
 
-RouteMarkers.displayName = 'RouteMarkers';
+RouteMarkers.displayName = "RouteMarkers";
 
 /**
  * MapLibre GL base layer component
  */
 const MapLibreBaseLayer = React.memo(() => {
   const map = useMap();
+  const mapLibreLayerRef = useRef<L.Layer | null>(null);
 
   useEffect(() => {
-    if (!map || typeof window === 'undefined') return;
+    if (!map || typeof window === "undefined") return;
+    let isActive = true;
 
     const initializeMapLayer = async () => {
-      const maplibreLayer = L.maplibreGL({
-        style: await getMapStyle(),
-      });
+      try {
+        const style = await getMapStyle();
+        if (!isActive || mapLibreLayerRef.current) return;
+        const maplibreLayer = L.maplibreGL({
+          style,
+        });
 
-      maplibreLayer.addTo(map);
+        maplibreLayer.addTo(map);
+        mapLibreLayerRef.current = maplibreLayer;
+      } catch (error) {
+        console.error("[MapLibreBaseLayer] Failed to load map style", error);
+      }
     };
 
-    initializeMapLayer();
+    map.whenReady(initializeMapLayer);
+
+    return () => {
+      isActive = false;
+      if (mapLibreLayerRef.current) {
+        map.removeLayer(mapLibreLayerRef.current);
+        mapLibreLayerRef.current = null;
+      }
+    };
   }, [map]);
 
   return null;
 });
 
-MapLibreBaseLayer.displayName = 'MapLibreBaseLayer';
+MapLibreBaseLayer.displayName = "MapLibreBaseLayer";
 
 export default function Map({ routeNames }: MapProps) {
   const { setSelectedRoute } = useBusContext();
@@ -98,6 +113,7 @@ export default function Map({ routeNames }: MapProps) {
     center: MAP_SETTINGS.DEFAULT_POSITION,
     zoom: MAP_SETTINGS.ZOOM.DEFAULT,
     scrollWheelZoom: true,
+    preferCanvas: true,
     maxBounds: MAP_SETTINGS.MAX_BOUNDS,
     maxBoundsViscosity: 1.0,
     minZoom: MAP_SETTINGS.ZOOM.MIN,
