@@ -1,13 +1,18 @@
-// src/features/live/api/getRouteMap.ts
+// src/features/live/api/getStaticData.ts
 
-import { fetchAPI } from "@core/api/fetchAPI";
+import { fetchAPI, HttpError } from "@core/network/fetchAPI";
 import { CacheManager } from "@core/cache/CacheManager";
 
-import { DATA_SOURCE } from "@core/constants/env";
-import { ERROR_MESSAGES } from "@core/constants/locale";
+import { API_CONFIG, MAP_SETTINGS } from "@core/config/env";
+import { ERROR_MESSAGES } from "@core/config/locale";
 
-import type { BusStop, RouteInfo, RouteDetail } from "@live/models/data";
+import { GeoPolylineData } from "@core/domain/live";
 
+import type { BusStop, RouteInfo, RouteDetail } from "@core/domain/live";
+
+/**
+ * Models for cached data
+ */
 interface RouteMapData {
   lastUpdated: string;
   route_numbers: Record<string, string[]>;
@@ -18,15 +23,39 @@ interface StationData {
   stations: Record<string, BusStop>;
 }
 
+/**
+ * Cache Managers
+ */
 const routeMapCache = new CacheManager<RouteMapData>();
 const stationCache = new CacheManager<StationData>();
+const polylineCache = new CacheManager<GeoPolylineData | null>();
+
+/**
+ * Build URL for polyline data based on remote/local mode
+ */
+function getPolylineUrl(routeKey: string): string {
+  if (API_CONFIG.STATIC.USE_REMOTE && API_CONFIG.STATIC.BASE_URL) {
+    return `${API_CONFIG.STATIC.BASE_URL}/${API_CONFIG.STATIC.PATHS.POLYLINES}/${routeKey}.geojson`;
+  }
+  return `/data/polylines/${routeKey}.geojson`;
+}
+
+/**
+ * Build URL for map style data based on remote/local mode
+ */
+function getMapStyleUrl(): string {
+  if (API_CONFIG.STATIC.USE_REMOTE && API_CONFIG.STATIC.BASE_URL) {
+    return `${API_CONFIG.STATIC.BASE_URL}/${API_CONFIG.STATIC.PATHS.MAP_STYLE}`;
+  }
+  return `/data/mapStyle.json`;
+}
 
 /**
  * Build URL for route map based on remote/local mode
  */
 function getRouteMapUrl(): string {
-  if (DATA_SOURCE.USE_REMOTE && DATA_SOURCE.BASE_URL) {
-    return `${DATA_SOURCE.BASE_URL}/${DATA_SOURCE.PATHS.ROUTE_MAP}`;
+  if (API_CONFIG.STATIC.USE_REMOTE && API_CONFIG.STATIC.BASE_URL) {
+    return `${API_CONFIG.STATIC.BASE_URL}/${API_CONFIG.STATIC.PATHS.ROUTE_MAP}`;
   }
   return "/data/routeMap.json";
 }
@@ -44,6 +73,43 @@ export async function getRouteMap(): Promise<Record<string, string[]>> {
   return Object.fromEntries(
     Object.entries(data.route_numbers).filter(([, ids]) => ids.length > 0)
   );
+}
+
+/**
+ * Fetch the polyline geojson file for the provided key and cache the result.
+ * The key should follow the naming scheme `${routeId}` to target
+ * a specific route variant (falls back to `${routeName}` if no ID is provided).
+ *
+ * @param routeKey - filename-friendly key (ex: "30_WJB251000068")
+ * @returns {Promise<GeoPolylineData | null>} - GeoJSON Data or null if not found
+ */
+export async function getPolyline(routeKey: string): Promise<GeoPolylineData | null> {
+  return polylineCache.getOrFetch(routeKey, async () => {
+    try {
+      return await fetchAPI<GeoPolylineData>(getPolylineUrl(routeKey), { baseUrl: "" });
+    } catch (error) {
+      // Gracefully handle missing polyline files (404 errors)
+      if (error instanceof HttpError && error.status === 404) {
+        console.warn(`Polyline file not found: ${routeKey}`);
+        return null;
+      }
+      throw error;
+    }
+  });
+}
+
+/**
+ * Fetches the custom map style JSON and applies localization logic.
+ * This function caches the result to avoid redundant fetches.
+ * @returns A promise that resolves to the modified map style JSON
+ */
+export async function getMapStyle(): Promise<any> {
+  return await routeMapCache.getOrFetch("mapStyle", async () => {
+    // Fetch the style JSON (baseUrl is used as defined in MAP_SETTINGS)
+    const style = await fetchAPI<any>(MAP_SETTINGS.API_URL, { baseUrl: "" });
+
+    return style;
+  });
 }
 
 /**
