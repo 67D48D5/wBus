@@ -4,7 +4,7 @@
 
 import { useMemo } from "react";
 
-import { ERROR_MESSAGES } from "@core/constants/locale";
+import { ERROR_MESSAGES } from "@core/config/locale";
 
 // Check if we are in a client environment
 const isClient = typeof window !== "undefined";
@@ -15,7 +15,6 @@ let globalIcons: Partial<IconMap> | null = null;
 type IconMap = {
   busIcon: L.Icon;
   busStopIcon: L.Icon;
-  myLocationIcon: L.Icon;
 };
 
 export function useIcons(): Partial<IconMap> {
@@ -51,13 +50,7 @@ export function useIcons(): Partial<IconMap> {
         [16, 16],
         [8, 16],
         [0, -14]
-      ),
-      myLocationIcon: createIcon(
-        "/icons/my-location.svg",
-        [32, 32],
-        [16, 32],
-        [0, -30]
-      ),
+      )
     };
 
     return globalIcons;

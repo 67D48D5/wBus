@@ -3,7 +3,7 @@
 "use client";
 
 import React, { Component, ReactNode, ErrorInfo } from "react";
-import { ERROR_MESSAGES, COMMON } from "@core/constants/locale";
+import { ERROR_MESSAGES, COMMON } from "@core/config/locale";
 
 interface ErrorBoundaryProps {
   children: ReactNode;

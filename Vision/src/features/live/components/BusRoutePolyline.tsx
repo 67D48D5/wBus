@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Polyline } from "react-leaflet";
 
-import { getRouteInfo } from "@live/api/getRouteMap";
+import { getRouteInfo } from "@live/api/getStaticData";
 
 import { useMultiPolyline } from "@live/hooks/useMultiPolyline";
 import { useBusLocationData } from "@live/hooks/useBusLocation";
@@ -90,49 +90,6 @@ export default function BusRoutePolyline({ routeName }: Props) {
 
   return (
     <>
-      {/* Route variant selector - show if there are multiple variants */}
-      {availableRouteIds.length > 1 && selectedRouteId && (
-        <div
-          style={{
-            position: "absolute",
-            top: "10px",
-            right: "10px",
-            zIndex: 1000,
-            backgroundColor: "white",
-            padding: "8px 12px",
-            borderRadius: "4px",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-          }}
-        >
-          <label
-            style={{
-              fontSize: "12px",
-              color: "#666",
-              marginRight: "8px",
-            }}
-          >
-            노선 ID:
-          </label>
-          <select
-            value={selectedRouteId}
-            onChange={(e) => updateSelectedRouteId(e.target.value)}
-            style={{
-              padding: "4px 8px",
-              borderRadius: "3px",
-              border: "1px solid #ddd",
-              fontSize: "12px",
-              cursor: "pointer",
-            }}
-          >
-            {availableRouteIds.map((routeId) => (
-              <option key={routeId} value={routeId}>
-                {routeId}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
       {/* Inactive (alternative) routes - lighter and dashed */}
       {inactiveUpSegments.map((segment, idx) => (
         <Polyline

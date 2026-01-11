@@ -4,7 +4,7 @@
 
 import { useRef, useState, useEffect } from "react";
 
-import { BUS_ANIMATION_DURATION } from "@core/constants/env";
+import { MAP_SETTINGS } from "@core/config/env";
 
 import type { LatLngTuple } from "leaflet";
 
@@ -242,7 +242,7 @@ export function useAnimatedPosition(
     targetAngle: number,
     options: UseAnimatedPositionOptions = {}
 ): AnimatedPositionState {
-    const { duration = BUS_ANIMATION_DURATION, polyline = [], snapToPolyline: shouldSnap = true } = options;
+    const { duration = MAP_SETTINGS.ANIMATION.BUS_DURATION_MS, polyline = [], snapToPolyline: shouldSnap = true } = options;
 
     // Current animated state
     const [state, setState] = useState<AnimatedPositionState>(() => {

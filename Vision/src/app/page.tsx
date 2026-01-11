@@ -1,12 +1,13 @@
 // src/app/page.tsx
 
-import { COMMON, METADATA, UI_TEXT, SITE_INFO, FOOTER, NOTICE } from '@core/constants/locale';
-
-import RouteCard from '@schedule/components/RouteCard';
-import { getAllRoutes, getNotices } from '@schedule/api/getScheduleData';
 
 import Link from 'next/link';
 import { MapPin, Clock, Bell, Info, AlertTriangle, AlertCircle } from 'lucide-react';
+
+import { COMMON, METADATA, UI_TEXT, SITE_INFO, FOOTER, NOTICE } from '@core/config/locale';
+
+import RouteCard from '@schedule/components/RouteCard';
+import { getAllRoutes, getNotices } from '@schedule/api/getScheduleData';
 
 import type { Metadata } from 'next';
 

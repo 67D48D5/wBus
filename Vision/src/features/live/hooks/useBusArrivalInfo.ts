@@ -2,12 +2,12 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 
-import { LIVE_API_REFRESH_INTERVAL } from "@core/constants/env";
-import { ARRIVAL_MESSAGES } from "@core/constants/locale";
+import { API_CONFIG } from "@core/config/env";
+import { ARRIVAL_MESSAGES } from "@core/config/locale";
 
 import { getBusArrivalInfoData } from "@live/api/getRealtimeData";
 
-import type { ArrivalInfo } from "@live/models/data";
+import type { ArrivalInfo } from "@core/domain/live";
 
 export function useBusArrivalInfo(busStopId: string | null) {
   const [data, setData] = useState<ArrivalInfo[]>([]);
@@ -54,7 +54,7 @@ export function useBusArrivalInfo(busStopId: string | null) {
     fetchData();
 
     // Start a new timer for periodic fetches
-    timerRef.current = setInterval(fetchData, LIVE_API_REFRESH_INTERVAL);
+    timerRef.current = setInterval(fetchData, API_CONFIG.LIVE.REFRESH_INTERVAL);
 
     // Cleanup on unmount or busStopId change
     return () => {

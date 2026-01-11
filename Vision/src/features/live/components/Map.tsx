@@ -2,20 +2,17 @@
 
 "use client";
 
-import React, { useCallback, useMemo } from "react";
-import { MapContainer, TileLayer } from "react-leaflet";
+import React, { useCallback, useMemo, useEffect } from "react";
+import { MapContainer, useMap, ZoomControl } from "react-leaflet";
+import L from "leaflet";
+import "@maplibre/maplibre-gl-leaflet";
+import "maplibre-gl/dist/maplibre-gl.css";
 
 import {
-  MAP_URL,
-  MAP_ATTRIBUTION,
-  MAP_DEFAULT_ZOOM,
-  MAP_DEFAULT_POSITION,
-  MAP_MIN_ZOOM,
-  MAP_MAX_ZOOM,
-  MAP_MAX_BOUNDS,
-} from "@core/constants/env";
+  MAP_SETTINGS,
+} from "@core/config/env";
 
-import MapProvider from "./MapWithProvider";
+import MapProvider from "./MapProvider";
 
 import { useBusContext } from "@live/context/MapContext";
 
@@ -59,6 +56,39 @@ const RouteMarkers = React.memo(({
 
 RouteMarkers.displayName = 'RouteMarkers';
 
+/**
+ * MapLibre GL base layer component
+ */
+const MapLibreBaseLayer = React.memo(() => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map || typeof window === 'undefined') return;
+
+    const maplibreLayer = L.maplibreGL({
+      style: MAP_SETTINGS.API_URL,
+    });
+
+    maplibreLayer.addTo(map);
+
+    // Add custom attribution
+    if (MAP_SETTINGS.ATTRIBUTION) {
+      map.attributionControl.addAttribution(MAP_SETTINGS.ATTRIBUTION);
+    }
+
+    return () => {
+      map.removeLayer(maplibreLayer);
+      if (MAP_SETTINGS.ATTRIBUTION) {
+        map.attributionControl.removeAttribution(MAP_SETTINGS.ATTRIBUTION);
+      }
+    };
+  }, [map]);
+
+  return null;
+});
+
+MapLibreBaseLayer.displayName = 'MapLibreBaseLayer';
+
 export default function Map({ routeNames }: MapProps) {
   const { setSelectedRoute } = useBusContext();
 
@@ -72,13 +102,14 @@ export default function Map({ routeNames }: MapProps) {
 
   // Memoize map options to prevent unnecessary re-renders
   const mapOptions = useMemo(() => ({
-    center: MAP_DEFAULT_POSITION,
-    zoom: MAP_DEFAULT_ZOOM,
+    center: MAP_SETTINGS.DEFAULT_POSITION,
+    zoom: MAP_SETTINGS.ZOOM.DEFAULT,
     scrollWheelZoom: true,
-    maxBounds: MAP_MAX_BOUNDS,
+    maxBounds: MAP_SETTINGS.MAX_BOUNDS,
     maxBoundsViscosity: 1.0,
-    minZoom: MAP_MIN_ZOOM,
-    maxZoom: MAP_MAX_ZOOM,
+    minZoom: MAP_SETTINGS.ZOOM.MIN,
+    maxZoom: MAP_SETTINGS.ZOOM.MAX,
+    zoomControl: false,
   }), []);
 
   return (
@@ -86,8 +117,9 @@ export default function Map({ routeNames }: MapProps) {
       {...mapOptions}
       className="w-full h-full"
     >
+      <ZoomControl position="topright" />
       <MapProvider>
-        <TileLayer attribution={MAP_ATTRIBUTION} url={MAP_URL} maxZoom={MAP_MAX_ZOOM} />
+        <MapLibreBaseLayer />
         {routeNames.map((routeName) => (
           <RouteMarkers
             key={routeName}

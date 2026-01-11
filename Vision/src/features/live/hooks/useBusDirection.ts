@@ -4,10 +4,10 @@ import { useMemo, useCallback, useEffect, useState } from "react";
 
 import { useBusStop } from "./useBusStop";
 
-import { ERROR_MESSAGES } from "@core/constants/locale";
-import { ALWAYS_UPWARD_NODE_IDS } from "@core/constants/env";
+import { ERROR_MESSAGES } from "@core/config/locale";
+import { MAP_SETTINGS } from "@core/config/env";
 
-import { getRouteDetails, getRouteInfo } from "@live/api/getRouteMap";
+import { getRouteDetails, getRouteInfo } from "@live/api/getStaticData";
 
 /** Direction codes for bus routes */
 // Normalize to 1 (up) and 0 (down) to match icon expectations
@@ -18,7 +18,7 @@ export const Direction = {
 
 export type DirectionCode = (typeof Direction)[keyof typeof Direction] | null;
 
-const ALWAYS_UPWARD_NODEIDS = new Set(ALWAYS_UPWARD_NODE_IDS);
+const ALWAYS_UPWARD_NODEIDS = new Set(MAP_SETTINGS.ALWAYS_UPWARD_NODE_IDS);
 
 type SequenceLookupMap = Map<
   string,

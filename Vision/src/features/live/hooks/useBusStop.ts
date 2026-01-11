@@ -3,15 +3,15 @@
 import { useEffect, useState } from "react";
 
 import { CacheManager } from "@core/cache/CacheManager";
-import { ERROR_MESSAGES } from "@core/constants/locale";
+import { ERROR_MESSAGES } from "@core/config/locale";
 
-import { getRouteInfo } from "@live/api/getRouteMap";
-import { getBusStopLocationData } from "@live/api/getRouteMap";
+import { getRouteInfo } from "@live/api/getStaticData";
+import { getBusStopLocationData } from "@live/api/getStaticData";
 
 import { useBusContext } from "@live/context/MapContext";
 import { getHaversineDistance } from "@live/utils/geoUtils";
 
-import type { BusStop } from "@live/models/data";
+import type { BusStop } from "@core/domain/live";
 
 const stopCache = new CacheManager<BusStop[]>();
 const routeStopsCache = new CacheManager<BusStop[]>();

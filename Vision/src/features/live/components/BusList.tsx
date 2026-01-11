@@ -10,8 +10,8 @@ import { useSortedBusList } from "@live/hooks/useSortedBusList";
 import { getDirectionIcon } from "@live/utils/directionIcons";
 import { getBusErrorMessage, isWarningError } from "@live/utils/errorMessages";
 
-import { UI_TEXT, SCHEDULE_MESSAGES } from "@core/constants/locale";
-import { MAP_FLY_TO_DURATION } from "@core/constants/env";
+import { UI_TEXT, SCHEDULE_MESSAGES } from "@core/config/locale";
+import { MAP_SETTINGS } from "@core/config/env";
 
 type BusListProps = {
   routeNames: string[];
@@ -115,7 +115,7 @@ export default function BusList({ routeNames, allRoutes, selectedRoute, onRouteC
     if (map) {
       map.flyTo([lat, lng], map.getZoom(), {
         animate: true,
-        duration: MAP_FLY_TO_DURATION,
+        duration: MAP_SETTINGS.ANIMATION.FLY_TO_DURATION_SEC / 1000,
       });
     }
   }, [map]);

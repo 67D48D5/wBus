@@ -4,7 +4,7 @@
 
 import React, { createContext, useContext, useState, useMemo } from "react";
 
-import { ERROR_MESSAGES } from "@core/constants/locale";
+import { ERROR_MESSAGES } from "@core/config/locale";
 
 import type { Map } from "leaflet";
 

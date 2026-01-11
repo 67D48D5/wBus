@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 
-import { APP_NAME, APP_SPLASH_MESSAGE, SPLASH_FADE_DURATION } from "@core/constants/env";
+import { APP_CONFIG, UI_CONFIG } from "@core/config/env";
 
 interface SplashProps {
   /** Controls the visibility of the splash screen */
@@ -19,7 +19,7 @@ interface SplashProps {
  */
 export default function Splash({
   isVisible,
-  duration = SPLASH_FADE_DURATION,
+  duration = UI_CONFIG.SPLASH_FADE_DURATION,
   showLoader = true,
 }: SplashProps) {
   const [shouldRender, setShouldRender] = useState(isVisible);
@@ -64,13 +64,13 @@ export default function Splash({
         )}
 
         <div className="text-white text-5xl font-extrabold tracking-tight drop-shadow-2xl mb-3 animate-bounce">
-          {APP_NAME}
+          {APP_CONFIG.NAME}
         </div>
 
         <div className="flex items-center gap-2 px-6 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 shadow-xl">
           <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
           <div className="text-blue-50 text-sm font-medium tracking-wide">
-            {APP_SPLASH_MESSAGE}
+            {APP_CONFIG.SPLASH_MESSAGE}
           </div>
         </div>
       </div>

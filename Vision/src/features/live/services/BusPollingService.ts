@@ -1,13 +1,13 @@
 // src/features/live/services/BusPollingService.ts
 
-import { LIVE_API_REFRESH_INTERVAL } from "@core/constants/env";
-import { ERROR_MESSAGES } from "@core/constants/locale";
+import { API_CONFIG } from "@core/config/env";
+import { ERROR_MESSAGES } from "@core/config/locale";
 
 import { getBusLocationData } from "@live/api/getRealtimeData";
-import { getRouteMap } from "@live/api/getRouteMap";
+import { getRouteMap } from "@live/api/getStaticData";
 
-import type { BusItem } from "@live/models/data";
-import type { BusDataError } from "@live/models/error";
+import type { BusItem } from "@core/domain/live";
+import type { BusDataError } from "@core/domain/error";
 
 const VALID_ERROR_CODES: Set<Exclude<BusDataError, null>> = new Set([
   "ERR:NONE_RUNNING",
@@ -162,7 +162,7 @@ export class BusPollingService {
     fetchFn();
 
     // Set up polling interval
-    this.intervals[routeName] = setInterval(fetchFn, LIVE_API_REFRESH_INTERVAL);
+    this.intervals[routeName] = setInterval(fetchFn, API_CONFIG.LIVE.REFRESH_INTERVAL);
 
     // Visibility listener - refresh data when page becomes visible
     const onVisible = () => {

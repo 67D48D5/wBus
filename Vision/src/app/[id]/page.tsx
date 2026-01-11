@@ -1,6 +1,6 @@
 // src/app/[id]/page.tsx
 
-import { UI_TEXT, FOOTER } from '@core/constants/locale';
+import { UI_TEXT, FOOTER } from '@core/config/locale';
 
 import TimetableView from '@schedule/components/TimetableView';
 import { getAllRouteIds, getRouteData } from '@schedule/api/getScheduleData';

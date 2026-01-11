@@ -2,15 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { getRouteInfo } from "@live/api/getRouteMap";
-import { mergePolylines } from "@live/api/getPolyline";
+import { getRouteInfo } from "@live/api/getStaticData";
+import { mergePolylines } from "@live/utils/polyUtils";
 
 import { usePolyline } from "@live/hooks/usePolyline";
 import { useBusDirection } from "@live/hooks/useBusDirection";
 import { useBusLocationData } from "@live/hooks/useBusLocation";
 
-import type { RouteInfo } from "@live/models/data";
-import type { BusItem } from "@live/models/data";
+import type { RouteInfo } from "@core/domain/live";
+import type { BusItem } from "@core/domain/live";
 
 export interface UseBusData {
   routeInfo: RouteInfo | null;

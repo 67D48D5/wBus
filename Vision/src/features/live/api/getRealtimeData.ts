@@ -1,8 +1,8 @@
 // src/features/live/api/getRealtimeData.ts
 
-import { fetchAPI } from "@core/api/fetchAPI";
+import { fetchAPI } from "@core/network/fetchAPI";
 
-import type { BusItem, ArrivalInfo } from "@live/models/data";
+import type { BusItem, ArrivalInfo } from "@core/domain/live";
 
 /**
  * Fetches real-time bus location data for a specific route.

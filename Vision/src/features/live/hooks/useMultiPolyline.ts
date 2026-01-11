@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { ERROR_MESSAGES } from "@core/constants/locale";
+import { ERROR_MESSAGES } from "@core/config/locale";
 
-import { getPolyline, transformPolyline } from "@live/api/getPolyline";
+import { getPolyline } from "@live/api/getStaticData";
+import { transformPolyline } from "@live/utils/polyUtils";
 
-import type { GeoPolylineData } from "@live/models/data";
+import type { GeoPolylineData } from "@core/domain/live";
 
 type PolylineSegment = {
     coords: [number, number][];

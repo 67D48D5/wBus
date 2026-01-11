@@ -2,13 +2,12 @@
 
 import { useEffect, useState, useRef } from "react";
 
-import { ERROR_MESSAGES } from "@core/constants/locale";
+import { ERROR_MESSAGES } from "@core/config/locale";
 
-import { getRouteMap } from "@live/api/getRouteMap";
+import { getRouteMap } from "@live/api/getStaticData";
 
 /**
  * Get (routeName) -> routeIds[] mapping for bus routes.
- *
  * Example: { "30": ["30100123", "30100124"] }
  */
 export function useRouteMap(): Record<string, string[]> | null {

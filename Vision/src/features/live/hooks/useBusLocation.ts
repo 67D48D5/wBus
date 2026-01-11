@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 
 import { busPollingService } from "@live/services/BusPollingService";
 
-import type { BusItem } from "@live/models/data";
-import type { BusDataError } from "@live/models/error";
+import type { BusItem } from "@core/domain/live";
+import type { BusDataError } from "@core/domain/error";
 
 /**
  * React hook to subscribe to bus location updates for a given route.

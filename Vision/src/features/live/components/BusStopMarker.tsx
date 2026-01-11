@@ -6,7 +6,7 @@ import { useState, useMemo } from "react";
 import { MapPinned } from "lucide-react";
 import { Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 
-import { BUSSTOP_MARKER_MIN_ZOOM } from "@core/constants/env";
+import { MAP_SETTINGS } from "@core/config/env";
 
 import { useIcons } from "@live/hooks/useIcons";
 import { useBusStop } from "@live/hooks/useBusStop";
@@ -41,7 +41,7 @@ export default function BusStopMarker({ routeName }: Props) {
   // Filter stops by viewport and zoom level for performance
   const visibleStops = useMemo(
     () => {
-      if (zoom < BUSSTOP_MARKER_MIN_ZOOM) {
+      if (zoom < MAP_SETTINGS.ZOOM.BUSSTOP_MARKER_MIN) {
         return [];
       }
       return filterStopsByViewport(stops, bounds, zoom);
