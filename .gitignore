@@ -1,4 +1,4 @@
-# `.gitignore` for `wBus` workspace
+# .gitignore for `wBus` project
 
 # Ignore macOS system files
 .DS_Store
