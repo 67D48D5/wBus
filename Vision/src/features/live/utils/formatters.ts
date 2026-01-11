@@ -27,7 +27,7 @@ export function formatVehicleType(vehicleType: string): string {
 /**
  * Format route number for display
  * @param routeNo - Route number string
- * @returns Formatted route number with "번" suffix
+ * @returns Formatted route number with suffix
  */
 export function formatRouteNumber(routeNo: string): string {
   return `${routeNo}${SCHEDULE_MESSAGES.ROUTE_SUFFIX}`;

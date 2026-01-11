@@ -1,4 +1,4 @@
-// models/schedule.ts
+// src/core/domain/schedule.ts
 
 export interface BusTime {
     minute: string;  // Minute

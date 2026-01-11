@@ -1,4 +1,4 @@
-// src/core/api/fetchAPI.ts
+// src/core/network/fetchAPI.ts
 
 import { APP_CONFIG, API_CONFIG } from "@core/config/env";
 import { ERROR_MESSAGES } from "@core/config/locale";

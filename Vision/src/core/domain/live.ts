@@ -1,4 +1,4 @@
-// src/core/domain/models/live.ts
+// src/core/domain/live.ts
 
 // Route Map
 export type RouteInfo = {

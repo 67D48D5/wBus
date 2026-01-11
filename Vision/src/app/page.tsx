@@ -1,6 +1,5 @@
 // src/app/page.tsx
 
-
 import Link from 'next/link';
 import { MapPin, Clock, Bell, Info, AlertTriangle, AlertCircle } from 'lucide-react';
 
@@ -121,7 +120,7 @@ export default async function HomePage() {
               <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
                 <Clock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               </div>
-              <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">버스 시간표</h2>
+              <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">{UI_TEXT.TIMETABLE_SUFFIX}</h2>
             </div>
 
             {/* Route Cards */}
