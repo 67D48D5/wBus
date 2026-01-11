@@ -1,10 +1,10 @@
-// src/features/live/models/data.ts
+// src/core/domain/models/live.ts
 
 // Route Map
 export type RouteInfo = {
-  routeName: string; // 사용자에게 보여주는 노선 이름 (ex. "30")
-  representativeRouteId: string; // TAGO API 요청 시 사용하는 ID
-  vehicleRouteIds: string[]; // 실시간 버스 위치 요청 시 사용하는 ID 목록
+  routeName: string; // The route name shown to users (e.g., "30")
+  representativeRouteId: string; // ID used for TAGO API requests
+  vehicleRouteIds: string[]; // List of IDs used for real-time bus location requests
 };
 
 // Route Detail Sequence Item
@@ -39,7 +39,7 @@ export type BusItem = {
   nodenm: string;
   nodeid: string;
   nodeord: number;
-  routeid?: string; // 버스의 route ID
+  routeid?: string; // Bus route ID
 };
 
 // Bus Stop Arrival Info
@@ -54,7 +54,7 @@ export type ArrivalInfo = {
 // Polyline
 export type GeoFeature = {
   type: "Feature";
-  properties: { dir: "up" | "down" } | { linkId: number; linkOrd: number; updnDir: string };
+  properties: { dir: "up" | "down" };
   geometry: { type: "LineString"; coordinates: [number, number][] };
 };
 

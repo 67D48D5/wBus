@@ -1,4 +1,4 @@
-// src/features/live/models/error.ts
+// src/core/domain/error.ts
 
 /** Error types for bus location polling */
 export type BusDataError =
