@@ -1,6 +1,7 @@
 // src/app/layout.tsx
 
 import "./globals.css";
+import "maplibre-gl/dist/maplibre-gl.css";
 
 import { ThemeProvider } from "next-themes";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -10,7 +11,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import { MapProvider } from "@live/context/MapContext";
 
-import { SITE_INFO } from "@core/constants/locale";
+import { SITE_INFO } from "@core/config/locale";
 
 // Google Fonts (Geist Safns, Geist Mono)
 const geistSans = Geist({
