@@ -6,7 +6,7 @@
 [![Next.js](https://img.shields.io/badge/Next.js-15.2-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.0-blue)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
-[![Python](https://img.shields.io/badge/Python-3.x-blue)](https://www.python.org/)
+[![Rust](https://img.shields.io/badge/Rust-2024%20edition-orange)](https://www.rust-lang.org/)
 
 ---
 
@@ -39,6 +39,7 @@
 
 - **Live bus location tracking** on interactive Leaflet map
 - **Real-time position updates** with smooth animations
+- **Optimized map loading** with cached styles and canvas rendering preference
 - Bus stop information and estimated arrival times
 - Route details on bus click
 - Automatic data refresh (configurable intervals)
@@ -64,9 +65,9 @@
 ├──────────────────────────────────────────────────────────────┤
 │                                                              │
 │  Frontend (Vision/)           Backend (Polly/)               │
-│  ├─ Next.js 15                ├─ Python Data Pipeline        │
+│  ├─ Next.js 15                ├─ Rust CLI Data Pipeline      │
 │  ├─ React 19                  ├─ Route Processing            │
-│  ├─ TypeScript                ├─ Schedule Processing         │
+│  ├─ TypeScript                ├─ Schedule Crawling           │
 │  ├─ Leaflet + OpenStreetMap   ├─ Geospatial Analysis         │
 │  └─ TailwindCSS               └─ GeoJSON Handling            │
 │                                                              │
@@ -85,7 +86,7 @@
 | Layer | Technologies |
 | ----- | ------------ |
 | **Frontend** | Next.js 15, React 19, TypeScript, Leaflet, TailwindCSS |
-| **Backend** | Python 3.x, GeoJSON processing, Spatial analysis |
+| **Backend** | Rust (Tokio, Reqwest), GeoJSON processing, Spatial analysis |
 | **Data** | GeoJSON, JSON, Static files |
 | **Deployment** | CloudFront, Static hosting |
 
@@ -124,8 +125,10 @@ wBus/
 │
 ├── Polly/                          # Backend Data Processing
 │   ├── src/
-│   │   ├── BusRouteProcessor.py    # Route data processing
-│   │   └── BusScheduleProcessor.py # Schedule data processing
+│   │   ├── main.rs                 # Polly CLI entry point
+│   │   ├── route/                  # Route data collection + snapping
+│   │   ├── schedule/               # Schedule crawling + parsing
+│   │   └── utils/                  # Shared helpers (env, filesystem)
 │   ├── storage/
 │   │   ├── processed_routes/       # Processed route output
 │   │   │   ├── routeMap.json       # Master route registry
@@ -147,7 +150,7 @@ wBus/
 
 - **Node.js** 20.x or higher
 - **npm** 10.x or higher (or yarn/pnpm)
-- **Python** 3.x (for data processing in Polly)
+- **Rust** toolchain (for Polly data processing)
 
 ### Installation & Development
 
@@ -236,8 +239,9 @@ See [Polly/API.md](./Polly/API.md) and [Polly/README.md](./Polly/README.md) for 
 
 #### Backend (Polly/)
 
-- **`BusRouteProcessor.py`** - Processes raw route GeoJSON files
-- **`BusScheduleProcessor.py`** - Processes and formats bus schedules
+- **`main.rs`** - CLI entry point with `route` and `schedule` subcommands
+- **`route/`** - Route data collection, snapping, and routeMap generation
+- **`schedule/`** - Schedule crawling, parsing, and output formatting
 - **`storage/`** - Input/output directory for data files
 
 ### Running Development Server
@@ -260,34 +264,39 @@ This creates an optimized build in the `.next/` directory.
 
 ---
 
+## Map Loading & Performance
+
+- MapLibre styles are cached so the base layer is fetched once per session.
+- Leaflet is configured to prefer canvas rendering for marker-heavy screens.
+- MapLibre layers are removed during unmount to avoid stale map layers in client navigation.
+
+---
+
 ## Data Processing
 
 The **Polly** backend handles all data processing:
 
-### Route Processing
+### Route Processing (`polly route`)
 
-- Reads raw GeoJSON files from `storage/raw_routes/`
-- Applies geospatial analysis and route optimization
-- Outputs processed routes to `storage/snapped_routes/`
-- Generates master route registry (`routeMap.json`)
+- Fetches route metadata and stop sequences from TAGO API
+- Saves raw GeoJSON to `storage/processed_routes/raw_routes/`
+- Snaps routes via OSRM and writes `storage/processed_routes/snapped_routes/`
+- Generates `routeMap.json` with route IDs, details, and station map
 
-### Schedule Processing
+### Schedule Processing (`polly schedule`)
 
-- Processes bus schedules and timetables
-- Formats schedules for frontend consumption
-- Handles weekday/weekend/holiday distinctions
-- Outputs to `storage/schedules/`
+- Crawls Wonju bus schedule pages
+- Parses day types/directions and merges schedules
+- Outputs structured JSON to `storage/schedules/`
 
 ### Data Pipeline
 
 ```text
-Raw Route Files (.geojson)
+Route/Stop API + Schedule Pages
     ↓
-BusRouteProcessor.py
+Polly (Rust CLI: route + schedule)
     ↓
-Route Snapping & Optimization
-    ↓
-Processed Routes + routeMap.json
+Processed Routes + routeMap.json + schedules/
     ↓
 Frontend Integration
 ```
