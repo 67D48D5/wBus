@@ -5,20 +5,21 @@
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 
-import { APP_NAME } from "@core/constants/env";
+import { APP_CONFIG } from "@core/config/env";
 
 export default function MapNavBar() {
   return (
-    <nav className="sticky top-0 left-0 w-full h-16 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 shadow-2xl z-70 flex items-center justify-between px-6 border-b-2 border-blue-800/30">
-      <div className="flex items-center gap-3">
+    <nav className="absolute top-4 left-4 z-50">
+      <div className="flex items-center gap-2 p-1.5 pr-5 bg-white/90 backdrop-blur-md border border-white/20 shadow-lg rounded-full">
         <Link
           href="/"
-          className="flex items-center justify-center w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200"
+          className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
         >
-          <ChevronLeft className="w-5 h-5 text-white" />
+          <ChevronLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-2xl font-extrabold tracking-tight text-white drop-shadow-lg flex items-center gap-3 animate-fade-in">
-          {APP_NAME}
+
+        <h1 className="text-sm font-bold text-slate-800 tracking-tight">
+          {APP_CONFIG.NAME}
         </h1>
       </div>
     </nav>
