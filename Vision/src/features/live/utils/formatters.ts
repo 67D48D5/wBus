@@ -1,6 +1,6 @@
 // src/features/live/utils/formatters.ts
 
-import { SCHEDULE_MESSAGES } from "@core/constants/locale";
+import { SCHEDULE_MESSAGES } from "@core/config/locale";
 
 /**
  * Utility functions for formatting data for display

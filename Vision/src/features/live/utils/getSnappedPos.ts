@@ -1,8 +1,8 @@
 // src/features/live/utils/getSnappedPos.ts
 
-import { snapToPolyline } from "@live/api/getPolyline";
+import { snapToPolyline } from "@live/utils/polyUtils";
 
-import type { BusItem } from "@live/models/data";
+import type { BusItem } from "@core/domain/live";
 
 import type { LatLngTuple } from "leaflet";
 

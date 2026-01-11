@@ -1,6 +1,6 @@
 // src/features/schedule/utils/time.ts
 
-import { BusData } from '@schedule/models/schedule';
+import { BusData } from '@core/domain/schedule';
 
 /**
  * Get current hour as zero-padded string (e.g., "09", "14")

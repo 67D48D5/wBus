@@ -1,8 +1,8 @@
 // src/features/live/utils/errorMessages.ts
 
-import { ERROR_MESSAGES } from "@core/constants/locale";
+import { ERROR_MESSAGES } from "@core/config/locale";
 
-import type { BusDataError } from "@live/models/error";
+import type { BusDataError } from "@core/domain/error";
 
 /**
  * Map of error codes to user-friendly messages
