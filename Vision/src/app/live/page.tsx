@@ -11,7 +11,6 @@ import Splash from "@live/components/MapSplash";
 import MapNavBar from "@live/components/MapNavBar";
 import MapWrapper from "@live/components/MapWrapper";
 import BusList from "@live/components/BusList";
-import MyLocation from "@live/components/MyLocation";
 
 const ROUTE_PREFERENCE_KEY = "wbus_selected_route";
 const DEFAULT_ROUTE = "30";
@@ -91,7 +90,6 @@ export default function MapPage() {
                         selectedRoute={selectedRoute}
                         onRouteChange={handleRouteChange}
                     />
-                    <MyLocation />
                 </div>
             </div>
         </>
