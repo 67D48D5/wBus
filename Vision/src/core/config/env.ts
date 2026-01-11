@@ -83,10 +83,6 @@ export const API_CONFIG = {
  * Map Settings (MapLibre/Mapbox)
  */
 export const MAP_SETTINGS = {
-  ATTRIBUTION: getEnv(
-    process.env.NEXT_PUBLIC_MAP_ATTRIBUTION,
-    '<a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> <a href="https://www.openmaptiles.org/" target="_blank">© OpenMapTiles</a> Data from <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>'
-  ),
   MAX_BOUNDS: getEnvBounds(process.env.NEXT_PUBLIC_MAP_MAX_BOUNDS, "37.22,127.8,37.52,128.05"),
   DEFAULT_POSITION: (() => {
     const raw = getEnv(process.env.NEXT_PUBLIC_MAP_DEFAULT_POSITION, "37.3421,127.91976");

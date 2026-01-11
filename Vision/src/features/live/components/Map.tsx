@@ -72,20 +72,9 @@ const MapLibreBaseLayer = React.memo(() => {
       });
 
       maplibreLayer.addTo(map);
-
-      // Add custom attribution
-      if (MAP_SETTINGS.ATTRIBUTION) {
-        map.attributionControl.addAttribution(MAP_SETTINGS.ATTRIBUTION);
-      }
     };
 
     initializeMapLayer();
-
-    return () => {
-      if (MAP_SETTINGS.ATTRIBUTION) {
-        map.attributionControl.removeAttribution(MAP_SETTINGS.ATTRIBUTION);
-      }
-    };
   }, [map]);
 
   return null;
