@@ -2,23 +2,24 @@
 
 "use client";
 
+import "maplibre-gl/dist/maplibre-gl.css";
+
+import "@maplibre/maplibre-gl-leaflet";
 import React, { useCallback, useMemo, useEffect } from "react";
 import { MapContainer, useMap, ZoomControl } from "react-leaflet";
 import L from "leaflet";
-import "@maplibre/maplibre-gl-leaflet";
-import "maplibre-gl/dist/maplibre-gl.css";
 
 import {
   MAP_SETTINGS,
 } from "@core/config/env";
 
-import MapProvider from "./MapProvider";
-
+import { getMapStyle } from "@live/api/getStaticData";
 import { useBusContext } from "@live/context/MapContext";
 
 import BusMarker from "@live/components/BusMarker";
 import BusStopMarker from "@live/components/BusStopMarker";
 import BusRoutePolyline from "@live/components/BusRoutePolyline";
+import MapProvider from "@live/components/MapProvider";
 
 type MapProps = {
   routeNames: string[];
@@ -65,19 +66,22 @@ const MapLibreBaseLayer = React.memo(() => {
   useEffect(() => {
     if (!map || typeof window === 'undefined') return;
 
-    const maplibreLayer = L.maplibreGL({
-      style: MAP_SETTINGS.API_URL,
-    });
+    const initializeMapLayer = async () => {
+      const maplibreLayer = L.maplibreGL({
+        style: await getMapStyle(),
+      });
 
-    maplibreLayer.addTo(map);
+      maplibreLayer.addTo(map);
 
-    // Add custom attribution
-    if (MAP_SETTINGS.ATTRIBUTION) {
-      map.attributionControl.addAttribution(MAP_SETTINGS.ATTRIBUTION);
-    }
+      // Add custom attribution
+      if (MAP_SETTINGS.ATTRIBUTION) {
+        map.attributionControl.addAttribution(MAP_SETTINGS.ATTRIBUTION);
+      }
+    };
+
+    initializeMapLayer();
 
     return () => {
-      map.removeLayer(maplibreLayer);
       if (MAP_SETTINGS.ATTRIBUTION) {
         map.attributionControl.removeAttribution(MAP_SETTINGS.ATTRIBUTION);
       }

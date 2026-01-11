@@ -83,7 +83,6 @@ export const API_CONFIG = {
  * Map Settings (MapLibre/Mapbox)
  */
 export const MAP_SETTINGS = {
-  API_URL: getEnv(process.env.NEXT_PUBLIC_MAP_URL, "https://tiles.openfreemap.org/styles/liberty"),
   ATTRIBUTION: getEnv(
     process.env.NEXT_PUBLIC_MAP_ATTRIBUTION,
     '<a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> <a href="https://www.openmaptiles.org/" target="_blank">© OpenMapTiles</a> Data from <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>'

@@ -106,7 +106,7 @@ export async function getPolyline(routeKey: string): Promise<GeoPolylineData | n
 export async function getMapStyle(): Promise<any> {
   return await routeMapCache.getOrFetch("mapStyle", async () => {
     // Fetch the style JSON (baseUrl is used as defined in MAP_SETTINGS)
-    const style = await fetchAPI<any>(MAP_SETTINGS.API_URL, { baseUrl: "" });
+    const style = await fetchAPI<any>(getMapStyleUrl(), { baseUrl: "" });
 
     return style;
   });
