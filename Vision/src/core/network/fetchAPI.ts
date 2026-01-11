@@ -1,7 +1,7 @@
 // src/core/api/fetchAPI.ts
 
-import { LIVE_API_URL, STATIC_API_URL, APP_NAME } from "@core/constants/env";
-import { ERROR_MESSAGES } from "@core/constants/locale";
+import { APP_CONFIG, API_CONFIG } from "@core/config/env";
+import { ERROR_MESSAGES } from "@core/config/locale";
 
 // Set a delay function for retry logic
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -34,16 +34,16 @@ export async function fetchAPI<T = unknown>(
   const { retries = 3, retryDelay = 1000, isStatic = false, baseUrl: customBaseUrl, init } = options;
 
   if (customBaseUrl === undefined) {
-    if (!isStatic && LIVE_API_URL === "NOT_SET") {
+    if (!isStatic && API_CONFIG.LIVE.URL === "NOT_SET") {
       throw new Error(ERROR_MESSAGES.API_URL_NOT_SET("LIVE_API_URL"));
     }
 
-    if (isStatic && STATIC_API_URL === "NOT_SET") {
+    if (isStatic && API_CONFIG.STATIC.BASE_URL === "NOT_SET") {
       throw new Error(ERROR_MESSAGES.API_URL_NOT_SET("STATIC_API_URL"));
     }
   }
 
-  const baseUrl = customBaseUrl ?? (isStatic ? STATIC_API_URL : LIVE_API_URL);
+  const baseUrl = customBaseUrl ?? (isStatic ? API_CONFIG.STATIC.BASE_URL : API_CONFIG.LIVE.URL);
   const url = `${baseUrl}${endpoint}`;
 
   for (let i = 0; i < retries; i++) {
@@ -52,7 +52,7 @@ export async function fetchAPI<T = unknown>(
         ...init,
         method: "GET",
         headers: {
-          Client: APP_NAME,
+          Client: APP_CONFIG.NAME,
           ...(init?.headers ?? {}),
         },
       });
