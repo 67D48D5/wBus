@@ -42,8 +42,51 @@ function getPolylineUrl(routeKey: string): string {
 
 /**
  * Build URL for map style data based on remote/local mode
+ * Priority: 1. NEXT_PUBLIC_MAP_URL, 2. Remote Static Data, 3. Local Data 4. Default Fallback
+ * @return {string} - The full URL to fetch the map style JSON
  */
-function getMapStyleUrl(): string {
+export function getMapStyleUrl(): string {
+  const { STATIC } = API_CONFIG;
+  const DEFAULT_FALLBACK = "https://tiles.openfreemap.org/styles/liberty";
+
+  // 1. [Highest Priority] If an explicit map style URL is set (for custom styles)
+  // Example: NEXT_PUBLIC_MAP_URL="/map/style.json" or an external URL
+  if (process.env.NEXT_PUBLIC_MAP_URL) {
+    return process.env.NEXT_PUBLIC_MAP_URL;
+  }
+
+  // 2. If the file path is not set, fall back to default
+  const stylePath = STATIC.PATHS.MAP_STYLE || "mapStyle.json";
+
+  // 3. Remote mode (USE_REMOTE=true)
+  if (STATIC.USE_REMOTE) {
+    if (!STATIC.BASE_URL || STATIC.BASE_URL === "NOT_SET") {
+      console.warn("STATIC_API_URL is not set while USE_REMOTE is true. Falling back to default.");
+      return DEFAULT_FALLBACK;
+    }
+    // Use joinUrl utility to prevent duplicate slashes (defined in fetchAPI.ts)
+    return joinUrl(STATIC.BASE_URL, stylePath);
+  }
+
+  // 4. [Default] Local mode
+  // If STATIC.BASE_URL is set to "/data", "/data/mapStyle.json" will be returned
+  return joinUrl(STATIC.BASE_URL || "/data", stylePath);
+}
+
+/**
+ * URL assembly utility (removes duplicate slashes)
+ */
+function joinUrl(base: string, path: string): string {
+  return `${base.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
+}
+
+/**
+ * Build URL for map style data based on remote/local mode
+ */
+function getMapStyleUrl2(): string {
+  if (!API_CONFIG.STATIC.PATHS.MAP_STYLE) {
+    return "https://tiles.openfreemap.org/styles/liberty"; // Fallback to default style URL
+  }
   if (API_CONFIG.STATIC.USE_REMOTE && API_CONFIG.STATIC.BASE_URL) {
     return `${API_CONFIG.STATIC.BASE_URL}/${API_CONFIG.STATIC.PATHS.MAP_STYLE}`;
   }
