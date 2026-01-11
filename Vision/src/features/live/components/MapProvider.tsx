@@ -1,4 +1,4 @@
-// src/features/live/components/MapWithProvider.tsx
+// src/features/live/components/MapProvider.tsx
 
 "use client";
 
@@ -7,11 +7,11 @@ import { useMap } from "react-leaflet";
 
 import { useBusContext } from "@live/context/MapContext";
 
-interface MapWithProviderProps {
+interface MapProviderProps {
   children: React.ReactNode;
 }
 
-export default function MapWithProvider({ children }: MapWithProviderProps) {
+export default function MapProvider({ children }: MapProviderProps) {
   const leafletMap = useMap();
   const { setMap } = useBusContext();
 
