@@ -2,12 +2,12 @@
 
 "use client";
 
-import type { LatLngTuple } from "leaflet";
 import type L from "leaflet";
+import type { LatLngTuple } from "leaflet";
 
 import { MAP_SETTINGS } from "@core/config/env";
 
-import RotatedMarker from "@live/components/RotatedMarker";
+import MapRotatedBusMarker from "@live/components/MapRotatedBusMarker";
 import { useAnimatedPosition } from "@live/hooks/useAnimatedPosition";
 
 interface AnimatedBusMarkerProps {
@@ -30,7 +30,7 @@ export function AnimatedBusMarker({
     rotationAngle,
     icon,
     polyline = [],
-    animationDuration = MAP_SETTINGS.ANIMATION.BUS_DURATION_MS,
+    animationDuration = MAP_SETTINGS.ANIMATION.BUS_MOVE_DURATION,
     children,
     eventHandlers,
 }: AnimatedBusMarkerProps) {
@@ -45,13 +45,13 @@ export function AnimatedBusMarker({
     );
 
     return (
-        <RotatedMarker
+        <MapRotatedBusMarker
             position={animatedPosition}
             rotationAngle={animatedAngle % 360}
             icon={icon}
             eventHandlers={eventHandlers}
         >
             {children}
-        </RotatedMarker>
+        </MapRotatedBusMarker>
     );
 }

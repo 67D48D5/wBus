@@ -14,11 +14,6 @@ import { useBusArrivalInfo } from "@live/hooks/useBusArrivalInfo";
 
 import type { ArrivalInfo } from "@core/domain/live";
 
-
-type Props = {
-    stopId: string;
-};
-
 // Helper to determine urgency color based on arrival time
 function getUrgencyColor(minutes: number) {
     if (minutes <= 2) return "text-red-500 bg-red-50";
@@ -128,7 +123,7 @@ function ArrivalList({
 
 export default function BusStopPopup({
     stopId,
-}: Props) {
+}: { stopId: string }) {
     const {
         data: arrivalRawData,
         loading,

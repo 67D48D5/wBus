@@ -82,7 +82,7 @@ export const ERROR_MESSAGES = {
     ROUTE_MAP_FETCH_ERROR: 'Failed to fetch route map:',
 
     // Component Errors
-    USE_BUS_CONTEXT_ERROR: '`useBusContext` must be used within `MapProvider`',
+    USE_BUS_CONTEXT_ERROR: '`useBusContext` must be used within `MapContextProvider`',
     LEAFLET_IMPORT_ERROR: 'Leaflet import error:',
     ERROR_BOUNDARY_CAUGHT: 'ErrorBoundary caught an error:',
 
@@ -138,11 +138,6 @@ export const UI_TEXT = {
     // Bus List Toggle
     SHOW_BUS_LIST: '버스 목록 보기',
     HIDE_BUS_LIST: '버스 목록 숨기기',
-
-    // My Location
-    FIND_MY_LOCATION: '내 위치 찾기',
-    MY_LOCATION_POPUP: (lat: number, lng: number) =>
-        `<b>📍 내 위치</b><br>위도: ${lat}<br>경도: ${lng}`,
 
     // Bus Marker & Details
     BUS_ROUTE_LABEL: (routeName: string) => `${routeName}번 버스`,

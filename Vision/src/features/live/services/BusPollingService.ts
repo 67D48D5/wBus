@@ -1,6 +1,6 @@
 // src/features/live/services/BusPollingService.ts
 
-import { API_CONFIG } from "@core/config/env";
+import { API_CONFIG, APP_CONFIG } from "@core/config/env";
 import { ERROR_MESSAGES } from "@core/config/locale";
 
 import { getBusLocationData } from "@live/api/getRealtimeData";
@@ -131,7 +131,9 @@ export class BusPollingService {
         this.errorListeners[routeName]?.forEach((cb) => cb(null));
       }
     } catch (err: unknown) {
-      console.error(ERROR_MESSAGES.BUS_POLLING_ERROR, err);
+      if (APP_CONFIG.IS_DEV)
+        console.error(ERROR_MESSAGES.BUS_POLLING_ERROR, err);
+
       this.cache[routeName] = [];
       this.dataListeners[routeName]?.forEach((cb) => cb([]));
 

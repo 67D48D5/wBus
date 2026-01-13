@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-const ROUTE_PREFERENCE_KEY = "wbus_selected_routeId";
+import { APP_CONFIG, PREFERENCE_KEYS } from "@core/config/env";
 
 /**
  * Hook to manage user's selected routeId preference using localStorage.
@@ -20,7 +20,7 @@ export function useRoutePreference(
     useEffect(() => {
         setIsMounted(true);
         try {
-            const saved = localStorage.getItem(`${ROUTE_PREFERENCE_KEY}_${routeName}`);
+            const saved = localStorage.getItem(`${PREFERENCE_KEYS.SELECTED_ROUTE}_${routeName}`);
             if (saved && availableRouteIds.includes(saved)) {
                 setSelectedRouteId(saved);
                 return;
@@ -43,10 +43,11 @@ export function useRoutePreference(
             if (availableRouteIds.includes(routeId)) {
                 setSelectedRouteId(routeId);
                 try {
-                    localStorage.setItem(`${ROUTE_PREFERENCE_KEY}_${routeName}`, routeId);
+                    localStorage.setItem(`${PREFERENCE_KEYS.SELECTED_ROUTE}_${routeName}`, routeId);
                 } catch (e) {
                     // localStorage might not be available
-                    console.warn("Failed to save route preference to localStorage", e);
+                    if (APP_CONFIG.IS_DEV)
+                        console.warn("[useRoutePreference] Failed to save route preference to localStorage:", e);
                 }
             }
         },

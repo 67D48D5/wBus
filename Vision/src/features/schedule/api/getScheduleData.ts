@@ -3,7 +3,7 @@
 import { fetchAPI } from '@core/network/fetchAPI';
 import { BusData } from '@core/domain/schedule';
 
-import { API_CONFIG } from '@core/config/env';
+import { API_CONFIG, APP_CONFIG } from '@core/config/env';
 import { ERROR_MESSAGES } from '@core/config/locale';
 
 import { promises as fs } from 'fs';
@@ -87,7 +87,9 @@ async function fetchScheduleData(routeId: string): Promise<BusData | null> {
         if ((error as any).code === 'ENOENT') {
             return null;
         }
-        console.error(ERROR_MESSAGES.DATA_FETCH_ERROR(routeId), error);
+        if (APP_CONFIG.IS_DEV) {
+            console.error(ERROR_MESSAGES.DATA_FETCH_ERROR(routeId), error);
+        }
         return null;
     }
 }
@@ -114,7 +116,9 @@ async function fetchNoticeData(): Promise<{ notices: Notice[] } | null> {
         if ((error as any).code === 'ENOENT') {
             return null;
         }
-        console.error(ERROR_MESSAGES.DATA_FETCH_ERROR('notice.json'), error);
+        if (APP_CONFIG.IS_DEV) {
+            console.error(ERROR_MESSAGES.DATA_FETCH_ERROR('notice.json'), error);
+        }
         return null;
     }
 }
@@ -140,7 +144,9 @@ async function getAvailableRouteIds(): Promise<string[]> {
 
         return availableRouteIds;
     } catch (error) {
-        console.error('Error reading schedules directory:', error);
+        if (APP_CONFIG.IS_DEV) {
+            console.error(ERROR_MESSAGES.DATA_FETCH_ERROR('getAvailableRouteIds'), error);
+        }
         availableRouteIds = [];
         return availableRouteIds;
     }

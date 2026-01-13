@@ -3,7 +3,7 @@
 import { fetchAPI, HttpError } from "@core/network/fetchAPI";
 import { CacheManager } from "@core/cache/CacheManager";
 
-import { API_CONFIG, MAP_SETTINGS } from "@core/config/env";
+import { API_CONFIG, APP_CONFIG } from "@core/config/env";
 import { ERROR_MESSAGES } from "@core/config/locale";
 
 import { GeoPolylineData } from "@core/domain/live";
@@ -41,59 +41,6 @@ function getPolylineUrl(routeKey: string): string {
 }
 
 /**
- * Build URL for map style data based on remote/local mode
- * Priority: 1. NEXT_PUBLIC_MAP_URL, 2. Remote Static Data, 3. Local Data 4. Default Fallback
- * @return {string} - The full URL to fetch the map style JSON
- */
-export function getMapStyleUrl(): string {
-  const { STATIC } = API_CONFIG;
-  const DEFAULT_FALLBACK = "https://tiles.openfreemap.org/styles/liberty";
-
-  // 1. [Highest Priority] If an explicit map style URL is set (for custom styles)
-  // Example: NEXT_PUBLIC_MAP_URL="/map/style.json" or an external URL
-  if (process.env.NEXT_PUBLIC_MAP_URL) {
-    return process.env.NEXT_PUBLIC_MAP_URL;
-  }
-
-  // 2. If the file path is not set, fall back to default
-  const stylePath = STATIC.PATHS.MAP_STYLE || "mapStyle.json";
-
-  // 3. Remote mode (USE_REMOTE=true)
-  if (STATIC.USE_REMOTE) {
-    if (!STATIC.BASE_URL || STATIC.BASE_URL === "NOT_SET") {
-      console.warn("STATIC_API_URL is not set while USE_REMOTE is true. Falling back to default.");
-      return DEFAULT_FALLBACK;
-    }
-    // Use joinUrl utility to prevent duplicate slashes (defined in fetchAPI.ts)
-    return joinUrl(STATIC.BASE_URL, stylePath);
-  }
-
-  // 4. [Default] Local mode
-  // If STATIC.BASE_URL is set to "/data", "/data/mapStyle.json" will be returned
-  return joinUrl(STATIC.BASE_URL || "/data", stylePath);
-}
-
-/**
- * URL assembly utility (removes duplicate slashes)
- */
-function joinUrl(base: string, path: string): string {
-  return `${base.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
-}
-
-/**
- * Build URL for map style data based on remote/local mode
- */
-function getMapStyleUrl2(): string {
-  if (!API_CONFIG.STATIC.PATHS.MAP_STYLE) {
-    return "https://tiles.openfreemap.org/styles/liberty"; // Fallback to default style URL
-  }
-  if (API_CONFIG.STATIC.USE_REMOTE && API_CONFIG.STATIC.BASE_URL) {
-    return `${API_CONFIG.STATIC.BASE_URL}/${API_CONFIG.STATIC.PATHS.MAP_STYLE}`;
-  }
-  return `/data/mapStyle.json`;
-}
-
-/**
  * Build URL for route map based on remote/local mode
  */
 function getRouteMapUrl(): string {
@@ -101,6 +48,40 @@ function getRouteMapUrl(): string {
     return `${API_CONFIG.STATIC.BASE_URL}/${API_CONFIG.STATIC.PATHS.ROUTE_MAP}`;
   }
   return "/data/routeMap.json";
+}
+
+/**
+ * Build URL for map style data based on remote/local mode
+ * Priority: 1. NEXT_PUBLIC_MAP_URL, 2. Remote Static Data, 3. Local Data 4. Default Fallback
+ * @return {string} - The full URL to fetch the map style JSON
+ */
+export function getMapStyleUrl(): string {
+  const { STATIC } = API_CONFIG;
+
+  // [Highest Priority] If an explicit map style URL is set (for custom styles)
+  // Example: NEXT_PUBLIC_MAP_URL="/map/style.json" or an external URL
+  if (process.env.NEXT_PUBLIC_MAP_URL) {
+    return process.env.NEXT_PUBLIC_MAP_URL;
+  }
+
+  // If the file path is not set, fall back to default
+  const stylePath = STATIC.PATHS.MAP_STYLE || "mapStyle.json";
+
+  // Remote mode (USE_REMOTE=true)
+  if (STATIC.USE_REMOTE) {
+    if (!STATIC.BASE_URL || STATIC.BASE_URL === "NOT_SET") {
+      if (APP_CONFIG.IS_DEV) {
+        console.warn("[getMapStyleUrl] 'STATIC_API_URL' is not set while USE_REMOTE is true. Falling back to default.");
+      }
+      return API_CONFIG.MAP_STYLE_FALLBACK_API_URL;
+    }
+    // Use joinUrl utility to prevent duplicate slashes (defined in fetchAPI.ts)
+    return joinUrl(STATIC.BASE_URL, stylePath);
+  }
+
+  // [Default] Local mode
+  // If STATIC.BASE_URL is set to "/data", "/data/mapStyle.json" will be returned
+  return joinUrl(STATIC.BASE_URL || "/data", stylePath);
 }
 
 /**
@@ -133,7 +114,9 @@ export async function getPolyline(routeKey: string): Promise<GeoPolylineData | n
     } catch (error) {
       // Gracefully handle missing polyline files (404 errors)
       if (error instanceof HttpError && error.status === 404) {
-        console.warn(`Polyline file not found: ${routeKey}`);
+        if (APP_CONFIG.IS_DEV) {
+          console.warn(`[getPolyline] Polyline file not found: ${routeKey}`);
+        }
         return null;
       }
       throw error;
@@ -193,7 +176,9 @@ export async function getRouteInfo(
     const routeIds = map[routeName];
 
     if (!routeIds?.length) {
-      console.warn(ERROR_MESSAGES.ROUTE_NOT_FOUND_IN_MAP(routeName));
+      if (APP_CONFIG.IS_DEV) {
+        console.warn(ERROR_MESSAGES.ROUTE_NOT_FOUND_IN_MAP(routeName));
+      }
       return null;
     }
 
@@ -203,7 +188,9 @@ export async function getRouteInfo(
       vehicleRouteIds: routeIds,
     };
   } catch (err) {
-    console.error(ERROR_MESSAGES.GET_ROUTE_INFO_ERROR, err);
+    if (APP_CONFIG.IS_DEV) {
+      console.error(ERROR_MESSAGES.GET_ROUTE_INFO_ERROR, err);
+    }
     return null;
   }
 }
@@ -220,4 +207,11 @@ export async function getRouteDetails(
     return fetchAPI<RouteMapData>(getRouteMapUrl(), { baseUrl: "" });
   });
   return data.route_details[routeId] || null;
+}
+
+/**
+ * URL assembly utility (removes duplicate slashes)
+ */
+function joinUrl(base: string, path: string): string {
+  return `${base.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
 }

@@ -3,6 +3,8 @@
 "use client";
 
 import React, { Component, ReactNode, ErrorInfo } from "react";
+
+import { APP_CONFIG } from "@core/config/env";
 import { ERROR_MESSAGES, COMMON } from "@core/config/locale";
 
 interface ErrorBoundaryProps {
@@ -37,7 +39,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    console.error(ERROR_MESSAGES.ERROR_BOUNDARY_CAUGHT, error, errorInfo);
+    // Log error details for debugging
+    if (APP_CONFIG.IS_DEV) {
+      console.error(ERROR_MESSAGES.ERROR_BOUNDARY_CAUGHT, error, errorInfo);
+    }
 
     // Call optional error callback
     if (this.props.onError) {
@@ -72,7 +77,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             <p className="text-gray-600 text-center mb-6">
               {ERROR_MESSAGES.RESTART_APP}
             </p>
-            {process.env.NODE_ENV === "development" && this.state.error && (
+            {APP_CONFIG.IS_DEV && this.state.error && (
               <div className="bg-red-50 border border-red-200 rounded p-3 mb-4">
                 <p className="text-xs font-mono text-red-800 break-all">
                   {this.state.error.toString()}

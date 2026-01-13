@@ -9,7 +9,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
-import { MapProvider } from "@live/context/MapContext";
+import { MapContextProvider } from "@live/context/MapContext";
 
 import { SITE_INFO } from "@core/config/locale";
 
@@ -45,7 +45,7 @@ export const viewport = {
 };
 
 // RootLayout is the main layout component that wraps around all pages.
-// It includes global styles, the MapProvider for map context, and analytics components.
+// It includes global styles, the MapContextProvider for map context, and analytics components.
 export default function RootLayout({
   children,
 }: {
@@ -57,8 +57,8 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {/* Provides global map context via MapProvider */}
-          <MapProvider>{children}</MapProvider>
+          {/* Provides global map context via MapContextProvider */}
+          <MapContextProvider>{children}</MapContextProvider>
         </ThemeProvider>
         {/* Vercel SpeedInsights and Analytics components */}
         <SpeedInsights />

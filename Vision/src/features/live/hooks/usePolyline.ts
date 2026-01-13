@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { APP_CONFIG } from "@core/config/env";
 import { ERROR_MESSAGES } from "@core/config/locale";
 
 import { getPolyline } from "@live/api/getStaticData";
@@ -25,7 +26,7 @@ export function usePolyline(routeName: string, routeId?: string | null) {
         // json can be null if polyline file is not found (404)
         setData(json);
       })
-      .catch((error) => console.error(ERROR_MESSAGES.POLYLINE_FETCH_ERROR, error));
+      .catch((error) => { if (APP_CONFIG.IS_DEV) console.error(ERROR_MESSAGES.POLYLINE_FETCH_ERROR, error) });
   }, [routeKey]);
 
   const { upPolyline, downPolyline } = useMemo(() => {

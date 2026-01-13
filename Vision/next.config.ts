@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
     // If in development mode but environment variable is missing, warn the developer
     const remoteApiUrl = process.env.REMOTE_API_URL;
     if (!remoteApiUrl) {
-      console.warn("⚠️ REMOTE_API_URL is not set in .env.local. Proxy will not work.");
+      console.warn("[DEVELOPMENT MODE] 'REMOTE_API_URL' is not set in .env.local. Proxy will not work.");
       return [];
     }
 

@@ -2,9 +2,10 @@
 
 "use client";
 
-import { useMemo } from "react";
-import { Popup } from "react-leaflet";
 import L from "leaflet";
+
+import { Popup } from "react-leaflet";
+import { useMemo, useEffect } from "react";
 
 import { MAP_SETTINGS } from "@core/config/env";
 import { UI_TEXT } from "@core/config/locale";
@@ -15,9 +16,24 @@ import { useBusData } from "@live/hooks/useBusData";
 import { getSnappedPosition } from "@live/utils/getSnappedPos";
 import { getDirectionIcon } from "@live/utils/directionIcons";
 
-import { AnimatedBusMarker } from "@live/components/AnimatedBusMarker";
+import { AnimatedBusMarker } from "@live/components/MapAnimatedBusMarker";
 
 import type { LatLngTuple } from "leaflet";
+
+const BUS_LABEL_STYLE = `
+@keyframes busRouteMarquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.bus-marker-with-label .bus-route-text-animate {
+  display: inline-block;
+  animation: busRouteMarquee 3s linear infinite;
+}
+.bus-marker-with-label .bus-route-text-container:hover .bus-route-text-animate {
+  animation-play-state: paused;
+}
+`;
+const BUS_MARKER_SETTINGS = MAP_SETTINGS.BUS_MARKER;
 
 export default function BusMarker({
   routeName,
@@ -32,42 +48,48 @@ export default function BusMarker({
   const { routeInfo, busList, getDirection, mergedUp, mergedDown } =
     useBusData(routeName);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (document.getElementById(BUS_MARKER_SETTINGS.LABEL_STYLE_ID)) return;
+
+    const style = document.createElement("style");
+    style.id = BUS_MARKER_SETTINGS.LABEL_STYLE_ID;
+    style.textContent = BUS_LABEL_STYLE;
+    document.head.appendChild(style);
+  }, []);
+
+  const iconCache = useMemo(() => new Map<string, L.DivIcon>(), [busIcon]);
+
   // Create a custom DivIcon with route number overlay
   const createBusIconWithLabel = useMemo(() => {
-    return (routeNumber: string) => {
-      if (typeof window === "undefined") return busIcon;
+    const escapeHtml = (text: string | number | null | undefined) =>
+      String(text ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
 
-      // Escape HTML to prevent XSS
-      const escapeHtml = (text: string) => {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-      };
+    return (routeNumber: string) => {
+      if (typeof window === "undefined") return busIcon ?? null;
+      const cached = iconCache.get(routeNumber);
+      if (cached) return cached;
+      if (!busIcon) return null;
 
       const escapedRouteNumber = escapeHtml(routeNumber);
 
-      // Only apply marquee for route numbers longer than 3 characters
-      const needsMarquee = routeNumber.length > 3;
-      const displayText = needsMarquee ? `${escapedRouteNumber} ${escapedRouteNumber}` : escapedRouteNumber;
-      const animationClass = needsMarquee ? 'bus-route-text-animate' : '';
+      // Only apply marquee for route numbers longer than threshold
+      const needsMarquee = routeNumber.length > BUS_MARKER_SETTINGS.MARQUEE_THRESHOLD;
+      const displayText = needsMarquee
+        ? `${escapedRouteNumber} ${escapedRouteNumber}`
+        : escapedRouteNumber;
+      const animationClass = needsMarquee ? "bus-route-text-animate" : "";
+      const [iconWidth, iconHeight] = BUS_MARKER_SETTINGS.ICON_SIZE;
 
-      return L.divIcon({
+      const icon = L.divIcon({
         html: `
-          <style>
-            @keyframes marquee {
-              0% { transform: translateX(0); }
-              100% { transform: translateX(-50%); }
-            }
-            .bus-route-text-animate {
-              display: inline-block;
-              animation: marquee 3s linear infinite;
-            }
-            .bus-route-text-container:hover .bus-route-text-animate {
-              animation-play-state: paused;
-            }
-          </style>
-          <div style="position: relative; width: 29px; height: 43px; filter: drop-shadow(0 2px 8px rgba(37, 99, 235, 0.4));">
-            <img src="/icons/bus-icon.png" style="width: 29px; height: 43px; transition: transform 0.3s ease;" />
+          <div style="position: relative; width: ${iconWidth}px; height: ${iconHeight}px; filter: drop-shadow(0 2px 8px rgba(37, 99, 235, 0.4));">
+            <img src="/icons/bus-icon.png" style="width: ${iconWidth}px; height: ${iconHeight}px; transition: transform 0.3s ease;" />
             <div class="bus-route-text-container" style="
               position: absolute;
               top: 7px;
@@ -90,16 +112,20 @@ export default function BusMarker({
             </div>
           </div>
         `,
-        iconSize: [29, 43],
-        iconAnchor: [14, 21],
-        popupAnchor: [0, -21],
-        className: 'bus-marker-with-label'
+        iconSize: BUS_MARKER_SETTINGS.ICON_SIZE,
+        iconAnchor: BUS_MARKER_SETTINGS.ICON_ANCHOR,
+        popupAnchor: BUS_MARKER_SETTINGS.POPUP_ANCHOR,
+        className: "bus-marker-with-label"
       });
+
+      iconCache.set(routeNumber, icon);
+      return icon;
     };
-  }, [busIcon]);
+  }, [busIcon, iconCache]);
 
   // Calculate snapped positions for all buses
   const snappedList = useMemo(() => {
+    if (!routeInfo || busList.length === 0) return [];
     return busList.map((bus) => {
       const snapped = getSnappedPosition(
         bus,
@@ -108,12 +134,12 @@ export default function BusMarker({
         mergedDown
       );
       // Use only vehicle number as a unique key
-      const key = bus.vehicleno;
+      const key = `${routeName}-${bus.vehicleno}`;
       // Determine which polyline to use for animation
       const polyline: LatLngTuple[] = snapped.direction === 1 ? mergedUp : mergedDown;
       return { bus, key, polyline, ...snapped };
     });
-  }, [busList, getDirection, mergedUp, mergedDown]);
+  }, [routeInfo, busList, getDirection, mergedUp, mergedDown, routeName]);
 
   if (!routeInfo || snappedList.length === 0) return null;
 
@@ -122,6 +148,8 @@ export default function BusMarker({
       {snappedList.map(({ bus, key, position, angle, direction, polyline }) => {
         const icon = createBusIconWithLabel(bus.routenm);
         if (!icon) return null;
+        const DirectionIcon = getDirectionIcon(direction);
+        const stopName = bus.nodenm || UI_TEXT.NO_BUSES_SYMBOL;
         return (
           <AnimatedBusMarker
             key={key}
@@ -129,7 +157,7 @@ export default function BusMarker({
             rotationAngle={angle % 360}
             icon={icon}
             polyline={polyline}
-            animationDuration={MAP_SETTINGS.ANIMATION.BUS_DURATION_MS}
+            animationDuration={MAP_SETTINGS.ANIMATION.BUS_MOVE_DURATION}
             eventHandlers={{
               popupopen: () => {
                 if (onPopupOpen) {
@@ -147,10 +175,7 @@ export default function BusMarker({
               <div className="min-w-[140px] sm:min-w-[180px]">
                 <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white px-3 py-2 sm:px-4 sm:py-2.5 -mx-5 -mt-4 mb-2 sm:mb-3 rounded-t-lg shadow-md">
                   <div className="flex items-center gap-1.5 sm:gap-2">
-                    {(() => {
-                      const DirectionIcon = getDirectionIcon(direction);
-                      return <DirectionIcon className="w-4 h-4 sm:w-5 sm:h-5" />;
-                    })()}
+                    <DirectionIcon className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
                     <span className="font-bold text-sm sm:text-base tracking-tight">
                       {UI_TEXT.BUS_ROUTE_LABEL(bus.routenm)}
                     </span>
@@ -166,7 +191,7 @@ export default function BusMarker({
                   <div className="flex items-start gap-1.5 sm:gap-2">
                     <span className="text-[10px] sm:text-xs font-semibold text-gray-500 w-14 sm:w-16 mt-0.5 sm:mt-1">{UI_TEXT.CURRENT_LOCATION}</span>
                     <span className="text-xs sm:text-sm text-gray-700 font-medium flex-1">
-                      {bus.nodenm}
+                      {stopName}
                     </span>
                   </div>
                 </div>

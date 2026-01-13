@@ -3,6 +3,7 @@
 "use client";
 
 import L from "leaflet";
+
 import { Marker, MarkerProps } from "react-leaflet";
 import { forwardRef, useEffect, useRef } from "react";
 
@@ -10,7 +11,7 @@ if (typeof window !== "undefined") {
   require("leaflet-rotatedmarker");
 }
 
-const RotatedMarker = forwardRef<
+const MapRotatedBusMarker = forwardRef<
   L.Marker,
   MarkerProps & { rotationAngle?: number; rotationOrigin?: string }
 >(({ rotationAngle = 0, rotationOrigin = "center", position, ...props }, ref) => {
@@ -50,6 +51,6 @@ const RotatedMarker = forwardRef<
   );
 });
 
-RotatedMarker.displayName = "RotatedMarker";
+MapRotatedBusMarker.displayName = "MapRotatedBusMarker";
 
-export default RotatedMarker;
+export default MapRotatedBusMarker;

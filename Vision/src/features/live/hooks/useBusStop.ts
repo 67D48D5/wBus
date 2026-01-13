@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 
-import { CacheManager } from "@core/cache/CacheManager";
+import { APP_CONFIG } from "@core/config/env";
 import { ERROR_MESSAGES } from "@core/config/locale";
+
+import { CacheManager } from "@core/cache/CacheManager";
 
 import { getRouteInfo } from "@live/api/getStaticData";
 import { getBusStopLocationData } from "@live/api/getStaticData";
@@ -36,7 +38,9 @@ export function useBusStop(routeName: string) {
 
         const routeInfo = await getRouteInfo(routeName);
         if (!routeInfo) {
-          console.warn(ERROR_MESSAGES.NO_ROUTE_INFO_FOUND(routeName));
+          if (APP_CONFIG.IS_DEV) {
+            console.warn(ERROR_MESSAGES.NO_ROUTE_INFO_FOUND(routeName));
+          }
           return;
         }
 
@@ -62,10 +66,14 @@ export function useBusStop(routeName: string) {
         // Cache the stops for this route
         routeStopsCache.set(routeName, stopsToUse);
 
-        console.log(`[useBusStop] Route "${routeName}": vehicleIds=${routeInfo.vehicleRouteIds.length}, matched=${filteredByRoute.length}, using=${stopsToUse.length} stops`);
+        if (APP_CONFIG.IS_DEV) {
+          console.debug(`[useBusStop] Route "${routeName}": vehicleIds=${routeInfo.vehicleRouteIds.length}, matched=${filteredByRoute.length}, using=${stopsToUse.length} stops`);
+        }
         if (isMounted) setStops(stopsToUse);
       } catch (err) {
-        console.error(ERROR_MESSAGES.BUS_STOP_FETCH_ERROR, err);
+        if (APP_CONFIG.IS_DEV) {
+          console.error(ERROR_MESSAGES.BUS_STOP_FETCH_ERROR, err);
+        }
       }
     };
 
@@ -110,7 +118,9 @@ export function useClosestStopOrd(routeName: string): number | null {
           setClosestOrd(closestStop.nodeord);
         }
       } catch (err) {
-        console.warn("[useClosestStopOrd] Unable to read map center yet", err);
+        if (APP_CONFIG.IS_DEV) {
+          console.warn("[useClosestStopOrd] Unable to read map center yet", err);
+        }
       }
     };
 

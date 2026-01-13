@@ -2,8 +2,10 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import { Polyline } from "react-leaflet";
+import { useEffect, useMemo, useState } from "react";
+
+import { APP_CONFIG } from "@core/config/env";
 
 import { getRouteInfo } from "@live/api/getStaticData";
 
@@ -11,9 +13,6 @@ import { useMultiPolyline } from "@live/hooks/useMultiPolyline";
 import { useBusLocationData } from "@live/hooks/useBusLocation";
 import { useRoutePreference } from "@live/hooks/useRoutePreference";
 
-type Props = {
-  routeName: string;
-};
 
 /**
  * Calculate the opacity for each polyline segment based on its index.
@@ -26,7 +25,7 @@ function computeOpacity(idx: number, total: number): number {
   return Math.max(1 - idx / total, 0.2);
 }
 
-export default function BusRoutePolyline({ routeName }: Props) {
+export default function BusRoutePolyline({ routeName }: { routeName: string }) {
   const { data: busList } = useBusLocationData(routeName);
   const [routeIds, setRouteIds] = useState<string[]>([]);
 
@@ -39,7 +38,7 @@ export default function BusRoutePolyline({ routeName }: Props) {
         if (!isMounted) return;
         setRouteIds(info?.vehicleRouteIds ?? []);
       })
-      .catch((error) => console.error(error));
+      .catch((error) => { if (APP_CONFIG.IS_DEV) { console.error(error); } });
 
     return () => {
       isMounted = false;

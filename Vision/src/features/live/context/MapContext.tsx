@@ -19,8 +19,8 @@ const MapContext = createContext<MapContextType | undefined>(undefined);
 
 /**
  * Custom hook to access the map context.
- * Must be used within a MapProvider component.
- * @throws Error if used outside of MapProvider
+ * Must be used within a MapContextProvider component.
+ * @throws Error if used outside of MapContextProvider
  * @returns The map context containing the map instance and setter
  */
 export function useBusContext(): MapContextType {
@@ -35,7 +35,7 @@ export function useBusContext(): MapContextType {
  * Provider component that maintains the Leaflet map instance globally.
  * Allows any child component to access the map instance via useBusContext hook.
  */
-export function MapProvider({ children }: { children: React.ReactNode }) {
+export function MapContextProvider({ children }: { children: React.ReactNode }) {
   const [map, setMap] = useState<Map | null>(null);
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
   const value = useMemo(() => ({ map, setMap, selectedRoute, setSelectedRoute }), [map, selectedRoute]);

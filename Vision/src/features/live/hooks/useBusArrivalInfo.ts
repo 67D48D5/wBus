@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 
-import { API_CONFIG } from "@core/config/env";
+import { API_CONFIG, APP_CONFIG } from "@core/config/env";
 import { ARRIVAL_MESSAGES } from "@core/config/locale";
 
 import { getBusArrivalInfoData } from "@live/api/getRealtimeData";
@@ -31,7 +31,9 @@ export function useBusArrivalInfo(busStopId: string | null) {
       const result = await getBusArrivalInfoData(busStopId);
       setData(result);
     } catch (e) {
-      console.error(e);
+      if (APP_CONFIG.IS_DEV) {
+        console.error("[useBusArrivalInfo] Error fetching bus arrival data:", e);
+      }
       setError(ARRIVAL_MESSAGES.LOAD_FAILED);
     } finally {
       setLoading(false);

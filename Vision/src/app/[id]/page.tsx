@@ -7,6 +7,7 @@ import { getAllRouteIds, getRouteData } from '@schedule/api/getScheduleData';
 
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+
 import { Bus, ArrowLeft } from 'lucide-react';
 
 import type { Metadata } from 'next';
