@@ -187,11 +187,9 @@ export default function BusMarker({
                   </div>
 
                   {/* Location Row */}
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] sm:text-xs font-semibold text-gray-500">
-                      {UI_TEXT.BUS_ITEM.CURRENT_LOC}
-                    </span>
-                    <span className="text-xs sm:text-sm text-gray-900 font-medium leading-tight break-keep">
+                  <div className="flex items-start gap-1.5 sm:gap-2">
+                    <span className="text-[10px] sm:text-xs font-semibold text-gray-500 w-14 sm:w-16 mt-0.5 sm:mt-1">{UI_TEXT.BUS_ITEM.CURRENT_LOC}</span>
+                    <span className="text-xs sm:text-sm text-gray-700 font-medium flex-1">
                       {stopName}
                     </span>
                   </div>
