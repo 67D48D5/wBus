@@ -14,12 +14,18 @@ import type { BusDataError } from "@core/domain/error";
 export function useBusLocationData(routeName: string): {
   data: BusItem[];
   error: BusDataError;
+  hasFetched: boolean;
 } {
   const [busList, setBusList] = useState<BusItem[]>([]);
   const [error, setError] = useState<BusDataError>(null);
+  const [hasFetched, setHasFetched] = useState(false);
 
   useEffect(() => {
     if (!routeName) return;
+
+    setBusList([]);
+    setError(null);
+    setHasFetched(false);
 
     // Subscribe to bus location updates
     const unsubscribe = busPollingService.subscribe(
@@ -27,11 +33,13 @@ export function useBusLocationData(routeName: string): {
       (data) => {
         setBusList(data);
         setError(null);
+        setHasFetched(true);
         // Only clear other caches after we have data for the new route
         busPollingService.clearOtherCaches(routeName);
       },
       (err) => {
         setError(err);
+        setHasFetched(true);
         if (err !== null) {
           setBusList([]);
         }
@@ -41,5 +49,5 @@ export function useBusLocationData(routeName: string): {
     return unsubscribe;
   }, [routeName]);
 
-  return { data: busList, error };
+  return { data: busList, error, hasFetched };
 }

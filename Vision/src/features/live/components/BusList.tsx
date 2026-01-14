@@ -3,12 +3,10 @@
 "use client";
 
 import React, { useMemo, useCallback, useState, useEffect } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
 
 import { useBusContext } from "@live/context/MapContext";
+import { BusListItem } from "@live/components/BusListItem";
 import { useSortedBusList } from "@live/hooks/useSortedBusList";
-
-import { getDirectionIcon } from "@live/utils/directionIcons";
 import { getBusErrorMessage, isWarningError } from "@live/utils/errorMessages";
 
 import { UI_TEXT, SCHEDULE_MESSAGES } from "@core/config/locale";
@@ -96,11 +94,6 @@ export default function BusList({ routeNames, allRoutes, selectedRoute, onRouteC
     );
   }, [allRoutesData]);
 
-  // Since we're only loading one route, no filtering needed
-  const filteredBuses = useMemo(() => {
-    return allBuses;
-  }, [allBuses]);
-
   // Check if any route has errors with proper memoization
   const anyError = useMemo(() => {
     return allRoutesData.find((data) => data.error !== null)?.error || null;
@@ -108,8 +101,8 @@ export default function BusList({ routeNames, allRoutes, selectedRoute, onRouteC
 
   const errorMessage = getBusErrorMessage(anyError);
   const isLoading = allRoutesData.length === 0
-    || allRoutesData.every((data) => data.sortedList.length === 0 && data.error === null);
-  const isNoData = filteredBuses.length === 0;
+    || allRoutesData.some((data) => !data.hasFetched);
+  const isNoData = allBuses.length === 0;
   const isErrorState = isWarningError(anyError);
   const statusText = anyError
     ? errorMessage
@@ -117,7 +110,7 @@ export default function BusList({ routeNames, allRoutes, selectedRoute, onRouteC
       ? UI_TEXT.LOADING_BUS_DATA
       : isNoData
         ? UI_TEXT.NO_BUSES_RUNNING
-        : UI_TEXT.BUSES_RUNNING(filteredBuses.length);
+        : UI_TEXT.BUSES_RUNNING(allBuses.length);
   const listMessage = anyError
     ? errorMessage
     : isLoading
@@ -145,7 +138,6 @@ export default function BusList({ routeNames, allRoutes, selectedRoute, onRouteC
       routesData,
       allRoutesData,
       allBuses,
-      filteredBuses,
       anyError,
       statusText,
       listMessage,
@@ -215,37 +207,15 @@ export default function BusList({ routeNames, allRoutes, selectedRoute, onRouteC
               {listMessage}
             </li>
           ) : (
-            filteredBuses.map(({ bus, routeName, getDirection }) => {
-              const direction = bus.nodeid && bus.nodeord !== undefined
-                ? getDirection(bus.nodeid, bus.nodeord, bus.routeid)
-                : null;
-              const DirectionIcon = getDirectionIcon(direction);
-              const stopName = bus.nodenm || UI_TEXT.NO_BUSES_SYMBOL;
-
-              return (
-                <li key={`${routeName}-${bus.vehicleno}`}>
-                  <button
-                    type="button"
-                    className="flex w-full justify-between items-center py-2 px-2 sm:py-3 sm:px-3 cursor-pointer bg-gradient-to-r from-gray-50 to-blue-50/50 hover:from-blue-100 hover:to-indigo-100 transition-all duration-300 rounded-lg sm:rounded-xl group border border-transparent hover:border-blue-300 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] text-left"
-                    onClick={() => handleBusClick(bus.gpslati, bus.gpslong)}
-                    aria-label={`${bus.vehicleno} ${UI_TEXT.CURRENT_LOCATION} ${stopName}`}
-                  >
-                    <div className="flex flex-col gap-0.5 sm:gap-1">
-                      <span className="font-bold text-sm sm:text-base text-gray-900 group-hover:text-blue-700 transition-colors">
-                        {bus.vehicleno}
-                      </span>
-                      <span className="text-[10px] sm:text-[11px] font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full px-2 py-0.5 sm:px-2.5 sm:py-1 inline-block w-fit shadow-sm">
-                        {routeName}{SCHEDULE_MESSAGES.ROUTE_SUFFIX}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1 text-gray-600 group-hover:text-gray-900 text-[10px] sm:text-xs text-right max-w-[100px] sm:max-w-[130px] font-medium transition-colors">
-                      <span className="truncate" title={stopName}>{stopName}</span>
-                      <DirectionIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" aria-hidden="true" />
-                    </div>
-                  </button>
-                </li>
-              );
-            })
+            allBuses.map(({ bus, routeName, getDirection }) => (
+              <BusListItem
+                key={`${routeName}-${bus.vehicleno}`}
+                bus={bus}
+                routeName={routeName}
+                getDirection={getDirection}
+                onClick={handleBusClick}
+              />
+            ))
           )}
         </ul>
       </div>

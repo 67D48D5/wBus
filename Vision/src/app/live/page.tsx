@@ -20,21 +20,7 @@ import BusList from "@live/components/BusList";
  */
 export default function MapPage() {
     const [isSplashVisible, setIsSplashVisible] = useState(true);
-    const [selectedRoute, setSelectedRoute] = useState<string>(() => {
-        // Initialize from localStorage if available
-        if (typeof window !== "undefined") {
-            try {
-                const saved = localStorage.getItem(PREFERENCE_KEYS.SELECTED_ROUTE);
-                return saved || MAP_SETTINGS.DEFAULT_ROUTE;
-            } catch (e) {
-                // localStorage might not be available
-                if (APP_CONFIG.IS_DEV) {
-                    console.warn("[MapPage] Failed to load route preference from localStorage", e);
-                }
-            }
-        }
-        return MAP_SETTINGS.DEFAULT_ROUTE;
-    });
+    const [selectedRoute, setSelectedRoute] = useState<string>(MAP_SETTINGS.DEFAULT_ROUTE);
 
     const routeMap = useRouteMap();
     const allRoutes = useMemo(() => routeMap ? Object.keys(routeMap) : [], [routeMap]);
@@ -50,6 +36,18 @@ export default function MapPage() {
                 if (APP_CONFIG.IS_DEV) {
                     console.warn("[MapPage] Failed to save route preference to localStorage", e);
                 }
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        try {
+            const saved = localStorage.getItem(PREFERENCE_KEYS.SELECTED_ROUTE);
+            if (saved) setSelectedRoute(saved);
+        } catch (e) {
+            if (APP_CONFIG.IS_DEV) {
+                console.warn("[MapPage] Failed to load route preference from localStorage", e);
             }
         }
     }, []);
