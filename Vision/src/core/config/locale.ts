@@ -12,6 +12,7 @@
 
 export const UI_TEXT = {
     COMMON: {
+        LOADING_LIVE: "실시간 버스 정보를 불러오는 중...",
         LOADING: '로딩 중...',
         RETRY: '다시 시도',
         CONFIRM: '확인',
@@ -57,7 +58,6 @@ export const UI_TEXT = {
     },
 
     MAP: {
-        MY_LOCATION: '내 위치 확인',
         BUS_LOCATION_TITLE: '실시간 버스 위치',
         BUS_LOCATION_DESC: '지도에서 실시간으로 버스 위치를 확인하세요.',
     },
@@ -80,10 +80,7 @@ export const UI_TEXT = {
 
     NOTICE: {
         SECTION_TITLE: '공지사항',
-        NO_NOTICES: '공지사항이 없습니다.',
-        TYPE_INFO: 'info',
-        TYPE_WARNING: 'warning',
-        TYPE_URGENT: 'urgent',
+        NO_NOTICES: '공지사항이 없습니다.'
     },
 
     FOOTER: {

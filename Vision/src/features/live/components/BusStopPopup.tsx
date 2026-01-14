@@ -65,7 +65,7 @@ function ArrivalList({
             {!hasData && loading && (
                 <div className={`${contentPadding} flex flex-col items-center justify-center py-8`}>
                     <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mb-3"></div>
-                    <p className="text-sm text-gray-500 font-medium">{UI_TEXT.COMMON.LOADING}</p>
+                    <p className="text-sm text-gray-500 font-medium">{UI_TEXT.COMMON.LOADING_LIVE}</p>
                 </div>
             )}
 

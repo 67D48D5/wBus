@@ -71,7 +71,7 @@ export default function Splash({
         <div className="flex items-center gap-2 px-6 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 shadow-xl">
           <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
           <div className="text-blue-50 text-sm font-medium tracking-wide">
-            {UI_TEXT.COMMON.LOADING}
+            {UI_TEXT.COMMON.LOADING_LIVE}
           </div>
         </div>
       </div>

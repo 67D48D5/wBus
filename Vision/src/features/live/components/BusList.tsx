@@ -107,14 +107,14 @@ export default function BusList({ routeNames, allRoutes, selectedRoute, onRouteC
   const statusText = anyError
     ? errorMessage
     : isLoading
-      ? UI_TEXT.COMMON.LOADING
+      ? UI_TEXT.COMMON.LOADING_LIVE
       : isNoData
         ? UI_TEXT.BUS_LIST.NO_RUNNING
         : UI_TEXT.BUS_LIST.COUNT_RUNNING(allBuses.length);
   const listMessage = anyError
     ? errorMessage
     : isLoading
-      ? UI_TEXT.COMMON.LOADING
+      ? UI_TEXT.COMMON.LOADING_LIVE
       : UI_TEXT.BUS_LIST.NO_RUNNING;
   const statusDotClass = isLoading
     ? "bg-blue-300"
