@@ -8,7 +8,6 @@ import { UI_TEXT } from "@core/config/locale";
 import { useBusArrivalInfo } from "@live/hooks/useBusArrivalInfo";
 
 import {
-    formatRouteNumber,
     formatVehicleType,
     secondsToMinutes,
 } from "@live/utils/formatters";
@@ -114,7 +113,7 @@ function ArrivalList({
                                                 <div className="flex flex-col items-start gap-1">
                                                     <div className="flex items-center gap-1.5">
                                                         <div className="flex items-center justify-center min-w-[48px] h-6 px-1.5 bg-blue-600 text-white rounded text-xs font-bold shadow-sm">
-                                                            {formatRouteNumber(routeLabel)}
+                                                            {routeLabel}
                                                         </div>
                                                         <span className="text-[10px] text-gray-500 font-medium px-1.5 py-0.5 bg-gray-100 rounded border border-gray-200">
                                                             {vehicleType}
