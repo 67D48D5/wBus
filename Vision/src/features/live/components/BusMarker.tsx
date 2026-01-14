@@ -3,7 +3,6 @@
 "use client";
 
 import L from "leaflet";
-
 import { Popup } from "react-leaflet";
 import { useMemo, useEffect } from "react";
 
@@ -20,11 +19,13 @@ import { AnimatedBusMarker } from "@live/components/MapAnimatedBusMarker";
 
 import type { LatLngTuple } from "leaflet";
 
+// CSS Styles (Marquee & Popup)
 const BUS_LABEL_STYLE = `
 @keyframes busRouteMarquee {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
+/* Marker Icon Marquee */
 .bus-marker-with-label .bus-route-text-animate {
   display: inline-block;
   animation: busRouteMarquee 3s linear infinite;
@@ -32,8 +33,41 @@ const BUS_LABEL_STYLE = `
 .bus-marker-with-label .bus-route-text-container:hover .bus-route-text-animate {
   animation-play-state: paused;
 }
+
+/* Popup Text Marquee */
+@keyframes popupTextMarquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.popup-marquee-wrapper {
+  display: flex;
+  white-space: nowrap;
+  animation: popupTextMarquee 8s linear infinite; /* 정류장명은 기니까 조금 더 천천히 (6s -> 8s) */
+}
+.popup-marquee-container:hover .popup-marquee-wrapper {
+  animation-play-state: paused;
+}
 `;
+
 const BUS_MARKER_SETTINGS = MAP_SETTINGS.MARKERS.BUS;
+
+// 2. Marquee Component (Reusable)
+const PopupMarquee = ({ text, maxLength = 12 }: { text: string; maxLength?: number }) => {
+  const shouldMarquee = text.length > maxLength;
+
+  if (!shouldMarquee) {
+    return <span className="truncate">{text}</span>;
+  }
+
+  return (
+    <div className="popup-marquee-container overflow-hidden w-full relative">
+      <div className="popup-marquee-wrapper w-max">
+        <span className="pr-4">{text}</span>
+        <span className="pr-4">{text}</span>
+      </div>
+    </div>
+  );
+};
 
 export default function BusMarker({
   routeName,
@@ -175,23 +209,30 @@ export default function BusMarker({
                 </div>
 
                 {/* Info Body Section */}
-                <div className="bg-white px-4 py-3 space-y-2.5">
+                <div className="bg-white px-4 py-3 space-y-3">
                   {/* Vehicle Number Row */}
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-gray-500">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <span className="text-xs font-semibold text-gray-500 shrink-0 whitespace-nowrap w-14 sm:w-16">
                       {UI_TEXT.BUS_ITEM.VEHICLE_NUM}
                     </span>
-                    <span className="text-xs sm:text-sm font-bold text-gray-800 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
-                      {bus.vehicleno}
-                    </span>
+                    <div className="flex-1 min-w-0 flex justify-end">
+                      <div className="text-xs sm:text-sm font-bold text-gray-800 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 max-w-full">
+                        <PopupMarquee text={bus.vehicleno} maxLength={10} />
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Location Row */}
-                  <div className="flex items-start gap-1.5 sm:gap-2">
-                    <span className="text-[10px] sm:text-xs font-semibold text-gray-500 w-14 sm:w-16 mt-0.5 sm:mt-1">{UI_TEXT.BUS_ITEM.CURRENT_LOC}</span>
-                    <span className="text-xs sm:text-sm text-gray-700 font-medium flex-1">
-                      {stopName}
+                  {/* Current Location (Stop) Row - Marquee Applied Here Too! */}
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <span className="text-[10px] sm:text-xs font-semibold text-gray-500 shrink-0 whitespace-nowrap w-14 sm:w-16">
+                      {UI_TEXT.BUS_ITEM.CURRENT_LOC}
                     </span>
+
+                    <div className="flex-1 min-w-0 flex justify-end">
+                      <div className="text-xs sm:text-sm text-gray-700 font-medium max-w-full text-right">
+                        <PopupMarquee text={stopName} maxLength={12} />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
