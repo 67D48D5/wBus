@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { AlertTriangle, Bus, Clock, MapPin } from "lucide-react";
 
-import { ARRIVAL_MESSAGES, SCHEDULE_MESSAGES, TIME_LABELS } from "@core/config/locale";
+import { UI_TEXT } from "@core/config/locale";
 
 import { useBusArrivalInfo } from "@live/hooks/useBusArrivalInfo";
 
@@ -25,9 +25,8 @@ function getUrgencyColor(minutes: number) {
 
 // Helper to format remaining stops
 function formatStopCount(count: number) {
-    if (count === 0) return SCHEDULE_MESSAGES.ARRIVING_SOON;
-    if (count === 1) return SCHEDULE_MESSAGES.ONE_STOP_AWAY;
-    return SCHEDULE_MESSAGES.STOPS_AWAY(count);
+    if (count === 0) return UI_TEXT.BUS_ITEM.ARRIVING_SOON;
+    return UI_TEXT.BUS_ITEM.STOPS_LEFT(count);
 }
 
 // Real-time arrival list component
@@ -67,7 +66,7 @@ function ArrivalList({
             {!hasData && loading && (
                 <div className={`${contentPadding} flex flex-col items-center justify-center py-8`}>
                     <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mb-3"></div>
-                    <p className="text-sm text-gray-500 font-medium">{ARRIVAL_MESSAGES.LOADING}</p>
+                    <p className="text-sm text-gray-500 font-medium">{UI_TEXT.COMMON.LOADING}</p>
                 </div>
             )}
 
@@ -76,8 +75,9 @@ function ArrivalList({
                 <div className={contentPadding}>
                     <div className="flex flex-col items-center justify-center py-6 text-center bg-gray-50 rounded-xl border border-gray-100 border-dashed">
                         <Bus className="w-10 h-10 text-gray-400 mb-2" />
-                        <p className="text-sm text-gray-700 font-semibold">{ARRIVAL_MESSAGES.NO_BUSES}</p>
-                        <p className="text-xs text-gray-500 mt-1">{ARRIVAL_MESSAGES.CHECK_SCHEDULE}</p>
+                        <p className="text-sm text-gray-700 font-semibold">{UI_TEXT.BUS_LIST.NO_RUNNING}</p>
+                        {/* @TODO: Vary this message */}
+                        <p className="text-xs text-gray-500 mt-1">{UI_TEXT.BUS_LIST.NO_RUNNING}</p>
                     </div>
                 </div>
             )}
@@ -126,7 +126,7 @@ function ArrivalList({
                                                 <div className="flex flex-col items-end gap-1">
                                                     <div className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs sm:text-sm font-bold ${urgencyClasses}`}>
                                                         <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                                                        <span>{minutes}{TIME_LABELS.MINUTE_SUFFIX}</span>
+                                                        <span>{UI_TEXT.TIME.FORMAT_REMAINING(minutes)}</span>
                                                     </div>
                                                     <div className="flex items-center gap-1 text-[10px] sm:text-xs text-gray-500 font-medium">
                                                         <MapPin className="w-3 h-3" />

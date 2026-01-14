@@ -4,7 +4,7 @@ import { fetchAPI } from '@core/network/fetchAPI';
 import { BusData } from '@core/domain/schedule';
 
 import { API_CONFIG, APP_CONFIG } from '@core/config/env';
-import { ERROR_MESSAGES } from '@core/config/locale';
+import { LOG_MESSAGES } from '@core/config/locale';
 
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -75,7 +75,7 @@ async function fetchScheduleData(routeId: string): Promise<BusData | null> {
         if (isRemote) {
             return await fetchAPI<BusData>(location, {
                 baseUrl: '', // location is already a complete URL, so baseUrl is empty
-                init: { next: { revalidate: API_CONFIG.STATIC.CACHE_REVALIDATE } }
+                init: { next: { revalidate: API_CONFIG.STATIC.REVALIDATE_SEC } }
             });
         } else {
             // Server-side Local File Read
@@ -88,7 +88,7 @@ async function fetchScheduleData(routeId: string): Promise<BusData | null> {
             return null;
         }
         if (APP_CONFIG.IS_DEV) {
-            console.error(ERROR_MESSAGES.DATA_FETCH_ERROR(routeId), error);
+            console.error(LOG_MESSAGES.FETCH_FAILED(routeId, 500), error);
         }
         return null;
     }
@@ -105,7 +105,7 @@ async function fetchNoticeData(): Promise<{ notices: Notice[] } | null> {
 
             return await fetchAPI<{ notices: Notice[] }>(location, {
                 baseUrl: '',
-                init: { next: { revalidate: API_CONFIG.STATIC.CACHE_REVALIDATE } }
+                init: { next: { revalidate: API_CONFIG.STATIC.REVALIDATE_SEC } }
             });
         } else {
             const location = path.join(process.cwd(), 'public/data', 'notice.json');
@@ -117,7 +117,7 @@ async function fetchNoticeData(): Promise<{ notices: Notice[] } | null> {
             return null;
         }
         if (APP_CONFIG.IS_DEV) {
-            console.error(ERROR_MESSAGES.DATA_FETCH_ERROR('notice.json'), error);
+            console.error(LOG_MESSAGES.FETCH_FAILED('notice.json', 500), error);
         }
         return null;
     }
@@ -145,7 +145,7 @@ async function getAvailableRouteIds(): Promise<string[]> {
         return availableRouteIds;
     } catch (error) {
         if (APP_CONFIG.IS_DEV) {
-            console.error(ERROR_MESSAGES.DATA_FETCH_ERROR('getAvailableRouteIds'), error);
+            console.error(LOG_MESSAGES.FETCH_FAILED('getAvailableRouteIds', 500), error);
         }
         availableRouteIds = [];
         return availableRouteIds;

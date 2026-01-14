@@ -4,7 +4,7 @@ import { useMemo, useCallback, useEffect, useState } from "react";
 
 import { useBusStop } from "./useBusStop";
 
-import { ERROR_MESSAGES } from "@core/config/locale";
+import { LOG_MESSAGES } from "@core/config/locale";
 import { APP_CONFIG, MAP_SETTINGS } from "@core/config/env";
 
 import { getRouteDetails, getRouteInfo } from "@live/api/getStaticData";
@@ -65,7 +65,7 @@ export function useBusDirection(routeName: string) {
         }
       } catch (err) {
         if (APP_CONFIG.IS_DEV) {
-          console.error(ERROR_MESSAGES.GET_ROUTE_INFO_ERROR(routeName), err);
+          console.error(LOG_MESSAGES.ROUTE_MISSING(routeName), err);
         }
         if (isMounted) setRouteSequences([]);
       }
@@ -215,7 +215,7 @@ export async function getDirectionFromRouteDetails(
     return null;
   } catch (err) {
     if (APP_CONFIG.IS_DEV) {
-      console.error(ERROR_MESSAGES.GET_ROUTE_INFO_ERROR(routeid), err);
+      console.error(LOG_MESSAGES.ROUTE_MISSING(routeid), err);
     }
     return null;
   }

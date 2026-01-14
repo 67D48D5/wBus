@@ -1,6 +1,6 @@
 // src/features/live/utils/formatters.ts
 
-import { SCHEDULE_MESSAGES } from "@core/config/locale";
+import { UI_TEXT } from "@core/config/locale";
 
 /**
  * Utility functions for formatting data for display
@@ -30,5 +30,5 @@ export function formatVehicleType(vehicleType: string): string {
  * @returns Formatted route number with suffix
  */
 export function formatRouteNumber(routeNo: string): string {
-  return `${routeNo}${SCHEDULE_MESSAGES.ROUTE_SUFFIX}`;
+  return `${routeNo}${UI_TEXT.BUS_LIST.TITLE_ROUTE}`;
 }

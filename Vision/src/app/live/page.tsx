@@ -4,7 +4,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from "react";
 
-import { APP_CONFIG, MAP_SETTINGS, PREFERENCE_KEYS } from "@core/config/env";
+import { APP_CONFIG, MAP_SETTINGS, STORAGE_KEYS } from "@core/config/env";
 
 import { busPollingService } from "@live/services/BusPollingService";
 import { useRouteMap } from "@live/hooks/useRouteMap";
@@ -30,7 +30,7 @@ export default function MapPage() {
         setSelectedRoute(route);
         if (typeof window !== "undefined") {
             try {
-                localStorage.setItem(PREFERENCE_KEYS.SELECTED_ROUTE, route);
+                localStorage.setItem(STORAGE_KEYS.ROUTE_ID, route);
             } catch (e) {
                 // localStorage might not be available
                 if (APP_CONFIG.IS_DEV) {
@@ -43,7 +43,7 @@ export default function MapPage() {
     useEffect(() => {
         if (typeof window === "undefined") return;
         try {
-            const saved = localStorage.getItem(PREFERENCE_KEYS.SELECTED_ROUTE);
+            const saved = localStorage.getItem(STORAGE_KEYS.ROUTE_ID);
             if (saved) setSelectedRoute(saved);
         } catch (e) {
             if (APP_CONFIG.IS_DEV) {

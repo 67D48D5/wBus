@@ -42,23 +42,35 @@ const BusStopMarkerItem = memo(({ stop, icon, onRouteChange }: BusStopMarkerItem
         popupclose: handlePopupClose,
       }}
     >
-      <Popup autoPan={false} minWidth={180} className="custom-bus-stop-popup">
-        <div className="min-w-[160px] sm:min-w-[210px]">
-          <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white px-3 py-2 sm:px-4 sm:py-2.5 -mx-5 -mt-4 mb-2 sm:mb-3 rounded-t-lg shadow-md">
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <MapPinned className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-              <span className="font-bold text-sm sm:text-base tracking-tight">{stop.nodenm}</span>
+      <Popup autoPan={false} minWidth={200} className="custom-bus-stop-popup">
+        <div className="min-w-[200px] sm:min-w-[250px] flex flex-col">
+          {/* Header Section */}
+          <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white px-4 py-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <MapPinned className="w-5 h-5 flex-shrink-0 text-white/90" />
+                <span className="font-bold text-sm sm:text-base tracking-tight leading-snug">
+                  {stop.nodenm}
+                </span>
+              </div>
             </div>
-            <span className="text-[10px] sm:text-xs text-blue-100 font-medium bg-white/20 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md inline-block mt-1 sm:mt-1.5">
-              {stop.nodeno}
-            </span>
+            {/* Node Number Badge */}
+            <div className="mt-2 flex">
+              <span className="text-[10px] sm:text-xs font-bold text-blue-700 bg-white/90 px-2 py-0.5 rounded shadow-sm border border-blue-200/50">
+                {stop.nodeno}
+              </span>
+            </div>
           </div>
-          {isPopupOpen && (
-            <BusStopPopup
-              stopId={stop.nodeid}
-              onRouteChange={onRouteChange}
-            />
-          )}
+
+          {/* Body Section (Arrival Info) */}
+          <div className="bg-white min-h-[60px]">
+            {isPopupOpen && (
+              <BusStopPopup
+                stopId={stop.nodeid}
+                onRouteChange={onRouteChange}
+              />
+            )}
+          </div>
         </div>
       </Popup>
     </Marker>
@@ -94,7 +106,7 @@ export default function BusStopMarker({
   // Filter stops by viewport and zoom level for performance
   const visibleStops = useMemo(
     () => {
-      if (zoom < MAP_SETTINGS.ZOOM.BUS_STOP_DISPLAY) {
+      if (zoom < MAP_SETTINGS.ZOOM.BUS_STOP_VISIBLE) {
         return [];
       }
       return filterStopsByViewport(stops, bounds, zoom);

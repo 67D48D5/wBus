@@ -1,7 +1,7 @@
 // src/core/network/fetchAPI.ts
 
 import { APP_CONFIG, API_CONFIG } from "@core/config/env";
-import { ERROR_MESSAGES } from "@core/config/locale";
+import { LOG_MESSAGES } from "@core/config/locale";
 
 // Set a delay function for retry logic
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -35,11 +35,11 @@ export async function fetchAPI<T = unknown>(
 
   if (customBaseUrl === undefined) {
     if (!isStatic && API_CONFIG.LIVE.URL === "NOT_SET") {
-      throw new Error(ERROR_MESSAGES.API_URL_NOT_SET("LIVE_API_URL"));
+      throw new Error(LOG_MESSAGES.API_URL_MISSING("LIVE_API_URL"));
     }
 
     if (isStatic && API_CONFIG.STATIC.BASE_URL === "NOT_SET") {
-      throw new Error(ERROR_MESSAGES.API_URL_NOT_SET("STATIC_API_URL"));
+      throw new Error(LOG_MESSAGES.API_URL_MISSING("STATIC_API_URL"));
     }
   }
 
@@ -52,7 +52,7 @@ export async function fetchAPI<T = unknown>(
         ...init,
         method: "GET",
         headers: {
-          Client: APP_CONFIG.APP_NAME,
+          Client: APP_CONFIG.NAME,
           ...(init?.headers ?? {}),
         },
       });
@@ -60,7 +60,7 @@ export async function fetchAPI<T = unknown>(
       if (!response.ok) {
         const errorText = await response.text();
         throw new HttpError(
-          ERROR_MESSAGES.HTTP_ERROR(response.status, errorText),
+          LOG_MESSAGES.FETCH_FAILED(url, response.status),
           response.status
         );
       }
@@ -74,12 +74,12 @@ export async function fetchAPI<T = unknown>(
           throw error;
         }
         const message = error instanceof Error ? error.message : String(error);
-        throw new Error(ERROR_MESSAGES.REQUEST_FAILED(message));
+        throw new Error(LOG_MESSAGES.FETCH_FAILED(url, -1) + ` - ${message}`);
       }
 
       await delay(retryDelay);
     }
   }
 
-  throw new Error(ERROR_MESSAGES.UNKNOWN_NETWORK_ERROR);
+  throw new Error(LOG_MESSAGES.UNHANDLED_EXCEPTION);
 }

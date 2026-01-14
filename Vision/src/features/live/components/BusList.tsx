@@ -9,8 +9,8 @@ import { BusListItem } from "@live/components/BusListItem";
 import { useSortedBusList } from "@live/hooks/useSortedBusList";
 import { getBusErrorMessage, isWarningError } from "@live/utils/errorMessages";
 
-import { UI_TEXT, SCHEDULE_MESSAGES } from "@core/config/locale";
 import { APP_CONFIG, MAP_SETTINGS } from "@core/config/env";
+import { UI_TEXT } from "@core/config/locale";
 
 type BusListProps = {
   routeNames: string[];
@@ -107,15 +107,15 @@ export default function BusList({ routeNames, allRoutes, selectedRoute, onRouteC
   const statusText = anyError
     ? errorMessage
     : isLoading
-      ? UI_TEXT.LOADING_BUS_DATA
+      ? UI_TEXT.COMMON.LOADING
       : isNoData
-        ? UI_TEXT.NO_BUSES_RUNNING
-        : UI_TEXT.BUSES_RUNNING(allBuses.length);
+        ? UI_TEXT.BUS_LIST.NO_RUNNING
+        : UI_TEXT.BUS_LIST.COUNT_RUNNING(allBuses.length);
   const listMessage = anyError
     ? errorMessage
     : isLoading
-      ? UI_TEXT.LOADING_BUS_DATA
-      : UI_TEXT.NO_BUSES_RUNNING;
+      ? UI_TEXT.COMMON.LOADING
+      : UI_TEXT.BUS_LIST.NO_RUNNING;
   const statusDotClass = isLoading
     ? "bg-blue-300"
     : isErrorState
@@ -149,7 +149,7 @@ export default function BusList({ routeNames, allRoutes, selectedRoute, onRouteC
     if (map) {
       map.flyTo([lat, lng], map.getZoom(), {
         animate: true,
-        duration: MAP_SETTINGS.ANIMATION.FLY_TO_DURATION / 1000,
+        duration: MAP_SETTINGS.ANIMATION.FLY_TO_MS / 1000,
       });
     }
   }, [map]);
@@ -167,7 +167,7 @@ export default function BusList({ routeNames, allRoutes, selectedRoute, onRouteC
         <div className="px-3 pt-3 pb-2 sm:px-5 sm:pt-5 sm:pb-3 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-t-xl sm:rounded-t-2xl">
           <div className="flex items-center justify-between mb-1 sm:mb-2">
             <h2 className="text-sm sm:text-base font-bold text-white flex items-center gap-2 tracking-tight">
-              {UI_TEXT.ROUTE_BUS_LIST(selectedRoute)}
+              {UI_TEXT.BUS_LIST.TITLE_ROUTE(selectedRoute)}
             </h2>
             <div className="flex items-center gap-1.5 sm:gap-2">
               <select
@@ -177,7 +177,7 @@ export default function BusList({ routeNames, allRoutes, selectedRoute, onRouteC
               >
                 {allRoutes.filter(Boolean).map((routeName) => (
                   <option key={routeName} value={routeName} className="text-gray-800">
-                    {routeName}{SCHEDULE_MESSAGES.ROUTE_SUFFIX}
+                    {UI_TEXT.BUS_LIST.TITLE_ROUTE(routeName)}
                   </option>
                 ))}
               </select>

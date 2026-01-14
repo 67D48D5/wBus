@@ -13,7 +13,6 @@ import { useMultiPolyline } from "@live/hooks/useMultiPolyline";
 import { useBusLocationData } from "@live/hooks/useBusLocation";
 import { useRoutePreference } from "@live/hooks/useRoutePreference";
 
-
 /**
  * Calculate the opacity for each polyline segment based on its index.
  *

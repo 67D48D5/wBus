@@ -242,7 +242,7 @@ export function useAnimatedPosition(
     targetAngle: number,
     options: UseAnimatedPositionOptions = {}
 ): AnimatedPositionState {
-    const { duration = MAP_SETTINGS.ANIMATION.BUS_MOVE_DURATION, polyline = [], snapToPolyline: shouldSnap = true } = options;
+    const { duration = MAP_SETTINGS.ANIMATION.BUS_MOVE_MS, polyline = [], snapToPolyline: shouldSnap = true } = options;
 
     // Current animated state
     const [state, setState] = useState<AnimatedPositionState>(() => {

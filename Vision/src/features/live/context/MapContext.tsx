@@ -4,7 +4,7 @@
 
 import React, { createContext, useContext, useState, useMemo } from "react";
 
-import { ERROR_MESSAGES } from "@core/config/locale";
+import { LOG_MESSAGES } from "@core/config/locale";
 
 import type { Map } from "leaflet";
 
@@ -26,7 +26,7 @@ const MapContext = createContext<MapContextType | undefined>(undefined);
 export function useBusContext(): MapContextType {
   const context = useContext(MapContext);
   if (!context) {
-    throw new Error(ERROR_MESSAGES.USE_BUS_CONTEXT_ERROR);
+    throw new Error(LOG_MESSAGES.CONTEXT_MISSING("MapContext", "useBusContext"));
   }
   return context;
 }

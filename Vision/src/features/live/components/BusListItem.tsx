@@ -2,7 +2,7 @@
 
 import React from "react";
 
-import { UI_TEXT, SCHEDULE_MESSAGES } from "@core/config/locale";
+import { UI_TEXT } from "@core/config/locale";
 
 import { getDirectionIcon } from "@live/utils/directionIcons";
 
@@ -19,7 +19,7 @@ export const BusListItem = React.memo(({ bus, routeName, getDirection, onClick }
         : null;
 
     const DirectionIcon = getDirectionIcon(direction);
-    const stopName = bus.nodenm || UI_TEXT.NO_BUSES_SYMBOL;
+    const stopName = bus.nodenm || "";
 
     return (
         <li>
@@ -27,7 +27,7 @@ export const BusListItem = React.memo(({ bus, routeName, getDirection, onClick }
                 type="button"
                 className="flex w-full justify-between items-center py-2 px-2 sm:py-3 sm:px-3 cursor-pointer bg-gradient-to-r from-gray-50 to-blue-50/50 hover:from-blue-100 hover:to-indigo-100 transition-all duration-300 rounded-lg sm:rounded-xl group border border-transparent hover:border-blue-300 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] text-left"
                 onClick={() => onClick(bus.gpslati, bus.gpslong)}
-                aria-label={`${bus.vehicleno} ${UI_TEXT.CURRENT_LOCATION} ${stopName}`}
+                aria-label={`${bus.vehicleno} ${UI_TEXT.BUS_ITEM.CURRENT_LOC} ${stopName}`}
             >
                 {/* Left: Vehicle number and route information */}
                 <div className="flex flex-col gap-0.5 sm:gap-1">
@@ -35,7 +35,7 @@ export const BusListItem = React.memo(({ bus, routeName, getDirection, onClick }
                         {bus.vehicleno}
                     </span>
                     <span className="text-[10px] sm:text-[11px] font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full px-2 py-0.5 sm:px-2.5 sm:py-1 inline-block w-fit shadow-sm">
-                        {routeName}{SCHEDULE_MESSAGES.ROUTE_SUFFIX}
+                        {routeName}
                     </span>
                 </div>
 

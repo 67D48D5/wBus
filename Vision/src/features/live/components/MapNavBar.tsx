@@ -19,7 +19,7 @@ export default function MapNavBar() {
         </Link>
 
         <h1 className="text-sm font-bold text-slate-800 tracking-tight">
-          {APP_CONFIG.APP_NAME}
+          {APP_CONFIG.NAME}
         </h1>
       </div>
     </nav>

@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 
 import { API_CONFIG, APP_CONFIG } from "@core/config/env";
-import { ARRIVAL_MESSAGES } from "@core/config/locale";
+import { UI_TEXT } from "@core/config/locale";
 
 import { getBusArrivalInfoData } from "@live/api/getRealtimeData";
 
@@ -34,7 +34,7 @@ export function useBusArrivalInfo(busStopId: string | null) {
       if (APP_CONFIG.IS_DEV) {
         console.error("[useBusArrivalInfo] Error fetching bus arrival data:", e);
       }
-      setError(ARRIVAL_MESSAGES.LOAD_FAILED);
+      setError(UI_TEXT.ERROR.NO_ARRIVAL_INFO);
     } finally {
       setLoading(false);
     }
@@ -56,7 +56,7 @@ export function useBusArrivalInfo(busStopId: string | null) {
     fetchData();
 
     // Start a new timer for periodic fetches
-    timerRef.current = setInterval(fetchData, API_CONFIG.LIVE.REFRESH_INTERVAL);
+    timerRef.current = setInterval(fetchData, API_CONFIG.LIVE.POLLING_INTERVAL_MS);
 
     // Cleanup on unmount or busStopId change
     return () => {

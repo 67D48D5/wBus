@@ -5,7 +5,7 @@
 import { useState, useMemo, useEffect, memo } from "react";
 
 import { DAY_TYPES, DayType } from "@core/config/env";
-import { UI_TEXT, DAY_TYPE_LABELS, FEATURED_STOPS_LABELS } from "@core/config/locale";
+import { UI_TEXT, DAY_LABELS } from "@core/config/locale";
 
 import { BusData, BusTime } from "@core/domain/schedule";
 
@@ -14,8 +14,8 @@ import { BusData, BusTime } from "@core/domain/schedule";
  */
 function getFeaturedStopsLabel(key: string): string {
     if (key === 'general') return '';
-    if (key === 'weekday') return FEATURED_STOPS_LABELS.WEEKDAY;
-    if (key === 'sunday') return FEATURED_STOPS_LABELS.SUNDAY;
+    if (key === 'weekday') return DAY_LABELS.WEEKDAY;
+    if (key === 'sunday') return DAY_LABELS.SUNDAY;
     return key;
 }
 
@@ -23,8 +23,8 @@ function getFeaturedStopsLabel(key: string): string {
  * Mapping from day type values to localized labels
  */
 const dayTypeToLabel = {
-    [DAY_TYPES.WEEKDAY]: DAY_TYPE_LABELS.WEEKDAY,
-    [DAY_TYPES.WEEKEND]: DAY_TYPE_LABELS.WEEKEND,
+    [DAY_TYPES.WEEKDAY]: DAY_LABELS.WEEKDAY,
+    [DAY_TYPES.WEEKEND]: DAY_LABELS.WEEKEND,
 } as const;
 
 interface NextBusInfo {
@@ -127,7 +127,7 @@ function TimetableView({ data }: { data: BusData }) {
 
             {data.featuredStops && Object.keys(data.featuredStops).length > 0 && (
                 <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-sm">
-                    <p className="font-bold text-slate-700 dark:text-slate-300 mb-2">{UI_TEXT.MAJOR_STOPS}</p>
+                    <p className="font-bold text-slate-700 dark:text-slate-300 mb-2">{UI_TEXT.SCHEDULE.MAJOR_STOPS}</p>
                     {Object.entries(data.featuredStops).map(([key, stops]) => (
                         <div key={key} className="mb-2 last:mb-0">
                             <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{getFeaturedStopsLabel(key)}</p>
@@ -180,7 +180,7 @@ function TimetableView({ data }: { data: BusData }) {
                                 <span key={i} className={`text-lg font-medium ${nextBus && item.minute === nextBus.minute ? "text-blue-600 dark:text-blue-400 font-bold" : ""}`}>
                                     {item.minute}{item.noteId && <sup className="text-red-500 ml-0.5">{item.noteId}</sup>}
                                 </span>
-                            )) ?? <span className="text-slate-300">{UI_TEXT.NO_BUSES_SYMBOL}</span>}
+                            )) ?? <span className="text-slate-300"></span>}
                         </div>
                     </div>
                 </div>
@@ -204,7 +204,7 @@ function TimetableView({ data }: { data: BusData }) {
                                     <span key={i} className="text-lg font-medium">
                                         {item.minute}{item.noteId && <sup className="text-red-500 ml-0.5">{item.noteId}</sup>}
                                     </span>
-                                )) ?? <span className="text-slate-300">{UI_TEXT.NO_BUSES_SYMBOL}</span>}
+                                )) ?? <span className="text-slate-300"></span>}
                             </div>
                         </div>
                     );
@@ -213,13 +213,13 @@ function TimetableView({ data }: { data: BusData }) {
 
             {data.notes && Object.keys(data.notes).length > 0 && (
                 <div className="p-4 bg-slate-100 dark:bg-slate-800/50 rounded-xl text-xs text-slate-500 space-y-1">
-                    <p className="font-bold mb-1">{UI_TEXT.NOTES_TITLE}</p>
+                    <p className="font-bold mb-1">{UI_TEXT.SCHEDULE.NOTES_TITLE}</p>
                     {Object.entries(data.notes).map(([id, text]) => <p key={id}>{id}: {text}</p>)}
                 </div>
             )}
 
             <div className="text-center text-xs text-slate-400 dark:text-slate-500">
-                {UI_TEXT.LAST_UPDATED} {data.lastUpdated}
+                {UI_TEXT.SCHEDULE.LAST_UPDATED} {data.lastUpdated}
             </div>
         </div>
     );

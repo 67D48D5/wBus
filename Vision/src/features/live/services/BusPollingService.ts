@@ -1,7 +1,7 @@
 // src/features/live/services/BusPollingService.ts
 
 import { API_CONFIG, APP_CONFIG } from "@core/config/env";
-import { ERROR_MESSAGES } from "@core/config/locale";
+import { LOG_MESSAGES } from "@core/config/locale";
 
 import { getBusLocationData } from "@live/api/getRealtimeData";
 import { getRouteMap } from "@live/api/getStaticData";
@@ -102,7 +102,7 @@ export class BusPollingService {
       const vehicleIds = routeMap[routeName];
 
       if (!vehicleIds || vehicleIds.length === 0) {
-        throw new Error(ERROR_MESSAGES.ERR_INVALID_ROUTE);
+        throw new Error(LOG_MESSAGES.ROUTE_MISSING(routeName));
       }
 
       const results = await Promise.allSettled(
@@ -115,7 +115,7 @@ export class BusPollingService {
       );
 
       if (fulfilled.length === 0) {
-        throw new Error(ERROR_MESSAGES.ERR_NETWORK);
+        throw new Error(LOG_MESSAGES.FETCH_FAILED("BusLocationData", 500));
       }
 
       const buses = fulfilled.flatMap((r) => r.value);
@@ -132,7 +132,7 @@ export class BusPollingService {
       }
     } catch (err: unknown) {
       if (APP_CONFIG.IS_DEV)
-        console.error(ERROR_MESSAGES.BUS_POLLING_ERROR, err);
+        console.error(LOG_MESSAGES.FETCH_FAILED("BusLocationData", 500), "[" + routeName + "]", err);
 
       this.cache[routeName] = [];
       this.dataListeners[routeName]?.forEach((cb) => cb([]));
@@ -164,7 +164,7 @@ export class BusPollingService {
     fetchFn();
 
     // Set up polling interval
-    this.intervals[routeName] = setInterval(fetchFn, API_CONFIG.LIVE.REFRESH_INTERVAL);
+    this.intervals[routeName] = setInterval(fetchFn, API_CONFIG.LIVE.POLLING_INTERVAL_MS);
 
     // Visibility listener - refresh data when page becomes visible
     const onVisible = () => {

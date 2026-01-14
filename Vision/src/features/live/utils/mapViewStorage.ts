@@ -2,7 +2,7 @@
 
 import L from "leaflet";
 
-import { APP_CONFIG, MAP_SETTINGS, PREFERENCE_KEYS } from "@core/config/env";
+import { APP_CONFIG, MAP_SETTINGS, STORAGE_KEYS } from "@core/config/env";
 
 export type StoredMapView = {
   center: [number, number];
@@ -10,7 +10,7 @@ export type StoredMapView = {
 };
 
 const DEFAULT_MAP_VIEW: StoredMapView = {
-  center: MAP_SETTINGS.DEFAULT_POSITION,
+  center: MAP_SETTINGS.BOUNDS.DEFAULT_CENTER,
   zoom: MAP_SETTINGS.ZOOM.DEFAULT,
 };
 
@@ -26,7 +26,7 @@ export function loadStoredMapView(): StoredMapView | null {
   if (typeof window === "undefined") return null;
 
   try {
-    const raw = localStorage.getItem(PREFERENCE_KEYS.MAP_VIEW);
+    const raw = localStorage.getItem(STORAGE_KEYS.MAP_VIEW);
     if (!raw) return null;
 
     const parsed = JSON.parse(raw) as { center?: unknown; zoom?: unknown };
@@ -40,7 +40,7 @@ export function loadStoredMapView(): StoredMapView | null {
       return null;
     }
 
-    const bounds = L.latLngBounds(MAP_SETTINGS.MAX_BOUNDS);
+    const bounds = L.latLngBounds(MAP_SETTINGS.BOUNDS.MAX);
     if (!bounds.contains([lat, lng])) return null;
 
     return { center: [lat, lng], zoom: clampZoom(zoom) };
@@ -66,7 +66,7 @@ export function saveMapView(view: StoredMapView): void {
   if (typeof window === "undefined") return;
 
   try {
-    localStorage.setItem(PREFERENCE_KEYS.MAP_VIEW, JSON.stringify(view));
+    localStorage.setItem(STORAGE_KEYS.MAP_VIEW, JSON.stringify(view));
   } catch (error) {
     if (APP_CONFIG.IS_DEV) {
       console.error("[mapViewStorage] Failed to save map view to localStorage:", error);

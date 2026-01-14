@@ -33,7 +33,7 @@ const BUS_LABEL_STYLE = `
   animation-play-state: paused;
 }
 `;
-const BUS_MARKER_SETTINGS = MAP_SETTINGS.BUS_MARKER;
+const BUS_MARKER_SETTINGS = MAP_SETTINGS.MARKERS.BUS;
 
 export default function BusMarker({
   routeName,
@@ -143,7 +143,7 @@ export default function BusMarker({
         const icon = createBusIconWithLabel(bus.routenm);
         if (!icon) return null;
         const DirectionIcon = getDirectionIcon(direction);
-        const stopName = bus.nodenm || UI_TEXT.NO_BUSES_SYMBOL;
+        const stopName = bus.nodenm || "";
 
         return (
           <AnimatedBusMarker
@@ -152,7 +152,7 @@ export default function BusMarker({
             rotationAngle={angle % 360}
             icon={icon}
             polyline={polyline}
-            animationDuration={MAP_SETTINGS.ANIMATION.BUS_MOVE_DURATION}
+            animationDuration={MAP_SETTINGS.ANIMATION.BUS_MOVE_MS}
             eventHandlers={{
               popupopen: () => {
                 if (onPopupOpen) onPopupOpen(routeName);
@@ -169,7 +169,7 @@ export default function BusMarker({
                   <div className="flex items-center gap-2">
                     <DirectionIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white/90" aria-hidden="true" />
                     <span className="font-bold text-sm sm:text-base tracking-tight leading-none">
-                      {UI_TEXT.BUS_ROUTE_LABEL(bus.routenm)}
+                      {UI_TEXT.BUS_LIST.TITLE_ROUTE(bus.routenm)}
                     </span>
                   </div>
                 </div>
@@ -179,20 +179,17 @@ export default function BusMarker({
                   {/* Vehicle Number Row */}
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-semibold text-gray-500">
-                      {UI_TEXT.VEHICLE_NUMBER}
+                      {UI_TEXT.BUS_ITEM.VEHICLE_NUM}
                     </span>
                     <span className="text-xs sm:text-sm font-bold text-gray-800 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
                       {bus.vehicleno}
                     </span>
                   </div>
 
-                  {/* Divider (Optional, for clarity) */}
-                  <div className="h-px bg-gray-100 w-full" />
-
                   {/* Location Row */}
-                  <div className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-[10px] sm:text-xs font-semibold text-gray-500">
-                      {UI_TEXT.CURRENT_LOCATION}
+                      {UI_TEXT.BUS_ITEM.CURRENT_LOC}
                     </span>
                     <span className="text-xs sm:text-sm text-gray-900 font-medium leading-tight break-keep">
                       {stopName}

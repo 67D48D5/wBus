@@ -4,7 +4,7 @@ import { fetchAPI, HttpError } from "@core/network/fetchAPI";
 import { CacheManager } from "@core/cache/CacheManager";
 
 import { API_CONFIG, APP_CONFIG } from "@core/config/env";
-import { ERROR_MESSAGES } from "@core/config/locale";
+import { LOG_MESSAGES } from "@core/config/locale";
 
 import { GeoPolylineData } from "@core/domain/live";
 
@@ -73,7 +73,7 @@ export function getMapStyleUrl(): string {
       if (APP_CONFIG.IS_DEV) {
         console.warn("[getMapStyleUrl] 'STATIC_API_URL' is not set while USE_REMOTE is true. Falling back to default.");
       }
-      return API_CONFIG.MAP_STYLE_FALLBACK_API_URL;
+      return API_CONFIG.MAP_STYLE_FALLBACK;
     }
     // Use joinUrl utility to prevent duplicate slashes (defined in fetchAPI.ts)
     return joinUrl(STATIC.BASE_URL, stylePath);
@@ -177,7 +177,7 @@ export async function getRouteInfo(
 
     if (!routeIds?.length) {
       if (APP_CONFIG.IS_DEV) {
-        console.warn(ERROR_MESSAGES.ROUTE_NOT_FOUND_IN_MAP(routeName));
+        console.warn(LOG_MESSAGES.ROUTE_MISSING(routeName));
       }
       return null;
     }
@@ -189,7 +189,7 @@ export async function getRouteInfo(
     };
   } catch (err) {
     if (APP_CONFIG.IS_DEV) {
-      console.error(ERROR_MESSAGES.GET_ROUTE_INFO_ERROR, err);
+      console.error(LOG_MESSAGES.ROUTE_MISSING(routeName), err);
     }
     return null;
   }

@@ -11,7 +11,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import { MapContextProvider } from "@live/context/MapContext";
 
-import { SITE_INFO } from "@core/config/locale";
+import { SITE_CONFIG } from "@core/config/env";
 
 // Google Fonts (Geist Safns, Geist Mono)
 const geistSans = Geist({
@@ -27,7 +27,7 @@ const geistMono = Geist_Mono({
 // Page Metadata
 export const metadata = {
   title: "wBus",
-  description: SITE_INFO.DESCRIPTION,
+  description: SITE_CONFIG.METADATA.DESCRIPTION,
   icons: {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",

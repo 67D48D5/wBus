@@ -5,7 +5,7 @@
 import { useMemo } from "react";
 
 import { APP_CONFIG, MAP_SETTINGS } from "@core/config/env";
-import { ERROR_MESSAGES } from "@core/config/locale";
+import { LOG_MESSAGES } from "@core/config/locale";
 
 // Check if we are in a client environment
 const isClient = typeof window !== "undefined";
@@ -28,7 +28,7 @@ export function useIcons(): Partial<IconMap> {
       L = require("leaflet");
     } catch (error) {
       if (APP_CONFIG.IS_DEV) {
-        console.error(ERROR_MESSAGES.LEAFLET_IMPORT_ERROR, error);
+        console.error(LOG_MESSAGES.UNHANDLED_EXCEPTION, error);
       }
       return {};
     }
@@ -46,7 +46,7 @@ export function useIcons(): Partial<IconMap> {
         popupAnchor: popup,
       });
 
-    const busMarkerSettings = MAP_SETTINGS.BUS_MARKER;
+    const busMarkerSettings = MAP_SETTINGS.MARKERS.BUS;
 
     globalIcons = {
       busIcon: createIcon(

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { APP_CONFIG } from "@core/config/env";
-import { ERROR_MESSAGES } from "@core/config/locale";
+import { LOG_MESSAGES } from "@core/config/locale";
 
 import { getPolyline } from "@live/api/getStaticData";
 import { transformPolyline } from "@live/utils/polyUtils";
@@ -41,7 +41,7 @@ export function useMultiPolyline(
                 return { routeId, data };
             } catch (error) {
                 if (APP_CONFIG.IS_DEV) {
-                    console.error(ERROR_MESSAGES.POLYLINE_FETCH_ERROR, "[" + routeId + "]", error);
+                    console.error(LOG_MESSAGES.FETCH_FAILED("Polyline", 500), "[" + routeId + "]", error);
                 }
                 return { routeId, data: null };
             }

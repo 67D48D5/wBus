@@ -5,9 +5,9 @@
 import { memo, useState, useEffect } from 'react';
 import { Navigation } from 'lucide-react';
 
-import { UI_TEXT, COMMON, TIME_LABELS } from '@core/config/locale';
-
 import { BusData } from '@core/domain/schedule';
+import { UI_TEXT } from '@core/config/locale';
+
 import { getNearestBusTime } from '@schedule/utils/time';
 
 function NextBusTime({ data }: { data: BusData }) {
@@ -33,7 +33,7 @@ function NextBusTime({ data }: { data: BusData }) {
     if (!mounted) {
         return (
             <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                <span className="text-xs text-slate-400">{COMMON.LOADING}</span>
+                <span className="text-xs text-slate-400">{UI_TEXT.COMMON.LOADING}</span>
             </div>
         );
     }
@@ -41,7 +41,7 @@ function NextBusTime({ data }: { data: BusData }) {
     if (!nearestBus) {
         return (
             <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                <span className="text-xs text-slate-400">{UI_TEXT.NO_BUSES_SYMBOL}</span>
+                <span className="text-xs text-slate-400"></span>
             </div>
         );
     }
@@ -50,8 +50,8 @@ function NextBusTime({ data }: { data: BusData }) {
     const mins = nearestBus.minutes % 60;
 
     const timeText = hours > 0
-        ? `${hours}${TIME_LABELS.HOUR_ABBREV} ${mins}${TIME_LABELS.MINUTE_ABBREV}`
-        : `${mins}${TIME_LABELS.MINUTE_ABBREV}`;
+        ? `${hours}${UI_TEXT.TIME.HOUR_SUFFIX} ${mins}${UI_TEXT.TIME.MINUTE_SUFFIX}`
+        : `${mins}${UI_TEXT.TIME.MINUTE_SUFFIX}`;
 
     // Determine urgency color based on time remaining
     const isUrgent = nearestBus.minutes <= 10;

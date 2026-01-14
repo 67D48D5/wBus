@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { APP_CONFIG } from "@core/config/env";
-import { ERROR_MESSAGES } from "@core/config/locale";
+import { LOG_MESSAGES } from "@core/config/locale";
 
 import { CacheManager } from "@core/cache/CacheManager";
 
@@ -39,7 +39,7 @@ export function useBusStop(routeName: string) {
         const routeInfo = await getRouteInfo(routeName);
         if (!routeInfo) {
           if (APP_CONFIG.IS_DEV) {
-            console.warn(ERROR_MESSAGES.NO_ROUTE_INFO_FOUND(routeName));
+            console.warn(LOG_MESSAGES.ROUTE_MISSING(routeName));
           }
           return;
         }
@@ -75,7 +75,7 @@ export function useBusStop(routeName: string) {
         if (isMounted) setStops(stopsToUse);
       } catch (err) {
         if (APP_CONFIG.IS_DEV) {
-          console.error(ERROR_MESSAGES.BUS_STOP_FETCH_ERROR, err);
+          console.error(LOG_MESSAGES.FETCH_FAILED("Stations", 500), err);
         }
       }
     };

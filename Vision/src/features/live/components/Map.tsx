@@ -69,7 +69,7 @@ export default function Map({ routeNames, onReady, onRouteChange }: MapProps) {
     zoom: initialView.zoom,
     minZoom: MAP_SETTINGS.ZOOM.MIN,
     maxZoom: MAP_SETTINGS.ZOOM.MAX,
-    maxBounds: MAP_SETTINGS.MAX_BOUNDS,
+    maxBounds: MAP_SETTINGS.BOUNDS.MAX,
     maxBoundsViscosity: 1.0,
     scrollWheelZoom: true,
     preferCanvas: true,

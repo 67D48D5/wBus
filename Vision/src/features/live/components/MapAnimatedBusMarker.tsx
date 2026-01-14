@@ -30,7 +30,7 @@ export function AnimatedBusMarker({
     rotationAngle,
     icon,
     polyline = [],
-    animationDuration = MAP_SETTINGS.ANIMATION.BUS_MOVE_DURATION,
+    animationDuration = MAP_SETTINGS.ANIMATION.BUS_MOVE_MS,
     children,
     eventHandlers,
 }: AnimatedBusMarkerProps) {

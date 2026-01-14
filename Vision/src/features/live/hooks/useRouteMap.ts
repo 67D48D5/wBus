@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 
 import { APP_CONFIG } from "@core/config/env";
-import { ERROR_MESSAGES } from "@core/config/locale";
+import { LOG_MESSAGES } from "@core/config/locale";
 
 import { getRouteMap } from "@live/api/getStaticData";
 
@@ -25,7 +25,7 @@ export function useRouteMap(): Record<string, string[]> | null {
       })
       .catch((err) => {
         if (APP_CONFIG.IS_DEV)
-          console.error(ERROR_MESSAGES.ROUTE_MAP_FETCH_ERROR, err);
+          console.error(LOG_MESSAGES.FETCH_FAILED("RouteMap", 500), err);
       });
   }, []);
 
