@@ -42,7 +42,7 @@ const BUS_LABEL_STYLE = `
 .popup-marquee-wrapper {
   display: flex;
   white-space: nowrap;
-  animation: popupTextMarquee 8s linear infinite; /* 정류장명은 기니까 조금 더 천천히 (6s -> 8s) */
+  animation: popupTextMarquee 8s linear infinite;
 }
 .popup-marquee-container:hover .popup-marquee-wrapper {
   animation-play-state: paused;
@@ -51,7 +51,7 @@ const BUS_LABEL_STYLE = `
 
 const BUS_MARKER_SETTINGS = MAP_SETTINGS.MARKERS.BUS;
 
-// 2. Marquee Component (Reusable)
+// Marquee Component (Reusable)
 const PopupMarquee = ({ text, maxLength = 12 }: { text: string; maxLength?: number }) => {
   const shouldMarquee = text.length > maxLength;
 
@@ -62,7 +62,6 @@ const PopupMarquee = ({ text, maxLength = 12 }: { text: string; maxLength?: numb
   return (
     <div className="popup-marquee-container overflow-hidden w-full relative">
       <div className="popup-marquee-wrapper w-max">
-        <span className="pr-4">{text}</span>
         <span className="pr-4">{text}</span>
       </div>
     </div>
