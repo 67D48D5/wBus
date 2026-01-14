@@ -18,9 +18,10 @@ import type { BusStop } from "@core/domain/live";
 const stopCache = new CacheManager<BusStop[]>();
 const routeStopsCache = new CacheManager<BusStop[]>();
 
+const MIN_VALID_STOPS = 4;
+
 export function useBusStop(routeName: string) {
   const [stops, setStops] = useState<BusStop[]>(() => {
-    // Initialize with cached data if available to prevent flash of empty state
     return routeStopsCache.get(routeName) ?? [];
   });
 
@@ -30,7 +31,6 @@ export function useBusStop(routeName: string) {
 
     const load = async () => {
       try {
-        // Check cache first and use it immediately
         const cachedStops = routeStopsCache.get(routeName);
         if (cachedStops) {
           if (isMounted) setStops(cachedStops);
@@ -44,7 +44,6 @@ export function useBusStop(routeName: string) {
           return;
         }
 
-        // Get all stops once (global cache key)
         const allStops = await stopCache.getOrFetch("Stations", async () => {
           const fetchedData = await getBusStopLocationData();
           return fetchedData.sort(
@@ -52,22 +51,26 @@ export function useBusStop(routeName: string) {
           );
         });
 
-        // Try to filter by vehicleRouteIds if they match any stops
         const routeVehicleIds = new Set(routeInfo.vehicleRouteIds);
         const filteredByRoute = allStops.filter(
           (stop) => stop.nodeid && routeVehicleIds.has(stop.nodeid)
         );
 
-        // If we got stops matching the route IDs, use them; otherwise use all stops
-        // This handles the case where vehicleRouteIds are actual station IDs for some routes
-        // but not for others
-        const stopsToUse = filteredByRoute.length > 0 ? filteredByRoute : allStops;
+        // Matching Logic:
+        // 1. If the number of matched stops is sufficient, use them.
+        // 2. If the number of matched stops is too few (added logic: fix for route 90)
+        // -> abandon filtering and use the entire stop dataset.
+        const isValidRoute = filteredByRoute.length >= MIN_VALID_STOPS;
+
+        const stopsToUse = isValidRoute ? filteredByRoute : allStops;
 
         // Cache the stops for this route
         routeStopsCache.set(routeName, stopsToUse);
 
         if (APP_CONFIG.IS_DEV) {
-          console.debug(`[useBusStop] Route "${routeName}": vehicleIds=${routeInfo.vehicleRouteIds.length}, matched=${filteredByRoute.length}, using=${stopsToUse.length} stops`);
+          console.debug(
+            `[useBusStop] Route "${routeName}": rawIds=${routeInfo.vehicleRouteIds.length}, matched=${filteredByRoute.length}, threshold=${MIN_VALID_STOPS}, fallback=${!isValidRoute}`
+          );
         }
         if (isMounted) setStops(stopsToUse);
       } catch (err) {
@@ -79,7 +82,6 @@ export function useBusStop(routeName: string) {
 
     load();
 
-    // Cleanup function to avoid setting state on unmounted component
     return () => {
       isMounted = false;
     };
@@ -88,12 +90,6 @@ export function useBusStop(routeName: string) {
   return stops;
 }
 
-/**
- * Get the closest bus stop's nodeord based on the current map center.
- *
- * @param routeName routeName
- * @returns Closest stop's nodeord or null if no stops are available
- */
 export function useClosestStopOrd(routeName: string): number | null {
   const { map } = useBusContext();
   const stops = useBusStop(routeName);
@@ -105,7 +101,6 @@ export function useClosestStopOrd(routeName: string): number | null {
     let isUnmounted = false;
 
     const updateClosest = () => {
-      // Leaflet throws if getCenter runs before the map is fully ready; guard with a try/catch
       try {
         const { lat, lng } = map.getCenter();
         const closestStop = stops.reduce((prev, curr) => {
@@ -125,14 +120,10 @@ export function useClosestStopOrd(routeName: string): number | null {
     };
 
     const attachListeners = () => {
-      // First update when the hook is called
       updateClosest();
-
-      // Update closest stop when the map is moved
       map.on("moveend", updateClosest);
     };
 
-    // Ensure the map is fully initialized before calling getCenter to avoid _leaflet_pos errors
     map.whenReady(attachListeners);
 
     return () => {
