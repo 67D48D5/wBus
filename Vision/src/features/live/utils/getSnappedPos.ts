@@ -2,20 +2,20 @@
 
 import { snapToPolyline } from "@live/utils/polyUtils";
 
-import type { BusItem } from "@core/domain/live";
-
 import type { LatLngTuple } from "leaflet";
 
-/**
- * Calculate the distance between two lat/lng coordinates in meters (Haversine formula)
- */
+import type { BusItem } from "@core/domain/live";
+
+// Snap max distance in meters
+const MAX_SNAP_DISTANCE = 50;
+
 function calculateDistance(
   lat1: number,
   lng1: number,
   lat2: number,
   lng2: number
 ): number {
-  const R = 6371000; // Earth's radius in meters
+  const R = 6371000;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLng = ((lng2 - lng1) * Math.PI) / 180;
   const a =
@@ -29,13 +29,8 @@ function calculateDistance(
 }
 
 /**
- * Snap the bus position to the nearest point on the polyline and determine the direction.
- *
- * @param bus - BusItem Object
- * @param getDirection - Given nodeid, nodeord to get direction (1: up, 0: down)
- * @param upPolyline - Up polyline lat/lng coordinate list
- * @param downPolyline - Down polyline lat/lng coordinate list
- * @returns Snapped position, angle, and direction
+ * Snap bus location to the nearest route line.
+ * If direction information is missing or incorrect, automatically select the closer line.
  */
 export function getSnappedPosition(
   bus: BusItem,
@@ -48,44 +43,63 @@ export function getSnappedPosition(
   direction: number;
 } {
   const { gpslati, gpslong, nodeid } = bus;
-  const nodeord = Number(bus.nodeord); // if nodeord is a string, convert to number
+  const nodeord = Number(bus.nodeord);
 
-  const direction = getDirection(nodeid, nodeord, bus.routeid) ?? 0;
+  // 1. Direction information provided by the API (null if absent)
+  const apiDirection = getDirection(nodeid, nodeord, bus.routeid);
 
-  const polyline = (
-    direction === 1 ? upPolyline : downPolyline
-  ) as LatLngTuple[];
+  // Default coordinates (used if snapping fails)
+  const rawPosition: LatLngTuple = [gpslati, gpslong];
+  const defaultResult = { position: rawPosition, angle: 0, direction: apiDirection ?? 0 };
 
-  // Try to snap the bus position to the nearest point on the polyline
-  if (polyline.length >= 2) {
-    const snapped = snapToPolyline(
-      [gpslati, gpslong],
-      polyline.map(([lat, lng]) => [lat, lng] as [number, number])
-    );
-    if (snapped && snapped.position && snapped.angle !== undefined) {
-      // Check if the snapped position is too far from the original position (threshold: 200 meters)
-      const distance = calculateDistance(
-        gpslati,
-        gpslong,
-        snapped.position[0],
-        snapped.position[1]
-      );
+  // Helper function: Attempt to snap to a specific polyline
+  const trySnap = (targetPolyline: LatLngTuple[], dir: number) => {
+    if (!targetPolyline || targetPolyline.length < 2) return null;
 
-      // If the distance is within threshold, use snapped position; otherwise, use original position
-      if (distance <= 200) {
-        return {
-          position: snapped.position as LatLngTuple,
-          angle: snapped.angle,
-          direction,
-        };
-      }
+    const snapped = snapToPolyline(rawPosition as [number, number], targetPolyline as [number, number][]);
+    if (!snapped || !snapped.position) return null;
+
+    const dist = calculateDistance(gpslati, gpslong, snapped.position[0], snapped.position[1]);
+    return { ...snapped, distance: dist, direction: dir };
+  };
+
+  // 2. Attempt to snap to both up (1) and down (0) directions and calculate distances
+  const snapUp = trySnap(upPolyline, 1);
+  const snapDown = trySnap(downPolyline, 0);
+
+  // 3. Logic to determine the best snap position
+  let bestSnap = null;
+
+  // 3-1. If API direction information is clear and the snap distance for that direction is within the allowed range, prioritize it
+  if (apiDirection === 1 && snapUp && snapUp.distance <= MAX_SNAP_DISTANCE) {
+    bestSnap = snapUp;
+  } else if (apiDirection === 0 && snapDown && snapDown.distance <= MAX_SNAP_DISTANCE) {
+    bestSnap = snapDown;
+  }
+  // 3-2. If API direction information is missing (null) or the snap distance for the API direction is too far (possible data error), choose the closer one
+  else {
+    const validUp = snapUp && snapUp.distance <= MAX_SNAP_DISTANCE;
+    const validDown = snapDown && snapDown.distance <= MAX_SNAP_DISTANCE;
+
+    if (validUp && validDown) {
+      // If both are valid, choose the closer one
+      bestSnap = snapUp!.distance < snapDown!.distance ? snapUp : snapDown;
+    } else if (validUp) {
+      bestSnap = snapUp;
+    } else if (validDown) {
+      bestSnap = snapDown;
     }
   }
 
-  // If snapping fails or bus is too far, return the original GPS position with angle 0
-  return {
-    position: [gpslati, gpslong],
-    angle: 0,
-    direction,
-  };
+  // 4. Return the result
+  if (bestSnap) {
+    return {
+      position: bestSnap.position as LatLngTuple,
+      angle: bestSnap.angle ?? 0,
+      direction: bestSnap.direction, // Return corrected direction
+    };
+  }
+
+  // If snapping fails, return the original coordinates (but try to follow the API direction as much as possible)
+  return defaultResult;
 }
