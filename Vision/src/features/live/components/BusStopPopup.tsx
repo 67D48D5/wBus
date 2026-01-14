@@ -5,21 +5,22 @@ import { AlertTriangle, Bus, Clock, MapPin } from "lucide-react";
 
 import { ARRIVAL_MESSAGES, SCHEDULE_MESSAGES, TIME_LABELS } from "@core/config/locale";
 
+import { useBusArrivalInfo } from "@live/hooks/useBusArrivalInfo";
+
 import {
     formatRouteNumber,
     formatVehicleType,
     secondsToMinutes,
 } from "@live/utils/formatters";
-import { useBusArrivalInfo } from "@live/hooks/useBusArrivalInfo";
 
 import type { ArrivalInfo } from "@core/domain/live";
 
 // Helper to determine urgency color based on arrival time
 function getUrgencyColor(minutes: number) {
-    if (minutes <= 2) return "text-red-500 bg-red-50";
-    if (minutes <= 5) return "text-orange-500 bg-orange-50";
-    if (minutes <= 10) return "text-blue-500 bg-blue-50";
-    return "text-gray-600 bg-gray-50";
+    if (minutes <= 2) return "text-red-600 bg-red-50 border-red-100";
+    if (minutes <= 5) return "text-orange-600 bg-orange-50 border-orange-100";
+    if (minutes <= 10) return "text-blue-600 bg-blue-50 border-blue-100";
+    return "text-gray-600 bg-gray-50 border-gray-100";
 }
 
 // Helper to format remaining stops
@@ -43,41 +44,53 @@ function ArrivalList({
 }) {
     const hasData = arrivalData.length > 0;
 
+    // Global Popup style imposes padding: 0.
+    // We must apply padding inside these wrapper divs.
+    const contentPadding = "p-4";
+
+    // Error State
     if (error) {
         return (
-            <div className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-3 bg-gradient-to-r from-red-50 to-orange-50 rounded-lg sm:rounded-xl border border-red-200 shadow-sm">
-                <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 flex-shrink-0" />
-                <p className="text-xs sm:text-sm text-red-600 font-medium">{error}</p>
+            <div className={`w-full min-w-[200px] ${contentPadding}`}>
+                <div className="flex items-center gap-2 p-3 bg-red-50 rounded-lg border border-red-200">
+                    <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                    <p className="text-sm text-red-700 font-medium leading-tight">{error}</p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="relative">
+        <div className="flex flex-col w-full min-w-[240px] sm:min-w-[280px]">
+
+            {/* Loading State */}
             {!hasData && loading && (
-                <div className="flex items-center justify-center py-5 sm:py-8">
-                    <div className="flex flex-col items-center gap-2 sm:gap-3">
-                        <div className="animate-spin h-8 w-8 sm:h-10 sm:w-10 border-3 sm:border-4 border-blue-500 border-t-transparent rounded-full shadow-lg"></div>
-                        <p className="text-xs sm:text-sm text-gray-600 font-medium">{ARRIVAL_MESSAGES.LOADING}</p>
+                <div className={`${contentPadding} flex flex-col items-center justify-center py-8`}>
+                    <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mb-3"></div>
+                    <p className="text-sm text-gray-500 font-medium">{ARRIVAL_MESSAGES.LOADING}</p>
+                </div>
+            )}
+
+            {/* No Data State */}
+            {!hasData && !loading && (
+                <div className={contentPadding}>
+                    <div className="flex flex-col items-center justify-center py-6 text-center bg-gray-50 rounded-xl border border-gray-100 border-dashed">
+                        <Bus className="w-10 h-10 text-gray-400 mb-2" />
+                        <p className="text-sm text-gray-700 font-semibold">{ARRIVAL_MESSAGES.NO_BUSES}</p>
+                        <p className="text-xs text-gray-500 mt-1">{ARRIVAL_MESSAGES.CHECK_SCHEDULE}</p>
                     </div>
                 </div>
             )}
 
-            {!hasData && !loading && (
-                <div className="flex flex-col items-center justify-center py-5 sm:py-8 text-center bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg sm:rounded-xl border border-gray-200">
-                    <Bus className="w-9 h-9 sm:w-12 sm:h-12 text-blue-500 mb-2 sm:mb-3 animate-bounce" />
-                    <p className="text-xs sm:text-sm text-gray-600 font-semibold">{ARRIVAL_MESSAGES.NO_BUSES}</p>
-                    <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">{ARRIVAL_MESSAGES.CHECK_SCHEDULE}</p>
-                </div>
-            )}
-
+            {/* Data List State */}
             {hasData && (
-                <div className="max-h-[240px] sm:max-h-[320px] overflow-y-auto">
-                    <ul className="space-y-1.5 sm:space-y-2">
+                <div className="max-h-[260px] sm:max-h-[320px] overflow-y-auto custom-scrollbar bg-white">
+                    {/* List Wrapper with Padding */}
+                    <ul className="p-3 sm:p-4 space-y-2">
                         {arrivalData.map((bus, idx) => {
                             const minutes = secondsToMinutes(bus.arrtime);
                             const vehicleType = formatVehicleType(bus.vehicletp);
-                            const urgencyColor = getUrgencyColor(minutes);
+                            const urgencyClasses = getUrgencyColor(minutes);
                             const stopCount = formatStopCount(bus.arrprevstationcnt);
                             const rawRouteNo = bus.routeno ?? "";
                             const routeName = typeof rawRouteNo === "string"
@@ -89,34 +102,36 @@ function ArrivalList({
                                 <li key={idx}>
                                     <button
                                         type="button"
-                                        className="group relative w-full bg-gradient-to-r from-white to-blue-50/30 rounded-lg sm:rounded-xl border border-gray-200 hover:border-blue-400 hover:shadow-xl transition-all duration-300 overflow-hidden hover:scale-[1.02] active:scale-[0.98]"
+                                        className="w-full text-left bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-200 overflow-hidden group"
                                         onClick={onRouteChange && routeName ? () => onRouteChange(routeName) : undefined}
                                     >
-                                        {/* Urgency indicator bar */}
-                                        <div className={`absolute left-0 top-0 bottom-0 w-1 sm:w-1.5 ${urgencyColor.split(" ")[1]} shadow-sm`}></div>
+                                        <div className="flex items-stretch">
+                                            {/* Left Color Bar indicating urgency */}
+                                            <div className={`w-1.5 ${urgencyClasses.split(" ")[1]}`} />
 
-                                        <div className="flex items-center justify-between p-2 pl-3 sm:p-3 sm:pl-4 gap-2 sm:gap-3">
-                                            {/* Route number */}
-                                            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-                                                <div className="flex items-center justify-center min-w-[45px] sm:min-w-[55px] h-7 sm:h-9 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-md sm:rounded-lg font-bold text-xs sm:text-sm shadow-md group-hover:shadow-lg transition-shadow">
-                                                    {formatRouteNumber(routeLabel)}
+                                            <div className="flex-1 p-2.5 sm:p-3 flex items-center justify-between gap-3">
+                                                {/* Left: Route Info */}
+                                                <div className="flex flex-col items-start gap-1">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <div className="flex items-center justify-center min-w-[48px] h-6 px-1.5 bg-blue-600 text-white rounded text-xs font-bold shadow-sm">
+                                                            {formatRouteNumber(routeLabel)}
+                                                        </div>
+                                                        <span className="text-[10px] text-gray-500 font-medium px-1.5 py-0.5 bg-gray-100 rounded border border-gray-200">
+                                                            {vehicleType}
+                                                        </span>
+                                                    </div>
                                                 </div>
 
-                                                {/* Vehicle type badge */}
-                                                <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded sm:rounded-md text-[9px] sm:text-[10px] font-semibold shadow-sm">
-                                                    {vehicleType}
-                                                </span>
-                                            </div>
-
-                                            {/* Arrival info */}
-                                            <div className="flex flex-col items-end gap-0.5 sm:gap-1 flex-shrink-0">
-                                                <div className={`flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg ${urgencyColor} font-bold text-xs sm:text-sm whitespace-nowrap shadow-sm`}>
-                                                    <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                    <span>{minutes}{TIME_LABELS.MINUTE_SUFFIX}</span>
-                                                </div>
-                                                <div className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-[11px] text-gray-600 font-medium whitespace-nowrap bg-white px-1.5 py-0.5 sm:px-2 rounded sm:rounded-md shadow-sm">
-                                                    <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                                                    <span>{stopCount}</span>
+                                                {/* Right: Time & Location */}
+                                                <div className="flex flex-col items-end gap-1">
+                                                    <div className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs sm:text-sm font-bold ${urgencyClasses}`}>
+                                                        <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                                        <span>{minutes}{TIME_LABELS.MINUTE_SUFFIX}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1 text-[10px] sm:text-xs text-gray-500 font-medium">
+                                                        <MapPin className="w-3 h-3" />
+                                                        <span>{stopCount}</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

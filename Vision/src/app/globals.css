@@ -49,6 +49,29 @@ body {
   font-size: 32px !important;
 }
 
+/* Leaflet Popup */
+.leaflet-popup-content-wrapper {
+  padding: 0 !important;
+  /* Remove Inner Padding */
+  overflow: hidden !important;
+  /* Cut off content that overflows rounded corners */
+  border-radius: 12px !important;
+  /* Match component border radius */
+  border: none !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  /* Remove content margin */
+  width: 100% !important;
+  /* Full width */
+}
+
+.leaflet-popup-tip {
+  /* Background color of the popup tip (match header color or keep white) */
+  background: white;
+}
+
 @layer utilities {
   @keyframes fade-in-up {
     from {

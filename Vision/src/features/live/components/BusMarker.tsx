@@ -60,7 +60,6 @@ export default function BusMarker({
 
   const iconCache = useMemo(() => new Map<string, L.DivIcon>(), [busIcon]);
 
-  // Create a custom DivIcon with route number overlay
   const createBusIconWithLabel = useMemo(() => {
     const escapeHtml = (text: string | number | null | undefined) =>
       String(text ?? "")
@@ -77,8 +76,6 @@ export default function BusMarker({
       if (!busIcon) return null;
 
       const escapedRouteNumber = escapeHtml(routeNumber);
-
-      // Only apply marquee for route numbers longer than threshold
       const needsMarquee = routeNumber.length > BUS_MARKER_SETTINGS.MARQUEE_THRESHOLD;
       const displayText = needsMarquee
         ? `${escapedRouteNumber} ${escapedRouteNumber}`
@@ -123,7 +120,6 @@ export default function BusMarker({
     };
   }, [busIcon, iconCache]);
 
-  // Calculate snapped positions for all buses
   const snappedList = useMemo(() => {
     if (!routeInfo || busList.length === 0) return [];
     return busList.map((bus) => {
@@ -133,9 +129,7 @@ export default function BusMarker({
         mergedUp,
         mergedDown
       );
-      // Use only vehicle number as a unique key
       const key = `${routeName}-${bus.vehicleno}`;
-      // Determine which polyline to use for animation
       const polyline: LatLngTuple[] = snapped.direction === 1 ? mergedUp : mergedDown;
       return { bus, key, polyline, ...snapped };
     });
@@ -150,6 +144,7 @@ export default function BusMarker({
         if (!icon) return null;
         const DirectionIcon = getDirectionIcon(direction);
         const stopName = bus.nodenm || UI_TEXT.NO_BUSES_SYMBOL;
+
         return (
           <AnimatedBusMarker
             key={key}
@@ -160,37 +155,46 @@ export default function BusMarker({
             animationDuration={MAP_SETTINGS.ANIMATION.BUS_MOVE_DURATION}
             eventHandlers={{
               popupopen: () => {
-                if (onPopupOpen) {
-                  onPopupOpen(routeName);
-                }
+                if (onPopupOpen) onPopupOpen(routeName);
               },
               popupclose: () => {
-                if (onPopupClose) {
-                  onPopupClose();
-                }
+                if (onPopupClose) onPopupClose();
               },
             }}
           >
             <Popup autoPan={false} className="custom-bus-popup">
-              <div className="min-w-[140px] sm:min-w-[180px]">
-                <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white px-3 py-2 sm:px-4 sm:py-2.5 -mx-5 -mt-4 mb-2 sm:mb-3 rounded-t-lg shadow-md">
-                  <div className="flex items-center gap-1.5 sm:gap-2">
-                    <DirectionIcon className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
-                    <span className="font-bold text-sm sm:text-base tracking-tight">
+              <div className="min-w-[150px] sm:min-w-[200px] flex flex-col">
+                {/* Header Section */}
+                <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <DirectionIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white/90" aria-hidden="true" />
+                    <span className="font-bold text-sm sm:text-base tracking-tight leading-none">
                       {UI_TEXT.BUS_ROUTE_LABEL(bus.routenm)}
                     </span>
                   </div>
                 </div>
-                <div className="space-y-1.5 sm:space-y-2 px-0.5 sm:px-1">
-                  <div className="flex items-center gap-1.5 sm:gap-2">
-                    <span className="text-[10px] sm:text-xs font-semibold text-gray-500 w-14 sm:w-16">{UI_TEXT.VEHICLE_NUMBER}</span>
-                    <span className="text-xs sm:text-sm font-bold text-gray-900 bg-gray-100 px-2 py-0.5 sm:px-3 sm:py-1 rounded-md">
+
+                {/* Info Body Section */}
+                <div className="bg-white px-4 py-3 space-y-2.5">
+                  {/* Vehicle Number Row */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-gray-500">
+                      {UI_TEXT.VEHICLE_NUMBER}
+                    </span>
+                    <span className="text-xs sm:text-sm font-bold text-gray-800 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
                       {bus.vehicleno}
                     </span>
                   </div>
-                  <div className="flex items-start gap-1.5 sm:gap-2">
-                    <span className="text-[10px] sm:text-xs font-semibold text-gray-500 w-14 sm:w-16 mt-0.5 sm:mt-1">{UI_TEXT.CURRENT_LOCATION}</span>
-                    <span className="text-xs sm:text-sm text-gray-700 font-medium flex-1">
+
+                  {/* Divider (Optional, for clarity) */}
+                  <div className="h-px bg-gray-100 w-full" />
+
+                  {/* Location Row */}
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] sm:text-xs font-semibold text-gray-500">
+                      {UI_TEXT.CURRENT_LOCATION}
+                    </span>
+                    <span className="text-xs sm:text-sm text-gray-900 font-medium leading-tight break-keep">
                       {stopName}
                     </span>
                   </div>
