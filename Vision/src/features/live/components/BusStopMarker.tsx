@@ -21,9 +21,10 @@ import type { Icon } from "leaflet";
 type BusStopMarkerItemProps = {
   stop: BusStop;
   icon: Icon;
+  onRouteChange?: (routeName: string) => void;
 };
 
-const BusStopMarkerItem = memo(({ stop, icon }: BusStopMarkerItemProps) => {
+const BusStopMarkerItem = memo(({ stop, icon, onRouteChange }: BusStopMarkerItemProps) => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const handlePopupOpen = useCallback(() => {
     setIsPopupOpen(true);
@@ -55,6 +56,7 @@ const BusStopMarkerItem = memo(({ stop, icon }: BusStopMarkerItemProps) => {
           {isPopupOpen && (
             <BusStopPopup
               stopId={stop.nodeid}
+              onRouteChange={onRouteChange}
             />
           )}
         </div>
@@ -65,7 +67,13 @@ const BusStopMarkerItem = memo(({ stop, icon }: BusStopMarkerItemProps) => {
 
 BusStopMarkerItem.displayName = "BusStopMarkerItem";
 
-export default function BusStopMarker({ routeName }: { routeName: string }) {
+export default function BusStopMarker({
+  routeName,
+  onRouteChange
+}: {
+  routeName: string;
+  onRouteChange?: (routeName: string) => void;
+}) {
   const stops = useBusStop(routeName);
   const { busStopIcon } = useIcons();
 
@@ -110,6 +118,7 @@ export default function BusStopMarker({ routeName }: { routeName: string }) {
             key={key}
             stop={stop}
             icon={busStopIcon}
+            onRouteChange={onRouteChange}
           />
         );
       })}

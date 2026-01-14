@@ -88,7 +88,11 @@ export default function MapPage() {
             <div className="flex flex-col w-full h-[100dvh]">
                 <MapNavBar />
                 <div className="relative flex-1 overflow-hidden">
-                    <MapWrapper routeNames={[selectedRoute]} onReady={handleMapReady} />
+                    <MapWrapper
+                        routeNames={[selectedRoute]}
+                        onReady={handleMapReady}
+                        onRouteChange={handleRouteChange}
+                    />
                     <BusList
                         routeNames={[selectedRoute]}
                         allRoutes={allRoutes}

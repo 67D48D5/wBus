@@ -34,10 +34,12 @@ function ArrivalList({
     loading,
     error,
     arrivalData,
+    onRouteChange,
 }: {
     loading: boolean;
     error: string | null;
     arrivalData: ArrivalInfo[];
+    onRouteChange?: (routeName: string) => void;
 }) {
     const hasData = arrivalData.length > 0;
 
@@ -77,40 +79,48 @@ function ArrivalList({
                             const vehicleType = formatVehicleType(bus.vehicletp);
                             const urgencyColor = getUrgencyColor(minutes);
                             const stopCount = formatStopCount(bus.arrprevstationcnt);
+                            const rawRouteNo = bus.routeno ?? "";
+                            const routeName = typeof rawRouteNo === "string"
+                                ? rawRouteNo.trim()
+                                : String(rawRouteNo).trim();
+                            const routeLabel = routeName || String(rawRouteNo);
 
                             return (
-                                <li
-                                    key={idx}
-                                    className="groups relative bg-gradient-to-r from-white to-blue-50/30 rounded-lg sm:rounded-xl border border-gray-200 hover:border-blue-400 hover:shadow-xl transition-all duration-300 overflow-hidden hover:scale-[1.02] active:scale-[0.98]"
-                                >
-                                    {/* Urgency indicator bar */}
-                                    <div className={`absolute left-0 top-0 bottom-0 w-1 sm:w-1.5 ${urgencyColor.split(' ')[1]} shadow-sm`}></div>
+                                <li key={idx}>
+                                    <button
+                                        type="button"
+                                        className="group relative w-full bg-gradient-to-r from-white to-blue-50/30 rounded-lg sm:rounded-xl border border-gray-200 hover:border-blue-400 hover:shadow-xl transition-all duration-300 overflow-hidden hover:scale-[1.02] active:scale-[0.98]"
+                                        onClick={onRouteChange && routeName ? () => onRouteChange(routeName) : undefined}
+                                    >
+                                        {/* Urgency indicator bar */}
+                                        <div className={`absolute left-0 top-0 bottom-0 w-1 sm:w-1.5 ${urgencyColor.split(" ")[1]} shadow-sm`}></div>
 
-                                    <div className="flex items-center justify-between p-2 pl-3 sm:p-3 sm:pl-4 gap-2 sm:gap-3">
-                                        {/* Route number */}
-                                        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-                                            <div className="flex items-center justify-center min-w-[45px] sm:min-w-[55px] h-7 sm:h-9 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-md sm:rounded-lg font-bold text-xs sm:text-sm shadow-md group-hover:shadow-lg transition-shadow">
-                                                {formatRouteNumber(bus.routeno)}
+                                        <div className="flex items-center justify-between p-2 pl-3 sm:p-3 sm:pl-4 gap-2 sm:gap-3">
+                                            {/* Route number */}
+                                            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                                                <div className="flex items-center justify-center min-w-[45px] sm:min-w-[55px] h-7 sm:h-9 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-md sm:rounded-lg font-bold text-xs sm:text-sm shadow-md group-hover:shadow-lg transition-shadow">
+                                                    {formatRouteNumber(routeLabel)}
+                                                </div>
+
+                                                {/* Vehicle type badge */}
+                                                <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded sm:rounded-md text-[9px] sm:text-[10px] font-semibold shadow-sm">
+                                                    {vehicleType}
+                                                </span>
                                             </div>
 
-                                            {/* Vehicle type badge */}
-                                            <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded sm:rounded-md text-[9px] sm:text-[10px] font-semibold shadow-sm">
-                                                {vehicleType}
-                                            </span>
+                                            {/* Arrival info */}
+                                            <div className="flex flex-col items-end gap-0.5 sm:gap-1 flex-shrink-0">
+                                                <div className={`flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg ${urgencyColor} font-bold text-xs sm:text-sm whitespace-nowrap shadow-sm`}>
+                                                    <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                    <span>{minutes}{TIME_LABELS.MINUTE_SUFFIX}</span>
+                                                </div>
+                                                <div className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-[11px] text-gray-600 font-medium whitespace-nowrap bg-white px-1.5 py-0.5 sm:px-2 rounded sm:rounded-md shadow-sm">
+                                                    <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                                    <span>{stopCount}</span>
+                                                </div>
+                                            </div>
                                         </div>
-
-                                        {/* Arrival info */}
-                                        <div className="flex flex-col items-end gap-0.5 sm:gap-1 flex-shrink-0">
-                                            <div className={`flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg ${urgencyColor} font-bold text-xs sm:text-sm whitespace-nowrap shadow-sm`}>
-                                                <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                <span>{minutes}{TIME_LABELS.MINUTE_SUFFIX}</span>
-                                            </div>
-                                            <div className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-[11px] text-gray-600 font-medium whitespace-nowrap bg-white px-1.5 py-0.5 sm:px-2 rounded sm:rounded-md shadow-sm">
-                                                <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                                                <span>{stopCount}</span>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    </button>
                                 </li>
                             );
                         })}
@@ -123,7 +133,11 @@ function ArrivalList({
 
 export default function BusStopPopup({
     stopId,
-}: { stopId: string }) {
+    onRouteChange,
+}: {
+    stopId: string;
+    onRouteChange?: (routeName: string) => void;
+}) {
     const {
         data: arrivalRawData,
         loading,
@@ -143,6 +157,7 @@ export default function BusStopPopup({
             loading={loading}
             error={error}
             arrivalData={sortedArrivalData}
+            onRouteChange={onRouteChange}
         />
     );
 }

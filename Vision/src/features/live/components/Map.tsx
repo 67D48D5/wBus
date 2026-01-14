@@ -21,33 +21,40 @@ import { getInitialMapView } from "@live/utils/mapViewStorage";
 type MapProps = {
   routeNames: string[];
   onReady?: () => void;
+  onRouteChange?: (routeName: string) => void;
 };
 
 /**
  * Memoized route marker component to prevent unnecessary re-renders
  */
 const RouteMarkers = React.memo(({
-  routeName
+  routeName,
+  onRouteChange
 }: {
   routeName: string;
+  onRouteChange?: (routeName: string) => void;
 }) => (
   <>
     <BusMarker
       routeName={routeName}
     />
-    <BusStopMarker routeName={routeName} />
+    <BusStopMarker
+      routeName={routeName}
+      onRouteChange={onRouteChange}
+    />
     <BusRoutePolyline routeName={routeName} />
   </>
 ), (prevProps, nextProps) => {
   // Custom comparison to prevent unnecessary re-renders
   return (
     prevProps.routeName === nextProps.routeName
+    && prevProps.onRouteChange === nextProps.onRouteChange
   );
 });
 
 RouteMarkers.displayName = "RouteMarkers";
 
-export default function Map({ routeNames, onReady }: MapProps) {
+export default function Map({ routeNames, onReady, onRouteChange }: MapProps) {
   const readyOnceRef = useRef(false);
   const handleReadyOnce = useCallback(() => {
     if (readyOnceRef.current) return;
@@ -82,6 +89,7 @@ export default function Map({ routeNames, onReady }: MapProps) {
           <RouteMarkers
             key={routeName}
             routeName={routeName}
+            onRouteChange={onRouteChange}
           />
         ))}
       </MapContextBridge>
