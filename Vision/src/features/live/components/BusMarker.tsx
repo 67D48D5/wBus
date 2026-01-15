@@ -56,7 +56,7 @@ const PopupMarquee = ({ text, maxLength = 12 }: { text: string; maxLength?: numb
   const shouldMarquee = text.length > maxLength;
 
   if (!shouldMarquee) {
-    return <span className="truncate">{text}</span>;
+    return <span className="whitespace-nowrap">{text}</span>;
   }
 
   return (
@@ -210,26 +210,26 @@ export default function BusMarker({
                 {/* Info Body Section */}
                 <div className="bg-white px-4 py-3 space-y-3">
                   {/* Vehicle Number Row */}
-                  <div className="flex items-center gap-3 overflow-hidden">
+                  <div className="grid grid-cols-[56px_1fr] sm:grid-cols-[64px_1fr] items-center gap-3">
                     <span className="text-xs font-semibold text-gray-500 shrink-0 whitespace-nowrap w-14 sm:w-16">
                       {UI_TEXT.BUS_ITEM.VEHICLE_NUM}
                     </span>
-                    <div className="flex-1 min-w-0 flex justify-end">
-                      <div className="text-xs sm:text-sm font-bold text-gray-800 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 max-w-full">
-                        <PopupMarquee text={bus.vehicleno} maxLength={10} />
+                    <div className="min-w-0">
+                      <div className="inline-flex text-xs sm:text-sm font-bold text-gray-800 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 whitespace-nowrap">
+                        {bus.vehicleno}
                       </div>
                     </div>
                   </div>
 
-                  {/* Current Location (Stop) Row - Marquee Applied Here Too! */}
-                  <div className="flex items-center gap-3 overflow-hidden">
+                  {/* Current Location (Stop) Row */}
+                  <div className="grid grid-cols-[56px_1fr] sm:grid-cols-[64px_1fr] items-center gap-3">
                     <span className="text-[10px] sm:text-xs font-semibold text-gray-500 shrink-0 whitespace-nowrap w-14 sm:w-16">
                       {UI_TEXT.BUS_ITEM.CURRENT_LOC}
                     </span>
 
-                    <div className="flex-1 min-w-0 flex justify-end">
-                      <div className="text-xs sm:text-sm text-gray-700 font-medium max-w-full text-right">
-                        <PopupMarquee text={stopName} maxLength={12} />
+                    <div className="min-w-0">
+                      <div className="text-xs sm:text-sm text-gray-700 font-medium max-w-full">
+                        <PopupMarquee text={stopName} maxLength={8} />
                       </div>
                     </div>
                   </div>
