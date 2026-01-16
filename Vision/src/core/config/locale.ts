@@ -55,6 +55,9 @@ export const UI_TEXT = {
         VEHICLE_NUM: '차량번호',
         CURRENT_LOC: '현재위치',
         STATUS_CHECKING: '정보 확인 중...',
+        RUNNING_NOW: '운행중',
+        SHOW_ROUTE: '경로보기',
+        CLICK_ROUTE_FOR_INFO: '버스 번호를 클릭하여 상세 정보를 확인하세요.',
     },
 
     MAP: {

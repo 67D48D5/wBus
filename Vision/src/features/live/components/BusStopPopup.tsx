@@ -1,34 +1,101 @@
 // src/features/live/components/BusStopPopup.tsx
 
 import { useMemo } from "react";
-import { AlertTriangle, Bus, Clock, MapPin } from "lucide-react";
+import { AlertTriangle, Bus, Clock, MapPin, ChevronRight } from "lucide-react";
 
 import { UI_TEXT } from "@core/config/locale";
 
 import { useBusArrivalInfo } from "@live/hooks/useBusArrivalInfo";
-
-import {
-    formatVehicleType,
-    secondsToMinutes,
-} from "@live/utils/formatters";
+import { formatVehicleType, secondsToMinutes } from "@live/utils/formatters";
 
 import type { ArrivalInfo } from "@core/domain/live";
 
-// Helper to determine urgency color based on arrival time
-function getUrgencyColor(minutes: number) {
-    if (minutes <= 2) return "text-red-600 bg-red-50 border-red-100";
-    if (minutes <= 5) return "text-orange-600 bg-orange-50 border-orange-100";
-    if (minutes <= 10) return "text-blue-600 bg-blue-50 border-blue-100";
-    return "text-gray-600 bg-gray-50 border-gray-100";
+// Sets the theme based on arrival time in minutes
+const getStatusTheme = (minutes: number) => {
+    if (minutes <= 2) return {
+        text: "text-red-600",
+        bg: "bg-red-50",
+        border: "border-red-100",
+        badge: "bg-red-600",
+        label: UI_TEXT.BUS_ITEM.ARRIVING_SOON
+    };
+    if (minutes <= 5) return {
+        text: "text-orange-600",
+        bg: "bg-orange-50",
+        border: "border-orange-100",
+        badge: "bg-orange-500",
+        label: UI_TEXT.BUS_ITEM.ARRIVING_SOON
+    };
+    return {
+        text: "text-blue-600",
+        bg: "bg-slate-50",
+        border: "border-slate-100",
+        badge: "bg-blue-600",
+        label: UI_TEXT.BUS_ITEM.RUNNING_NOW
+    };
+};
+
+function ArrivalItem({
+    bus,
+    onRouteChange
+}: {
+    bus: ArrivalInfo;
+    onRouteChange?: (name: string) => void
+}) {
+    const minutes = secondsToMinutes(bus.arrtime);
+    const theme = getStatusTheme(minutes);
+    const routeName = String(bus.routeno ?? "").trim();
+
+    return (
+        <button
+            onClick={() => onRouteChange?.(routeName)}
+            className={`w-full group relative flex items-center justify-between p-3 rounded-xl border-2 transition-all duration-200 
+                ${theme.bg} ${theme.border} hover:border-blue-400 hover:shadow-md active:scale-[0.98] bg-white`}
+        >
+            <div className="flex flex-col items-start gap-1.5 overflow-hidden">
+                <div className="flex items-center gap-2">
+                    <span className={`px-2 py-0.5 rounded text-[11px] font-black text-white ${theme.badge} shadow-sm`}>
+                        {routeName}
+                    </span>
+                    <span className="text-[10px] font-semibold text-slate-400 truncate">
+                        {formatVehicleType(bus.vehicletp)}
+                    </span>
+                </div>
+
+                <div className="flex items-center gap-1 text-slate-500">
+                    <MapPin className="w-3 h-3 text-slate-400" />
+                    <span className="text-xs font-medium">
+                        {bus.arrprevstationcnt === 0 ? UI_TEXT.BUS_ITEM.ARRIVING_SOON : UI_TEXT.BUS_ITEM.STOPS_LEFT(bus.arrprevstationcnt)}
+                    </span>
+                </div>
+            </div>
+
+            <div className="flex flex-col items-end shrink-0">
+                <div className={`flex items-center gap-1 font-black ${theme.text}`}>
+                    <Clock className="w-3.5 h-3.5" />
+                    <span className="text-base sm:text-lg">
+                        {minutes === 0 ? UI_TEXT.BUS_ITEM.ARRIVING_SOON : `${minutes}${UI_TEXT.TIME.MINUTE_SUFFIX}`}
+                    </span>
+                </div>
+                <div className="flex items-center text-[10px] text-slate-400 font-bold group-hover:text-blue-500 transition-colors">
+                    {UI_TEXT.BUS_ITEM.SHOW_ROUTE} <ChevronRight className="w-3 h-3" />
+                </div>
+            </div>
+        </button>
+    );
 }
 
-// Helper to format remaining stops
-function formatStopCount(count: number) {
-    if (count === 0) return UI_TEXT.BUS_ITEM.ARRIVING_SOON;
-    return UI_TEXT.BUS_ITEM.STOPS_LEFT(count);
+// Loading skeleton UI to display while loading
+function LoadingSkeleton() {
+    return (
+        <div className="p-4 space-y-3">
+            {[1, 2, 3].map((i) => (
+                <div key={i} className="h-16 w-full bg-slate-100 animate-pulse rounded-xl" />
+            ))}
+        </div>
+    );
 }
 
-// Real-time arrival list component
 function ArrivalList({
     loading,
     error,
@@ -40,107 +107,36 @@ function ArrivalList({
     arrivalData: ArrivalInfo[];
     onRouteChange?: (routeName: string) => void;
 }) {
-    const hasData = arrivalData.length > 0;
-
-    // Global Popup style imposes padding: 0.
-    // We must apply padding inside these wrapper divs.
-    const contentPadding = "p-4";
-
-    // Error State
     if (error) {
         return (
-            <div className={`w-full min-w-[200px] ${contentPadding}`}>
-                <div className="flex items-center gap-2 p-3 bg-red-50 rounded-lg border border-red-200">
-                    <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
-                    <p className="text-sm text-red-700 font-medium leading-tight">{error}</p>
+            <div className="p-4">
+                <div className="flex flex-col items-center gap-2 p-4 bg-red-50 rounded-2xl border border-red-100 text-center">
+                    <AlertTriangle className="w-8 h-8 text-red-400" />
+                    <p className="text-sm text-red-800 font-bold leading-tight">{error}</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (loading && arrivalData.length === 0) return <LoadingSkeleton />;
+
+    if (!loading && arrivalData.length === 0) {
+        return (
+            <div className="p-4 text-center">
+                <div className="py-8 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                    <Bus className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                    <p className="text-sm text-slate-500 font-bold">{UI_TEXT.BUS_LIST.NO_RUNNING}</p>
+                    <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">No buses scheduled</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col w-full min-w-[240px] sm:min-w-[280px]">
-
-            {/* Loading State */}
-            {!hasData && loading && (
-                <div className={`${contentPadding} flex flex-col items-center justify-center py-8`}>
-                    <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mb-3"></div>
-                    <p className="text-sm text-gray-500 font-medium">{UI_TEXT.COMMON.LOADING_LIVE}</p>
-                </div>
-            )}
-
-            {/* No Data State */}
-            {!hasData && !loading && (
-                <div className={contentPadding}>
-                    <div className="flex flex-col items-center justify-center py-6 text-center bg-gray-50 rounded-xl border border-gray-100 border-dashed">
-                        <Bus className="w-10 h-10 text-gray-400 mb-2" />
-                        <p className="text-sm text-gray-700 font-semibold">{UI_TEXT.BUS_LIST.NO_RUNNING}</p>
-                        {/* @TODO: Vary this message */}
-                        <p className="text-xs text-gray-500 mt-1">{UI_TEXT.BUS_LIST.NO_RUNNING}</p>
-                    </div>
-                </div>
-            )}
-
-            {/* Data List State */}
-            {hasData && (
-                <div className="max-h-[260px] sm:max-h-[320px] overflow-y-auto custom-scrollbar bg-white">
-                    {/* List Wrapper with Padding */}
-                    <ul className="p-3 sm:p-4 space-y-2">
-                        {arrivalData.map((bus, idx) => {
-                            const minutes = secondsToMinutes(bus.arrtime);
-                            const vehicleType = formatVehicleType(bus.vehicletp);
-                            const urgencyClasses = getUrgencyColor(minutes);
-                            const stopCount = formatStopCount(bus.arrprevstationcnt);
-                            const rawRouteNo = bus.routeno ?? "";
-                            const routeName = typeof rawRouteNo === "string"
-                                ? rawRouteNo.trim()
-                                : String(rawRouteNo).trim();
-                            const routeLabel = routeName || String(rawRouteNo);
-
-                            return (
-                                <li key={idx}>
-                                    <button
-                                        type="button"
-                                        className="w-full text-left bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-200 overflow-hidden group"
-                                        onClick={onRouteChange && routeName ? () => onRouteChange(routeName) : undefined}
-                                    >
-                                        <div className="flex items-stretch">
-                                            {/* Left Color Bar indicating urgency */}
-                                            <div className={`w-1.5 ${urgencyClasses.split(" ")[1]}`} />
-
-                                            <div className="flex-1 p-2.5 sm:p-3 flex items-center justify-between gap-3">
-                                                {/* Left: Route Info */}
-                                                <div className="flex flex-col items-start gap-1">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <div className="flex items-center justify-center min-w-[48px] h-6 px-1.5 bg-blue-600 text-white rounded text-xs font-bold shadow-sm">
-                                                            {routeLabel}
-                                                        </div>
-                                                        <span className="text-[10px] text-gray-500 font-medium px-1.5 py-0.5 bg-gray-100 rounded border border-gray-200">
-                                                            {vehicleType}
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Right: Time & Location */}
-                                                <div className="flex flex-col items-end gap-1">
-                                                    <div className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs sm:text-sm font-bold ${urgencyClasses}`}>
-                                                        <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                                                        <span>{UI_TEXT.TIME.FORMAT_REMAINING(minutes)}</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-1 text-[10px] sm:text-xs text-gray-500 font-medium">
-                                                        <MapPin className="w-3 h-3" />
-                                                        <span>{stopCount}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </button>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                </div>
-            )}
+        <div className="max-h-[320px] overflow-y-auto custom-scrollbar p-3 sm:p-4 space-y-2.5">
+            {arrivalData.map((bus, idx) => (
+                <ArrivalItem key={`${bus.routeno}-${idx}`} bus={bus} onRouteChange={onRouteChange} />
+            ))}
         </div>
     );
 }
@@ -152,26 +148,22 @@ export default function BusStopPopup({
     stopId: string;
     onRouteChange?: (routeName: string) => void;
 }) {
-    const {
-        data: arrivalRawData,
-        loading,
-        error,
-    } = useBusArrivalInfo(stopId);
+    const { data: arrivalRawData, loading, error } = useBusArrivalInfo(stopId);
 
     const sortedArrivalData = useMemo(() => {
         return arrivalRawData
-            ? [...arrivalRawData].sort(
-                (a, b) => a.arrprevstationcnt - b.arrprevstationcnt
-            )
+            ? [...arrivalRawData].sort((a, b) => a.arrtime - b.arrtime) // Sort by actual arrival time rather than distance (stops)
             : [];
     }, [arrivalRawData]);
 
     return (
-        <ArrivalList
-            loading={loading}
-            error={error}
-            arrivalData={sortedArrivalData}
-            onRouteChange={onRouteChange}
-        />
+        <div className="w-full min-w-[260px] sm:min-w-[300px] bg-white">
+            <ArrivalList
+                loading={loading}
+                error={error}
+                arrivalData={sortedArrivalData}
+                onRouteChange={onRouteChange}
+            />
+        </div>
     );
 }

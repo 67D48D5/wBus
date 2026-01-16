@@ -2,17 +2,17 @@
 
 "use client";
 
-import { MapPinned } from "lucide-react";
+import BusStopPopup from "@live/components/BusStopPopup";
+
 import { memo, useCallback, useMemo, useState } from "react";
 import { Marker, Popup, useMap, useMapEvents } from "react-leaflet";
+import { MapPinned, Info, BusFront } from "lucide-react";
 
 import { APP_CONFIG, MAP_SETTINGS } from "@core/config/env";
-
-import BusStopPopup from "@live/components/BusStopPopup";
+import { UI_TEXT } from "@core/config/locale";
 
 import { useIcons } from "@live/hooks/useIcons";
 import { useBusStop } from "@live/hooks/useBusStop";
-
 import { filterStopsByViewport } from "@live/utils/stopFiltering";
 
 import type { BusStop } from "@core/domain/live";
@@ -26,12 +26,9 @@ type BusStopMarkerItemProps = {
 
 const BusStopMarkerItem = memo(({ stop, icon, onRouteChange }: BusStopMarkerItemProps) => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
-  const handlePopupOpen = useCallback(() => {
-    setIsPopupOpen(true);
-  }, []);
-  const handlePopupClose = useCallback(() => {
-    setIsPopupOpen(false);
-  }, []);
+
+  const handlePopupOpen = useCallback(() => setIsPopupOpen(true), []);
+  const handlePopupClose = useCallback(() => setIsPopupOpen(false), []);
 
   return (
     <Marker
@@ -42,34 +39,61 @@ const BusStopMarkerItem = memo(({ stop, icon, onRouteChange }: BusStopMarkerItem
         popupclose: handlePopupClose,
       }}
     >
-      <Popup autoPan={false} minWidth={200} className="custom-bus-stop-popup">
-        <div className="min-w-[200px] sm:min-w-[250px] flex flex-col">
+      <Popup
+        className="custom-bus-stop-popup"
+        minWidth={280}
+        maxWidth={320}
+        autoPanPadding={[50, 50]}
+      >
+        <div className="flex flex-col bg-white overflow-hidden rounded-2xl shadow-2xl border border-slate-100">
           {/* Header Section */}
-          <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white px-4 py-3">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <MapPinned className="w-5 h-5 flex-shrink-0 text-white/90" />
-                <span className="font-bold text-sm sm:text-base tracking-tight leading-snug">
-                  {stop.nodenm}
-                </span>
-              </div>
+          <div className="relative overflow-hidden bg-slate-900 px-4 py-4 text-white">
+            {/* Background decorative pattern */}
+            <div className="absolute -right-2 -top-2 opacity-10">
+              <BusFront size={80} strokeWidth={1} />
             </div>
-            {/* Node Number Badge */}
-            <div className="mt-2 flex">
-              <span className="text-[10px] sm:text-xs font-bold text-blue-700 bg-white/90 px-2 py-0.5 rounded shadow-sm border border-blue-200/50">
-                {stop.nodeno}
-              </span>
+
+            <div className="relative z-10 flex flex-col gap-2">
+              <div className="flex items-start gap-2.5">
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/30">
+                  <MapPinned size={18} />
+                </div>
+                <div className="flex flex-col gap-0.5 overflow-hidden">
+                  <h3 className="truncate text-base font-black leading-tight tracking-tight sm:text-lg">
+                    {stop.nodenm}
+                  </h3>
+                  <div className="flex items-center gap-1.5 text-slate-400">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400">Station ID</span>
+                    <span className="text-xs font-mono font-medium">{stop.nodeno || "N/A"}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Body Section (Arrival Info) */}
-          <div className="bg-white min-h-[60px]">
-            {isPopupOpen && (
+          {/* Body Section: Arrival Information List */}
+          <div className="relative min-h-[120px] bg-slate-50/50">
+            {isPopupOpen ? (
               <BusStopPopup
                 stopId={stop.nodeid}
                 onRouteChange={onRouteChange}
               />
+            ) : (
+              <div className="flex h-32 items-center justify-center">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{UI_TEXT.COMMON.LOADING_LIVE}</span>
+                </div>
+              </div>
             )}
+          </div>
+
+          {/* Footer Section */}
+          <div className="flex items-center justify-center border-t border-slate-100 bg-white py-2 px-4">
+            <div className="flex items-center gap-1 text-[10px] font-medium text-slate-400">
+              <Info size={12} className="text-slate-300" />
+              <span>{UI_TEXT.BUS_ITEM.CLICK_ROUTE_FOR_INFO}</span>
+            </div>
           </div>
         </div>
       </Popup>
@@ -103,27 +127,16 @@ export default function BusStopMarker({
     },
   });
 
-  // Filter stops by viewport and zoom level for performance
-  const visibleStops = useMemo(
-    () => {
-      if (zoom < MAP_SETTINGS.ZOOM.BUS_STOP_VISIBLE) {
-        return [];
-      }
-      return filterStopsByViewport(stops, bounds, zoom);
-    },
-    [stops, bounds, zoom]
-  );
-
-  if (APP_CONFIG.IS_DEV) {
-    console.log(`[BusStopMarker] Route: ${routeName}, Zoom: ${zoom}, Total stops: ${stops.length}, Visible: ${visibleStops.length}`);
-  }
+  const visibleStops = useMemo(() => {
+    if (zoom < MAP_SETTINGS.ZOOM.BUS_STOP_VISIBLE) return [];
+    return filterStopsByViewport(stops, bounds, zoom);
+  }, [stops, bounds, zoom]);
 
   if (!busStopIcon) return null;
 
   return (
     <>
       {visibleStops.map((stop, index) => {
-        // Use nodeid + updowncd as primary key, fallback to index for unique identification
         const key = stop.nodeid ? `${stop.nodeid}-${stop.updowncd}` : `stop-${index}`;
         return (
           <BusStopMarkerItem
