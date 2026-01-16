@@ -22,32 +22,24 @@ import { AnimatedBusMarker } from "@live/components/MapAnimatedBusMarker";
 
 import type { LatLngTuple } from "leaflet";
 
-// CSS Styles (Marquee & Popup)
+// CSS Styles 
 const BUS_LABEL_STYLE = `
 @keyframes busRouteMarquee {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
-/* Marker Icon Marquee */
+/* Marker Icon Marquee (For bus icon label) */
 .bus-marker-with-label .bus-route-text-animate {
   display: inline-block;
+  
+  /* Ensure it expands to fit content */
+  width: max-content; 
+  min-width: 100%;
+  
   animation: busRouteMarquee 3s linear infinite;
+  padding-right: 4px; /* Prevent text cutting at the end */
 }
 .bus-marker-with-label .bus-route-text-container:hover .bus-route-text-animate {
-  animation-play-state: paused;
-}
-
-/* Popup Text Marquee */
-@keyframes popupTextMarquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-.popup-marquee-wrapper {
-  display: flex;
-  white-space: nowrap;
-  animation: popupTextMarquee 8s linear infinite;
-}
-.popup-marquee-container:hover .popup-marquee-wrapper {
   animation-play-state: paused;
 }
 `;
@@ -67,6 +59,7 @@ export default function BusMarker({
   const { routeInfo, busList, getDirection, mergedUp, mergedDown } =
     useBusData(routeName);
 
+  // Inject bus label styles once
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (document.getElementById(BUS_MARKER_SETTINGS.LABEL_STYLE_ID)) return;
@@ -79,6 +72,7 @@ export default function BusMarker({
 
   const iconCache = useMemo(() => new Map<string, L.DivIcon>(), [busIcon]);
 
+  // Create a bus icon with route number label, using caching for performance
   const createBusIconWithLabel = useMemo(() => {
     const escapeHtml = (text: string | number | null | undefined) =>
       String(text ?? "")
@@ -95,9 +89,11 @@ export default function BusMarker({
       if (!busIcon) return null;
 
       const escapedRouteNumber = escapeHtml(routeNumber);
-      const needsMarquee = routeNumber.length > BUS_MARKER_SETTINGS.MARQUEE_THRESHOLD;
+      const needsMarquee = routeNumber.length > BUS_MARKER_SETTINGS.MARQUEE_THRESHOLD - 1;
+
+      // To create an infinite scroll effect for the icon label, repeat the text twice
       const displayText = needsMarquee
-        ? `${escapedRouteNumber} ${escapedRouteNumber}`
+        ? `${escapedRouteNumber}&nbsp;${escapedRouteNumber}&nbsp;`
         : escapedRouteNumber;
       const animationClass = needsMarquee ? "bus-route-text-animate" : "";
       const [iconWidth, iconHeight] = BUS_MARKER_SETTINGS.ICON_SIZE;
@@ -182,6 +178,7 @@ export default function BusMarker({
             }}
           >
             <Popup autoPan={false} className="custom-bus-popup">
+              {/* min-w-fit: Adjust popup size automatically to fit content */}
               <div className="min-w-fit sm:min-w-[200px] flex flex-col">
                 {/* Header Section */}
                 <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white px-4 py-3">
@@ -195,9 +192,11 @@ export default function BusMarker({
 
                 {/* Info Body Section */}
                 <div className="bg-white px-4 py-3 space-y-3">
+
                   {/* Vehicle Number Row */}
-                  <div className="grid grid-cols-[auto_1fr] sm:grid-cols-[64px_1fr] items-center gap-1">
-                    <span className="text-xs font-semibold text-gray-500 shrink-0 whitespace-nowrap w-14 sm:w-16">
+                  {/* grid-cols-[auto_1fr]: Label width auto, reduce gap with gap-2 */}
+                  <div className="grid grid-cols-[auto_1fr] items-center gap-2">
+                    <span className="text-xs font-semibold text-gray-500 shrink-0 whitespace-nowrap">
                       {UI_TEXT.BUS_ITEM.VEHICLE_NUM}
                     </span>
 
@@ -209,13 +208,15 @@ export default function BusMarker({
                   </div>
 
                   {/* Current Location (Stop) Row */}
-                  <div className="grid grid-cols-[auto_1fr] sm:grid-cols-[64px_1fr] items-center gap-1">
-                    <span className="text-[10px] sm:text-xs font-semibold text-gray-500 shrink-0 whitespace-nowrap w-14 sm:w-16">
+                  <div className="grid grid-cols-[auto_1fr] items-center gap-2">
+                    <span className="text-[10px] sm:text-xs font-semibold text-gray-500 shrink-0 whitespace-nowrap">
                       {UI_TEXT.BUS_ITEM.CURRENT_LOC}
                     </span>
 
+                    {/* Infinite Marquee */}
                     <div className="min-w-0">
                       <div className="text-xs sm:text-sm text-gray-700 font-medium max-w-full">
+                        {/* Set maxLength to around 8-10 to start scrolling for moderately long names */}
                         <PopupMarquee text={stopName} maxLength={8} />
                       </div>
                     </div>
