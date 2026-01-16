@@ -107,7 +107,7 @@ export default function BusList({ routeNames, allRoutes, selectedRoute, onRouteC
   const statusText = anyError
     ? errorMessage
     : isLoading
-      ? UI_TEXT.COMMON.LOADING_LIVE
+      ? UI_TEXT.COMMON.LOADING
       : isNoData
         ? UI_TEXT.BUS_LIST.NO_RUNNING
         : UI_TEXT.BUS_LIST.COUNT_RUNNING(allBuses.length);
