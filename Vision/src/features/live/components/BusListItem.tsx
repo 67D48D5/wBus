@@ -50,11 +50,11 @@ export const BusListItem = React.memo(({ bus, routeName, getDirection, onClick }
                 */}
                 <div className="flex items-center gap-1 text-gray-600 group-hover:text-gray-900 text-right min-w-0 flex-1 justify-end">
                     {/* Marquee Container
-                        List items are narrower than popups, so we set maxLength to around 6-7 for tight fit.
+                        List items are narrower than popups, so we set maxLength to around 6-8 for tight fit.
                         We set max-w to prevent overly long stop names from encroaching on the vehicle number. 
                     */}
                     <div className="text-[10px] sm:text-xs font-medium max-w-[90px] sm:max-w-[120px]">
-                        <PopupMarquee text={stopName} maxLength={6} />
+                        <PopupMarquee text={stopName} maxLength={8} />
                     </div>
 
                     <DirectionIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0 text-gray-400" aria-hidden="true" />
