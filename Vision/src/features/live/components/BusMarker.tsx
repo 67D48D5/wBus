@@ -191,32 +191,30 @@ export default function BusMarker({
                 </div>
 
                 {/* Info Body Section */}
-                <div className="bg-white px-4 py-3 space-y-3">
+                <div className="bg-white px-4 py-3 space-y-3 text-xs sm:text-sm">
 
                   {/* Vehicle Number Row */}
-                  {/* grid-cols-[auto_1fr]: Label width auto, reduce gap with gap-2 */}
-                  <div className="grid grid-cols-[auto_1fr] items-center gap-2">
-                    <span className="text-xs font-semibold text-gray-500 shrink-0 whitespace-nowrap">
+                  <div className="grid grid-cols-[auto_1fr] text-center items-center gap-2">
+                    <span className="text-[10px] sm:text-xs font-semibold text-gray-500 shrink-0 whitespace-nowrap">
                       {UI_TEXT.BUS_ITEM.VEHICLE_NUM}
                     </span>
 
-                    <div className="">
-                      <div className="inline-flex text-xs sm:text-sm font-bold text-gray-800 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 whitespace-nowrap">
+                    <div>
+                      <div className="inline-flex font-bold text-gray-800 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 whitespace-nowrap">
                         {bus.vehicleno}
                       </div>
                     </div>
                   </div>
 
                   {/* Current Location (Stop) Row */}
-                  <div className="grid grid-cols-[auto_1fr] items-center gap-2">
+                  <div className="grid grid-cols-[auto_1fr] text-center items-center gap-2">
                     <span className="text-[10px] sm:text-xs font-semibold text-gray-500 shrink-0 whitespace-nowrap">
                       {UI_TEXT.BUS_ITEM.CURRENT_LOC}
                     </span>
 
                     {/* Infinite Marquee */}
                     <div className="min-w-0">
-                      <div className="text-xs sm:text-sm text-gray-700 font-medium max-w-full">
-                        {/* Set maxLength to around 8-10 to start scrolling for moderately long names */}
+                      <div className="text-gray-700 font-medium text-center">
                         <PopupMarquee text={stopName} maxLength={8} />
                       </div>
                     </div>
