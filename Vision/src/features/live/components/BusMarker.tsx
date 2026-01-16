@@ -3,6 +3,9 @@
 "use client";
 
 import L from "leaflet";
+
+import PopupMarquee from "@live/utils/marqueeText";
+
 import { Popup } from "react-leaflet";
 import { useMemo, useEffect } from "react";
 
@@ -50,23 +53,6 @@ const BUS_LABEL_STYLE = `
 `;
 
 const BUS_MARKER_SETTINGS = MAP_SETTINGS.MARKERS.BUS;
-
-// Marquee Component (Reusable)
-const PopupMarquee = ({ text, maxLength = 12 }: { text: string; maxLength?: number }) => {
-  const shouldMarquee = text.length > maxLength;
-
-  if (!shouldMarquee) {
-    return <span className="whitespace-nowrap">{text}</span>;
-  }
-
-  return (
-    <div className="popup-marquee-container overflow-hidden w-full relative">
-      <div className="popup-marquee-wrapper w-max">
-        <span className="pr-4">{text}</span>
-      </div>
-    </div>
-  );
-};
 
 export default function BusMarker({
   routeName,

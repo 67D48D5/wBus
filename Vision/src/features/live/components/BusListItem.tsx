@@ -2,12 +2,14 @@
 
 import React from "react";
 
+import PopupMarquee from "@live/utils/marqueeText";
+
 import { UI_TEXT } from "@core/config/locale";
 
 import { getDirectionIcon } from "@live/utils/directionIcons";
 
 type BusListItemProps = {
-    bus: any; // @TODO: Replace with proper BusItem type
+    bus: any;
     routeName: string;
     getDirection: (nodeId: string, nodeOrd: number, routeId: string) => any;
     onClick: (lat: number, lng: number) => void;
@@ -29,9 +31,12 @@ export const BusListItem = React.memo(({ bus, routeName, getDirection, onClick }
                 onClick={() => onClick(bus.gpslati, bus.gpslong)}
                 aria-label={`${bus.vehicleno} ${UI_TEXT.BUS_ITEM.CURRENT_LOC} ${stopName}`}
             >
-                {/* Left: Vehicle number and route information */}
-                <div className="flex flex-col gap-0.5 sm:gap-1">
-                    <span className="font-bold text-sm sm:text-base text-gray-900 group-hover:text-blue-700 transition-colors">
+                {/* Left: Vehicle number and route information 
+                    1. shrink-0: Never shrink even if flex container is too small
+                    2. min-w-fit: Ensure the content fits without breaking
+                */}
+                <div className="flex flex-col gap-0.5 sm:gap-1 shrink-0 min-w-fit mr-2">
+                    <span className="font-bold text-sm sm:text-base text-gray-900 group-hover:text-blue-700 transition-colors whitespace-nowrap">
                         {bus.vehicleno}
                     </span>
                     <span className="text-[10px] sm:text-[11px] font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full px-2 py-0.5 sm:px-2.5 sm:py-1 inline-block w-fit shadow-sm">
@@ -39,12 +44,20 @@ export const BusListItem = React.memo(({ bus, routeName, getDirection, onClick }
                     </span>
                 </div>
 
-                {/* Right: Stop name and direction icon */}
-                <div className="flex items-center gap-1 text-gray-600 group-hover:text-gray-900 text-[10px] sm:text-xs text-right max-w-[100px] sm:max-w-[130px] font-medium transition-colors">
-                    <span className="truncate" title={stopName}>
-                        {stopName}
-                    </span>
-                    <DirectionIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" aria-hidden="true" />
+                {/* Right: Stop name and direction icon 
+                    1. min-w-0: Prevent flex child elements from overflowing the parent (essential for Marquee to work)
+                    2. justify-end: Align to the right
+                */}
+                <div className="flex items-center gap-1 text-gray-600 group-hover:text-gray-900 text-right min-w-0 flex-1 justify-end">
+                    {/* Marquee Container
+                        List items are narrower than popups, so we set maxLength to around 6-7 for tight fit.
+                        We set max-w to prevent overly long stop names from encroaching on the vehicle number. 
+                    */}
+                    <div className="text-[10px] sm:text-xs font-medium max-w-[90px] sm:max-w-[120px]">
+                        <PopupMarquee text={stopName} maxLength={6} />
+                    </div>
+
+                    <DirectionIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0 text-gray-400" aria-hidden="true" />
                 </div>
             </button>
         </li>
