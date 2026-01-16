@@ -71,7 +71,7 @@ export const MAP_SETTINGS = {
       ICON_ANCHOR: [14, 21] as [number, number],
       POPUP_ANCHOR: [0, -21] as [number, number],
       LABEL_STYLE_ID: "bus-route-label-style",
-      MARQUEE_THRESHOLD: 3,
+      MARQUEE_THRESHOLD: 3, // Number of characters to start marquee effect
     }
   },
   // Special logic for specific bus stops
