@@ -196,7 +196,7 @@ export default function BusMarker({
             }}
           >
             <Popup autoPan={false} className="custom-bus-popup">
-              <div className="min-w-[150px] sm:min-w-[200px] flex flex-col">
+              <div className="min-w-fit sm:min-w-[200px] flex flex-col">
                 {/* Header Section */}
                 <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white px-4 py-3">
                   <div className="flex items-center gap-2">
@@ -210,11 +210,12 @@ export default function BusMarker({
                 {/* Info Body Section */}
                 <div className="bg-white px-4 py-3 space-y-3">
                   {/* Vehicle Number Row */}
-                  <div className="grid grid-cols-[56px_1fr] sm:grid-cols-[64px_1fr] items-center gap-3">
+                  <div className="grid grid-cols-[auto_1fr] sm:grid-cols-[64px_1fr] items-center gap-1">
                     <span className="text-xs font-semibold text-gray-500 shrink-0 whitespace-nowrap w-14 sm:w-16">
                       {UI_TEXT.BUS_ITEM.VEHICLE_NUM}
                     </span>
-                    <div className="min-w-0">
+
+                    <div className="">
                       <div className="inline-flex text-xs sm:text-sm font-bold text-gray-800 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 whitespace-nowrap">
                         {bus.vehicleno}
                       </div>
@@ -222,7 +223,7 @@ export default function BusMarker({
                   </div>
 
                   {/* Current Location (Stop) Row */}
-                  <div className="grid grid-cols-[56px_1fr] sm:grid-cols-[64px_1fr] items-center gap-3">
+                  <div className="grid grid-cols-[auto_1fr] sm:grid-cols-[64px_1fr] items-center gap-1">
                     <span className="text-[10px] sm:text-xs font-semibold text-gray-500 shrink-0 whitespace-nowrap w-14 sm:w-16">
                       {UI_TEXT.BUS_ITEM.CURRENT_LOC}
                     </span>
