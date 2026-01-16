@@ -208,7 +208,7 @@ export async function getDirectionFromRouteDetails(
     const stopInfo = routeDetail.sequence.find(s => s.nodeord === nodeord);
 
     if (stopInfo) {
-      // updowncd: 0 = down/하행, 1 = up/상행
+      // updowncd: 0 = down, 1 = up, 2 = cycle (treat cycle as up for our purposes)
       return stopInfo.updowncd === 0 ? Direction.DOWN : Direction.UP;
     }
 
