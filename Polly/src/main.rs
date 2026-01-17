@@ -37,6 +37,10 @@ enum Commands {
         /// Update station map only and skip snapping
         #[arg(long)]
         station_map_only: bool,
+
+        /// Snap route paths using OSRM only (skip Tago API)
+        #[arg(long)]
+        osrm_only: bool,
     },
     /// Bus Schedule Crawling (Schedule Processor)
     Schedule {
@@ -63,8 +67,9 @@ async fn main() -> Result<()> {
             route,
             output_dir,
             station_map_only,
+            osrm_only,
         } => {
-            route::run(city_code, route, output_dir, station_map_only).await?;
+            route::run(city_code, route, output_dir, station_map_only, osrm_only).await?;
         }
         Commands::Schedule { route, output_dir } => {
             schedule::run(route, output_dir).await?;
