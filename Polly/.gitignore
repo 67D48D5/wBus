@@ -1,4 +1,4 @@
-# .gitignore for `Polly` project
+# .gitignore for Polly
 
 # Ignore output files
 *.geojson
