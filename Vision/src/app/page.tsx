@@ -16,6 +16,8 @@ import MapWrapper from "@map/components/MapWrapper";
 
 import BusList from "@bus/components/BusList";
 
+import ScheduleOverlay from "@schedule/components/ScheduleOverlay";
+
 /**
  * Real-time bus map page for the wBus application.
  * Displays real-time bus location information on a map for all routes.
@@ -99,6 +101,7 @@ export default function Page() {
                         selectedRoute={selectedRoute}
                         onRouteChange={handleRouteChange}
                     />
+                    <ScheduleOverlay routeId={selectedRoute} />
                 </div>
             </div>
         </>

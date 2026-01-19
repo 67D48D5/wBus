@@ -9,6 +9,8 @@ import { UI_TEXT, DAY_LABELS } from "@core/config/locale";
 
 import { BusData, BusTime } from "@core/domain/schedule";
 
+import { getCurrentDayType } from "@schedule/utils/time";
+
 /**
  * Get the localized label for a featured stops key
  */
@@ -83,7 +85,7 @@ function findNextBus(
 function TimetableView({ data }: { data: BusData }) {
     const isGeneralSchedule = !!data.schedule.general;
 
-    const [dayType, setDayType] = useState<DayType>(DAY_TYPES.WEEKDAY);
+    const [dayType, setDayType] = useState<DayType>(() => getCurrentDayType());
     const [direction, setDirection] = useState(data.directions[0]);
     const [now, setNow] = useState(() => new Date());
 
