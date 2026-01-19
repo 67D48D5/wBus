@@ -22,7 +22,7 @@ import ScheduleOverlay from "@schedule/components/ScheduleOverlay";
  * Real-time bus map page for the wBus application.
  * Displays real-time bus location information on a map for all routes.
  */
-export default function Page() {
+export default function HomePage() {
     const [isSplashVisible, setIsSplashVisible] = useState(true);
     const [selectedRoute, setSelectedRoute] = useState<string>(MAP_SETTINGS.DEFAULT_ROUTE);
 
@@ -38,7 +38,7 @@ export default function Page() {
             } catch (e) {
                 // localStorage might not be available
                 if (APP_CONFIG.IS_DEV) {
-                    console.warn("[Page] Failed to save route preference to localStorage", e);
+                    console.warn("[HomePage] Failed to save route preference to localStorage", e);
                 }
             }
         }
@@ -51,7 +51,7 @@ export default function Page() {
             if (saved) setSelectedRoute(saved);
         } catch (e) {
             if (APP_CONFIG.IS_DEV) {
-                console.warn("[Page] Failed to load route preference from localStorage", e);
+                console.warn("[HomePage] Failed to load route preference from localStorage", e);
             }
         }
     }, []);
