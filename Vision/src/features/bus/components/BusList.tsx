@@ -154,6 +154,19 @@ export default function BusList({ routeNames, allRoutes, selectedRoute, onRouteC
     }
   }, [map]);
 
+  const setMapScroll = useCallback((enabled: boolean) => {
+    if (!map?.scrollWheelZoom) return;
+    if (enabled) {
+      map.scrollWheelZoom.enable();
+    } else {
+      map.scrollWheelZoom.disable();
+    }
+  }, [map]);
+
+  useEffect(() => {
+    return () => setMapScroll(true);
+  }, [setMapScroll]);
+
   return (
     <>
       {routeNames.map((name) => (
@@ -163,7 +176,12 @@ export default function BusList({ routeNames, allRoutes, selectedRoute, onRouteC
           onDataUpdate={handleDataUpdate}
         />
       ))}
-      <div className="fixed bottom-2 left-2 sm:bottom-4 sm:left-4 bg-white/98 backdrop-blur-md rounded-xl sm:rounded-2xl shadow-2xl w-56 sm:w-72 z-20 border border-gray-200/50 overflow-hidden transition-all duration-300 hover:shadow-blue-200/50">
+      <div
+        className="bg-white/98 backdrop-blur-md rounded-xl sm:rounded-2xl shadow-2xl w-56 sm:w-72 border border-gray-200/50 overflow-hidden transition-all duration-300 hover:shadow-blue-200/50"
+        onPointerEnter={() => setMapScroll(false)}
+        onPointerLeave={() => setMapScroll(true)}
+        onWheel={(event) => event.stopPropagation()}
+      >
         <div className="px-3 pt-3 pb-2 sm:px-5 sm:pt-5 sm:pb-3 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-t-xl sm:rounded-t-2xl">
           <div className="flex items-center justify-between mb-1 sm:mb-2">
             <h2 className="text-sm sm:text-base font-bold text-white flex items-center gap-2 tracking-tight">
@@ -192,7 +210,7 @@ export default function BusList({ routeNames, allRoutes, selectedRoute, onRouteC
         </div>
 
         <ul
-          className={`text-xs sm:text-sm text-gray-800 transition-[max-height,opacity] duration-300 max-h-[100px] sm:max-h-[140px] overflow-y-auto px-2 py-1.5 sm:px-3 sm:py-2 opacity-100 space-y-1 sm:space-y-1.5`}
+          className={`text-xs sm:text-sm text-gray-800 transition-[max-height,opacity] duration-300 max-h-[100px] sm:max-h-[140px] overflow-y-auto overscroll-contain px-2 py-1.5 sm:px-3 sm:py-2 opacity-100 space-y-1 sm:space-y-1.5`}
         >
           {isNoData ? (
             <li

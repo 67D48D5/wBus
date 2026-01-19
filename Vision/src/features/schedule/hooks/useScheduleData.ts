@@ -23,7 +23,7 @@ function getScheduleUrl(routeId: string): string {
 
 async function fetchSchedule(routeId: string): Promise<BusData | null> {
   try {
-    return await fetchAPI<BusData>(getScheduleUrl(routeId), { baseUrl: "" });
+    return await fetchAPI<BusData>(getScheduleUrl(routeId), { baseUrl: "", retries: 1 });
   } catch (error) {
     if (error instanceof HttpError && error.status === 404) {
       return null;
@@ -36,6 +36,7 @@ export function useScheduleData(routeId: string | null) {
   const [data, setData] = useState<BusData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [missing, setMissing] = useState(false);
 
   useEffect(() => {
     let isActive = true;
@@ -43,6 +44,7 @@ export function useScheduleData(routeId: string | null) {
     if (!routeId) {
       setData(null);
       setError(null);
+      setMissing(false);
       setLoading(false);
       return () => {
         isActive = false;
@@ -53,6 +55,7 @@ export function useScheduleData(routeId: string | null) {
     if (cached !== undefined) {
       setData(cached);
       setError(null);
+      setMissing(cached === null);
       setLoading(false);
       return () => {
         isActive = false;
@@ -61,12 +64,14 @@ export function useScheduleData(routeId: string | null) {
 
     setLoading(true);
     setError(null);
+    setMissing(false);
 
     fetchSchedule(routeId)
       .then((result) => {
         if (!isActive) return;
         scheduleCache.set(routeId, result);
         setData(result);
+        setMissing(result === null);
       })
       .catch((err) => {
         if (!isActive) return;
@@ -74,6 +79,7 @@ export function useScheduleData(routeId: string | null) {
           console.error(LOG_MESSAGES.FETCH_FAILED(routeId, 500), err);
         }
         setError(UI_TEXT.ERROR.UNKNOWN);
+        setMissing(false);
       })
       .finally(() => {
         if (!isActive) return;
@@ -85,5 +91,5 @@ export function useScheduleData(routeId: string | null) {
     };
   }, [routeId]);
 
-  return { data, loading, error };
+  return { data, loading, error, missing };
 }

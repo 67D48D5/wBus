@@ -2,16 +2,18 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { CalendarClock, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { CalendarClock, ChevronDown } from "lucide-react";
 
 import { UI_TEXT } from "@core/config/locale";
-
 import { BusData } from "@core/domain/schedule";
-import { formatTime, getNearestBusTime } from "@schedule/utils/time";
-import { useScheduleData } from "@schedule/hooks/useScheduleData";
 
-import TimetableView from "@schedule/components/TimetableView";
+import { useBusContext } from "@map/context/MapContext";
+
+import { useScheduleData } from "@schedule/hooks/useScheduleData";
+import { formatTime, getNearestBusTime } from "@schedule/utils/time";
+
+import ScheduleView from "@/features/schedule/components/ScheduleView";
 
 type ScheduleOverlayProps = {
   routeId: string;
@@ -23,7 +25,7 @@ type NearestBus = {
   destination: string;
 };
 
-function SchedulePreview({ data, tone = "dark" }: { data: BusData; tone?: "dark" | "light" }) {
+function SchedulePreview({ data, tone = "light" }: { data: BusData; tone?: "light" | "muted" }) {
   const [nearestBus, setNearestBus] = useState<NearestBus | null>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -67,7 +69,7 @@ function SchedulePreview({ data, tone = "dark" }: { data: BusData; tone?: "dark"
   const remainingText = hours > 0
     ? `${hours}${UI_TEXT.TIME.HOUR_SUFFIX} ${mins}${UI_TEXT.TIME.MINUTE_SUFFIX}`
     : `${mins}${UI_TEXT.TIME.MINUTE_SUFFIX}`;
-  const primaryText = tone === "light" ? "text-white" : "text-slate-900";
+  const primaryText = tone === "light" ? "text-white" : "text-slate-800";
   const secondaryText = tone === "light" ? "text-blue-100/80" : "text-slate-500";
   const badgeStyle = tone === "light"
     ? "bg-white/20 text-white"
@@ -94,6 +96,14 @@ function ScheduleSkeleton() {
   );
 }
 
+function ScheduleCompactSkeleton() {
+  return (
+    <div className="space-y-2 animate-pulse">
+      <div className="h-14 rounded-xl bg-slate-100" />
+    </div>
+  );
+}
+
 function ScheduleEmptyState({ message }: { message: string }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
@@ -103,15 +113,10 @@ function ScheduleEmptyState({ message }: { message: string }) {
 }
 
 export default function ScheduleOverlay({ routeId }: ScheduleOverlayProps) {
-  const { data, loading, error } = useScheduleData(routeId);
+  const { data, loading, error, missing } = useScheduleData(routeId);
   const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (window.matchMedia("(min-width: 1024px)").matches) {
-      setIsOpen(true);
-    }
-  }, []);
+  const [showFull, setShowFull] = useState(false);
+  const { map } = useBusContext();
 
   const routeTitle = useMemo(() => {
     if (data?.routeName) return data.routeName;
@@ -120,78 +125,109 @@ export default function ScheduleOverlay({ routeId }: ScheduleOverlayProps) {
 
   const routeDescription = data?.description;
 
+  const setMapScroll = useCallback((enabled: boolean) => {
+    if (!map?.scrollWheelZoom) return;
+    if (enabled) {
+      map.scrollWheelZoom.enable();
+    } else {
+      map.scrollWheelZoom.disable();
+    }
+  }, [map]);
+
+  useEffect(() => {
+    if (missing) {
+      setMapScroll(true);
+    }
+  }, [missing, setMapScroll]);
+
+  useEffect(() => {
+    return () => setMapScroll(true);
+  }, [setMapScroll]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setShowFull(false);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    setShowFull(false);
+  }, [routeId]);
+
+  if (missing) {
+    return null;
+  }
+
   return (
-    <div className="fixed right-2 top-16 z-30 flex flex-col items-end gap-2 sm:right-4 sm:top-6">
-      {isOpen ? (
-        <div className="flex h-[70dvh] w-[320px] flex-col overflow-hidden rounded-2xl border border-slate-200/70 bg-white/95 shadow-2xl backdrop-blur-md sm:h-[calc(100dvh-120px)] sm:w-[380px]">
-          <div className="bg-gradient-to-br from-blue-600 via-sky-600 to-cyan-500 px-4 py-3">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
+    <div
+      className="w-56 sm:w-72"
+      onPointerEnter={() => setMapScroll(false)}
+      onPointerLeave={() => setMapScroll(true)}
+      onWheel={(event) => event.stopPropagation()}
+    >
+      <div className="overflow-hidden rounded-xl border border-gray-200/50 bg-white/98 shadow-2xl backdrop-blur-md transition-all duration-300 hover:shadow-blue-200/40 sm:rounded-2xl">
+        <button
+          type="button"
+          onClick={() => setIsOpen((prev) => !prev)}
+          className="w-full bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 px-3 py-3 text-left sm:px-4"
+          aria-expanded={isOpen}
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-white">
+                  <CalendarClock className="h-3.5 w-3.5" />
+                </span>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-blue-100">
                   {UI_TEXT.SCHEDULE.TIMETABLE}
                 </p>
-                <h2 className="truncate text-lg font-bold text-white">{routeTitle}</h2>
-                {routeDescription && (
-                  <p className="truncate text-xs text-blue-100/80">{routeDescription}</p>
-                )}
               </div>
-              <button
-                type="button"
-                onClick={() => setIsOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white transition hover:bg-white/30"
-                aria-label={UI_TEXT.COMMON.CANCEL}
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="mt-3 flex items-center justify-between gap-3">
-              <span className="text-[11px] font-semibold text-blue-100">
-                {UI_TEXT.SCHEDULE.NEXT_BUS}
-              </span>
-              {data ? (
-                <SchedulePreview data={data} tone="light" />
-              ) : (
-                <span className="text-[11px] text-blue-100/80">
-                  {loading ? UI_TEXT.COMMON.LOADING : UI_TEXT.SCHEDULE.NO_SERVICE}
-                </span>
+              <h2 className="mt-1 truncate text-base font-bold text-white">{routeTitle}</h2>
+              {routeDescription && (
+                <p className="truncate text-xs text-blue-100/80">{routeDescription}</p>
               )}
             </div>
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-white">
+              <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+            </span>
           </div>
-          <div className="flex-1 overflow-y-auto px-3 pb-4 pt-3 text-slate-800 custom-scrollbar sm:px-4">
-            {loading ? (
-              <ScheduleSkeleton />
-            ) : error ? (
-              <ScheduleEmptyState message={error} />
-            ) : data ? (
-              <TimetableView data={data} />
-            ) : (
-              <ScheduleEmptyState message={UI_TEXT.SCHEDULE.NO_SERVICE} />
-            )}
-          </div>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setIsOpen(true)}
-          className="group flex items-center gap-3 rounded-full border border-slate-200/70 bg-white/90 px-3 py-2 text-left shadow-xl backdrop-blur-md transition hover:border-blue-300 hover:shadow-blue-200/40"
-        >
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-white shadow-md shadow-blue-500/30">
-            <CalendarClock className="h-4 w-4" />
-          </span>
-          <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-500">
-              {UI_TEXT.SCHEDULE.TIMETABLE}
-            </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <div className="h-1.5 w-1.5 rounded-full bg-white/80" />
+            <span className="text-[11px] font-semibold text-blue-100">
+              {UI_TEXT.SCHEDULE.NEXT_BUS}
+            </span>
             {data ? (
-              <SchedulePreview data={data} />
+              <SchedulePreview data={data} tone="light" />
             ) : (
-              <span className="text-xs text-slate-400">
+              <span className="text-[11px] text-blue-100/80">
                 {loading ? UI_TEXT.COMMON.LOADING : UI_TEXT.SCHEDULE.NO_SERVICE}
               </span>
             )}
           </div>
         </button>
-      )}
+        {isOpen && (
+          <div className="max-h-[calc(100dvh-420px)] overflow-y-auto overscroll-contain px-3 py-3 text-slate-800 custom-scrollbar sm:max-h-[calc(100dvh-460px)] sm:px-4">
+            {loading ? (
+              showFull ? <ScheduleSkeleton /> : <ScheduleCompactSkeleton />
+            ) : error ? (
+              <ScheduleEmptyState message={error} />
+            ) : data ? (
+              <>
+                <ScheduleView data={data} mode={showFull ? "full" : "compact"} />
+                <button
+                  type="button"
+                  onClick={() => setShowFull((prev) => !prev)}
+                  className="mt-3 w-full rounded-lg border border-blue-100 bg-blue-50 py-2 text-xs font-semibold text-blue-600 transition hover:bg-blue-100"
+                >
+                  {showFull ? "간단히 보기" : "자세히 보기"}
+                </button>
+              </>
+            ) : (
+              <ScheduleEmptyState message={UI_TEXT.SCHEDULE.NO_SERVICE} />
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

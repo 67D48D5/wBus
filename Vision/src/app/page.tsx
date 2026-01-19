@@ -95,13 +95,15 @@ export default function Page() {
                         onReady={handleMapReady}
                         onRouteChange={handleRouteChange}
                     />
-                    <BusList
-                        routeNames={[selectedRoute]}
-                        allRoutes={allRoutes}
-                        selectedRoute={selectedRoute}
-                        onRouteChange={handleRouteChange}
-                    />
-                    <ScheduleOverlay routeId={selectedRoute} />
+                    <div className="fixed bottom-2 left-2 z-30 flex flex-col gap-3 sm:bottom-4 sm:left-4">
+                        <ScheduleOverlay routeId={selectedRoute} />
+                        <BusList
+                            routeNames={[selectedRoute]}
+                            allRoutes={allRoutes}
+                            selectedRoute={selectedRoute}
+                            onRouteChange={handleRouteChange}
+                        />
+                    </div>
                 </div>
             </div>
         </>
