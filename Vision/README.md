@@ -30,12 +30,6 @@ Then run the dev server:
 npm run dev
 ```
 
-## Pages
-
-- `/` schedules overview + notices
-- `/[id]` route timetable
-- `/live` real-time map
-
 ## Static Data Layout
 
 Vision reads static files from `public/data` by default:
