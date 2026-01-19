@@ -9,7 +9,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
-import { MapContextProvider } from "@live/context/MapContext";
+import { MapContextProvider } from "@map/context/MapContext";
 
 import { SITE_CONFIG } from "@core/config/env";
 
