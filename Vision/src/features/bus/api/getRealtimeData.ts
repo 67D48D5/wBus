@@ -26,7 +26,7 @@ export async function getBusLocationData(routeId: string): Promise<BusItem[]> {
 export async function getBusStopArrivalData(busStopId: string): Promise<BusStopArrival[]> {
   const data = await fetchAPI<{
     response?: { body?: { items?: { item?: BusStopArrival | BusStopArrival[] } } };
-  }>(`/getBusArrival/${busStopId}`);
+  }>(`/getBusArrivalInfo/${busStopId}`);
   const rawItem = data.response?.body?.items?.item;
   if (!rawItem) {
     return [];
