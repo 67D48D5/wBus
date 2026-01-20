@@ -3,7 +3,7 @@
 import path from 'path';
 import { promises as fs } from 'fs';
 
-import { fetchAPI } from '@core/network/fetchAPI';
+import { fetchAPI, HttpError } from '@core/network/fetchAPI';
 
 import { API_CONFIG, APP_CONFIG } from '@core/config/env';
 
@@ -84,12 +84,17 @@ async function fetchScheduleData(routeId: string): Promise<BusSchedule | null> {
         }
     } catch (error) {
         // If the file does not exist (e.g., 404), return null
-        if ((error as any).code === 'ENOENT') {
+        if ((error as any).code === 'ENOENT' || (error instanceof HttpError && (error.status === 404 || error.status === 403))) {
+            if (APP_CONFIG.IS_DEV) {
+                console.warn(`[getScheduleData] Schedule file not found for routeId: ${routeId}`);
+            }
             return null;
         }
+
         if (APP_CONFIG.IS_DEV) {
             console.error("[getScheduleData] Failed to fetch schedule data for routeId: " + routeId, error);
         }
+
         return null;
     }
 }
@@ -116,9 +121,11 @@ async function fetchNoticeData(): Promise<{ notices: Notice[] } | null> {
         if ((error as any).code === 'ENOENT') {
             return null;
         }
+
         if (APP_CONFIG.IS_DEV) {
             console.error("[getScheduleData] Failed to fetch notice data from `notice.json`", error);
         }
+
         return null;
     }
 }

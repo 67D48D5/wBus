@@ -25,9 +25,10 @@ async function fetchSchedule(routeId: string): Promise<BusSchedule | null> {
   try {
     return await fetchAPI<BusSchedule>(getScheduleUrl(routeId), { baseUrl: "", retries: 1 });
   } catch (error) {
-    if (error instanceof HttpError && error.status === 404) {
+    if (error instanceof HttpError && (error.status === 404 || error.status === 403)) {
       return null;
     }
+
     throw error;
   }
 }
