@@ -13,7 +13,9 @@ import { useBusContext } from "@map/context/MapContext";
 import { useScheduleData } from "@schedule/hooks/useScheduleData";
 import { formatTime, getNearestBusTime } from "@schedule/utils/time";
 
-import ScheduleView from "@/features/schedule/components/ScheduleView";
+import ScheduleView from "@schedule/components/ScheduleView";
+
+import Pill from "@shared/ui/Pill";
 
 type ScheduleOverlayProps = {
   routeId: string;
@@ -71,18 +73,14 @@ function SchedulePreview({ data, tone = "light" }: { data: BusData; tone?: "ligh
     : `${mins}${UI_TEXT.TIME.MINUTE_SUFFIX}`;
   const primaryText = tone === "light" ? "text-white" : "text-slate-800";
   const secondaryText = tone === "light" ? "text-blue-100/80" : "text-slate-500";
-  const badgeStyle = tone === "light"
-    ? "bg-white/20 text-white"
-    : "bg-blue-50 text-blue-600";
+  const badgeTone = tone === "light" ? "light" : "soft";
 
   return (
-    <div className="flex items-center gap-2">
-      <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${badgeStyle}`}>
-        {nearestBus.destination}
-      </span>
+    <Pill tone={badgeTone} className="gap-3">
+      <span className="text-[10px] font-semibold">{nearestBus.destination}</span>
       <span className={`text-sm font-mono font-bold ${primaryText}`}>{displayTime}</span>
       <span className={`text-[10px] font-semibold ${secondaryText}`}>{remainingText}</span>
-    </div>
+    </Pill>
   );
 }
 
@@ -118,11 +116,6 @@ export default function ScheduleOverlay({ routeId }: ScheduleOverlayProps) {
   const [showFull, setShowFull] = useState(false);
   const { map } = useBusContext();
 
-  const routeTitle = useMemo(() => {
-    if (data?.routeName) return data.routeName;
-    return UI_TEXT.BUS_LIST.TITLE_ROUTE(routeId);
-  }, [data?.routeName, routeId]);
-
   const routeDescription = data?.description;
 
   const setMapScroll = useCallback((enabled: boolean) => {
@@ -149,6 +142,10 @@ export default function ScheduleOverlay({ routeId }: ScheduleOverlayProps) {
       setShowFull(false);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    setMapScroll(!isOpen);
+  }, [isOpen, setMapScroll]);
 
   useEffect(() => {
     setShowFull(false);
@@ -178,14 +175,10 @@ export default function ScheduleOverlay({ routeId }: ScheduleOverlayProps) {
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-white">
                   <CalendarClock className="h-3.5 w-3.5" />
                 </span>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-blue-100">
-                  {UI_TEXT.SCHEDULE.TIMETABLE}
-                </p>
+                {routeDescription && (
+                  <p className="text-sm sm:text-base font-bold text-white flex items-center gap-2 tracking-tight">{routeDescription}</p>
+                )}
               </div>
-              <h2 className="mt-1 truncate text-base font-bold text-white">{routeTitle}</h2>
-              {routeDescription && (
-                <p className="truncate text-xs text-blue-100/80">{routeDescription}</p>
-              )}
             </div>
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-white">
               <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
@@ -206,14 +199,19 @@ export default function ScheduleOverlay({ routeId }: ScheduleOverlayProps) {
           </div>
         </button>
         {isOpen && (
-          <div className="max-h-[calc(100dvh-420px)] overflow-y-auto overscroll-contain px-3 py-3 text-slate-800 custom-scrollbar sm:max-h-[calc(100dvh-460px)] sm:px-4">
+          <div className="max-h-[60svh] overflow-y-auto overscroll-contain px-3 py-3 text-slate-800 custom-scrollbar sm:max-h-[calc(100svh-460px)] sm:px-4">
             {loading ? (
               showFull ? <ScheduleSkeleton /> : <ScheduleCompactSkeleton />
             ) : error ? (
               <ScheduleEmptyState message={error} />
             ) : data ? (
               <>
-                <ScheduleView data={data} mode={showFull ? "full" : "compact"} />
+                {!showFull ? (
+                  <ScheduleView data={data} mode="compact" />
+                ) : (
+                  <ScheduleView data={data} mode="full" />
+                )}
+                {showFull && <ScheduleView data={data} mode="full" />}
                 <button
                   type="button"
                   onClick={() => setShowFull((prev) => !prev)}

@@ -13,6 +13,8 @@ import { BusListItem } from "@bus/components/BusListItem";
 import { useSortedBusList } from "@bus/hooks/useSortedBusList";
 import { getBusErrorMessage, isWarningError } from "@bus/utils/errorMessages";
 
+import Pill from "@shared/ui/Pill";
+
 type BusListProps = {
   routeNames: string[];
   allRoutes: string[];
@@ -52,6 +54,7 @@ RouteDataCollector.displayName = 'RouteDataCollector';
 export default function BusList({ routeNames, allRoutes, selectedRoute, onRouteChange }: BusListProps) {
   const { map } = useBusContext();
   const [routesData, setRoutesData] = useState<Record<string, RouteData>>({});
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Update selected route
   const handleRouteChange = useCallback((route: string) => {
@@ -201,38 +204,45 @@ export default function BusList({ routeNames, allRoutes, selectedRoute, onRouteC
               </select>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <div className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full animate-pulse ${statusDotClass}`}></div>
             <p className="text-xs sm:text-sm text-blue-50 font-medium" aria-live="polite">
               {statusText}
             </p>
+            <button type="button" onClick={() => setIsExpanded((prev) => !prev)}>
+              <Pill tone="light" className="text-[10px]">
+                {isExpanded ? UI_TEXT.COMMON.COLLAPSE : UI_TEXT.COMMON.EXPAND}
+              </Pill>
+            </button>
           </div>
         </div>
 
-        <ul
-          className={`text-xs sm:text-sm text-gray-800 transition-[max-height,opacity] duration-300 max-h-[100px] sm:max-h-[140px] overflow-y-auto overscroll-contain px-2 py-1.5 sm:px-3 sm:py-2 opacity-100 space-y-1 sm:space-y-1.5`}
-        >
-          {isNoData ? (
-            <li
-              className={`py-3 px-2 sm:py-4 sm:px-3 text-xs sm:text-sm text-center rounded-lg ${isErrorState
-                ? "bg-red-50 text-red-600 border border-red-200"
-                : "bg-gray-50 text-gray-500 border border-gray-200"
-                }`}
-            >
-              {listMessage}
-            </li>
-          ) : (
-            allBuses.map(({ bus, routeName, getDirection }) => (
-              <BusListItem
-                key={`${routeName}-${bus.vehicleno}`}
-                bus={bus}
-                routeName={routeName}
-                getDirection={getDirection}
-                onClick={handleBusClick}
-              />
-            ))
-          )}
-        </ul>
+        {isExpanded && (
+          <ul
+            className="text-xs sm:text-sm text-gray-800 max-h-[160px] sm:max-h-[220px] overflow-y-auto overscroll-contain px-2 py-1.5 sm:px-3 sm:py-2 space-y-1 sm:space-y-1.5"
+          >
+            {isNoData ? (
+              <li
+                className={`py-3 px-2 sm:py-4 sm:px-3 text-xs sm:text-sm text-center rounded-lg ${isErrorState
+                  ? "bg-red-50 text-red-600 border border-red-200"
+                  : "bg-gray-50 text-gray-500 border border-gray-200"
+                  }`}
+              >
+                {listMessage}
+              </li>
+            ) : (
+              allBuses.map(({ bus, routeName, getDirection }) => (
+                <BusListItem
+                  key={`${routeName}-${bus.vehicleno}`}
+                  bus={bus}
+                  routeName={routeName}
+                  getDirection={getDirection}
+                  onClick={handleBusClick}
+                />
+              ))
+            )}
+          </ul>
+        )}
       </div>
     </>
   );

@@ -17,6 +17,8 @@ export const UI_TEXT = {
         RETRY: '다시 시도',
         CONFIRM: '확인',
         CANCEL: '취소',
+        EXPAND: '펼치기',
+        COLLAPSE: '접기',
     },
 
     TIME: {
