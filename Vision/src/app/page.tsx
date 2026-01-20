@@ -9,14 +9,14 @@ import { APP_CONFIG, MAP_SETTINGS, STORAGE_KEYS } from "@core/config/env";
 import { busPollingService } from "@bus/services/BusPollingService";
 import { useRouteMap } from "@bus/hooks/useRouteMap";
 
-import Splash from "@shared/ui/Splash";
-import NavBar from "@shared/ui/NavBar";
-
 import MapWrapper from "@map/components/MapWrapper";
 
 import BusList from "@bus/components/BusList";
 
 import ScheduleOverlay from "@schedule/components/ScheduleOverlay";
+
+import Splash from "@shared/ui/Splash";
+import NavBar from "@shared/ui/NavBar";
 
 /**
  * Real-time bus map page for the wBus application.
@@ -87,7 +87,7 @@ export default function HomePage() {
     return (
         <>
             <Splash isVisible={isSplashVisible} />
-            <div className="flex flex-col w-full h-[100dvh]">
+            <div className="flex flex-col w-full min-h-[100svh] h-[100dvh] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
                 <NavBar />
                 <div className="relative flex-1 overflow-hidden">
                     <MapWrapper
@@ -95,7 +95,7 @@ export default function HomePage() {
                         onReady={handleMapReady}
                         onRouteChange={handleRouteChange}
                     />
-                    <div className="fixed bottom-2 left-2 z-30 flex flex-col gap-3 sm:bottom-4 sm:left-4">
+                    <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] left-[calc(env(safe-area-inset-left)+0.5rem)] z-30 flex flex-col gap-3 sm:bottom-[calc(env(safe-area-inset-bottom)+1rem)] sm:left-[calc(env(safe-area-inset-left)+1rem)]">
                         <ScheduleOverlay routeId={selectedRoute} />
                         <BusList
                             routeNames={[selectedRoute]}
