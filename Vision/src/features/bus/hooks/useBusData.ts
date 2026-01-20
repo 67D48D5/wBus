@@ -4,11 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 
 import { getRouteInfo } from "@bus/api/getStaticData";
 
-import { useBusPolyline } from "@bus/hooks/useBusPolyline";
+import { useBusPolylineMap, type BusPolylineSet } from "@bus/hooks/useBusPolylineMap";
 import { useBusDirection } from "@bus/hooks/useBusDirection";
 import { useBusLocationData } from "@bus/hooks/useBusLocation";
-
-import { mergePolylines } from "@map/utils/polyUtils";
 
 import type { RouteInfo } from "@core/domain/route";
 import type { BusItem } from "@core/domain/bus";
@@ -17,8 +15,9 @@ export interface UseBusData {
   routeInfo: RouteInfo | null;
   busList: BusItem[];
   getDirection: ReturnType<typeof useBusDirection>;
-  mergedUp: L.LatLngTuple[];
-  mergedDown: L.LatLngTuple[];
+  polylineMap: Map<string, BusPolylineSet>;
+  fallbackPolylines: BusPolylineSet;
+  activeRouteId: string | null;
 }
 
 /**
@@ -41,19 +40,31 @@ export function useBusData(routeName: string): UseBusData {
     return liveRouteId ?? routeInfo?.representativeRouteId ?? null;
   }, [busList, routeInfo]);
 
-  const { upPolyline, downPolyline } = useBusPolyline(routeName, activeRouteId);
-
-  const mergedUp = useMemo(() => mergePolylines(upPolyline), [upPolyline]);
-  const mergedDown = useMemo(
-    () => mergePolylines(downPolyline),
-    [downPolyline]
+  const routeIds = useMemo(
+    () => routeInfo?.vehicleRouteIds ?? [],
+    [routeInfo]
   );
+
+  const polylineMap = useBusPolylineMap(routeIds);
+
+  const fallbackPolylines = useMemo<BusPolylineSet>(() => {
+    if (activeRouteId && polylineMap.has(activeRouteId)) {
+      return polylineMap.get(activeRouteId)!;
+    }
+
+    for (const polyline of polylineMap.values()) {
+      return polyline;
+    }
+
+    return { upPolyline: [], downPolyline: [] };
+  }, [activeRouteId, polylineMap]);
 
   return {
     routeInfo,
     busList,
     getDirection: directionFn,
-    mergedUp,
-    mergedDown,
+    polylineMap,
+    fallbackPolylines,
+    activeRouteId,
   };
 }

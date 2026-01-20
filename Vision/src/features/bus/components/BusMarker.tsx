@@ -56,7 +56,7 @@ export default function BusMarker({
   onPopupClose?: () => void;
 }) {
   const { busIcon } = useIcons();
-  const { routeInfo, busList, getDirection, mergedUp, mergedDown } =
+  const { routeInfo, busList, getDirection, polylineMap, fallbackPolylines, activeRouteId } =
     useBusData(routeName);
 
   // Inject bus label styles once
@@ -138,17 +138,26 @@ export default function BusMarker({
   const snappedList = useMemo(() => {
     if (!routeInfo || busList.length === 0) return [];
     return busList.map((bus) => {
-      const snapped = getSnappedPosition(
-        bus,
-        getDirection,
-        mergedUp,
-        mergedDown
-      );
+      const busRouteId = bus.routeid ?? activeRouteId ?? routeInfo.representativeRouteId;
+      const busPolylines = busRouteId
+        ? polylineMap.get(busRouteId)
+        : null;
+      const { upPolyline, downPolyline } = busPolylines ?? fallbackPolylines;
+      const snapped = getSnappedPosition(bus, getDirection, upPolyline, downPolyline);
       const key = `${routeName}-${bus.vehicleno}`;
-      const polyline: LatLngTuple[] = snapped.direction === 1 ? mergedUp : mergedDown;
+      const polyline: LatLngTuple[] =
+        snapped.direction === 1 ? upPolyline : downPolyline;
       return { bus, key, polyline, ...snapped };
     });
-  }, [routeInfo, busList, getDirection, mergedUp, mergedDown, routeName]);
+  }, [
+    routeInfo,
+    busList,
+    getDirection,
+    polylineMap,
+    fallbackPolylines,
+    activeRouteId,
+    routeName,
+  ]);
 
   if (!routeInfo || snappedList.length === 0) return null;
 
