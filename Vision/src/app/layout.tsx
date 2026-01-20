@@ -9,9 +9,11 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
+import { SITE_CONFIG } from "@core/config/env";
+
 import { MapContextProvider } from "@map/context/MapContext";
 
-import { SITE_CONFIG } from "@core/config/env";
+import type { Metadata, Viewport } from "next";
 
 // Google Fonts (Geist Safns, Geist Mono)
 const geistSans = Geist({
@@ -24,22 +26,56 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const BASE_URL = "https://wbus.vercel.app";
+
 // Page Metadata
-export const metadata = {
-  title: "wBus",
+export const metadata: Metadata = {
+  metadataBase: new URL(BASE_URL),
+
+  title: {
+    default: "wBus",
+    template: "%s · wBus",
+  },
   description: SITE_CONFIG.METADATA.DESCRIPTION,
+
+  alternates: {
+    canonical: "/",
+  },
+
+  openGraph: {
+    type: "website",
+    url: BASE_URL,
+    siteName: "wBus",
+    title: "wBus",
+    description: SITE_CONFIG.METADATA.DESCRIPTION,
+    images: [
+      {
+        url: "/opengraph-image.png",
+        width: 1200,
+        height: 630,
+        alt: "wBus",
+      },
+    ],
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "wBus",
+    description: SITE_CONFIG.METADATA.DESCRIPTION,
+    images: ["/opengraph-image.png"],
+  },
+
   icons: {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
 };
 
-// Set viewport properties
-export const viewport = {
+export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  userScalable: "no",
+  userScalable: false,
   viewportFit: "cover",
   themeColor: "#003876",
   colorScheme: "light",
