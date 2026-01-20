@@ -13,8 +13,6 @@ import MapWrapper from "@map/components/MapWrapper";
 
 import BusList from "@bus/components/BusList";
 
-import ScheduleOverlay from "@schedule/components/ScheduleOverlay";
-
 import Splash from "@shared/ui/Splash";
 import NavBar from "@shared/ui/NavBar";
 
@@ -96,7 +94,6 @@ export default function HomePage() {
                         onRouteChange={handleRouteChange}
                     />
                     <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] left-[calc(env(safe-area-inset-left)+0.5rem)] z-30 flex flex-col gap-3 sm:bottom-[calc(env(safe-area-inset-bottom)+1rem)] sm:left-[calc(env(safe-area-inset-left)+1rem)]">
-                        <ScheduleOverlay routeId={selectedRoute} />
                         <BusList
                             routeNames={[selectedRoute]}
                             allRoutes={allRoutes}

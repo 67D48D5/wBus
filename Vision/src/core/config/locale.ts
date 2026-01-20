@@ -37,6 +37,8 @@ export const UI_TEXT = {
         MAJOR_STOPS: '주요 정류장',
         TIMETABLE: '시간표',
         NEXT_BUS: '다음 버스',
+        SHOW_DETAILS: '시간표 보기',
+        HIDE_DETAILS: '시간표 접기',
         NO_SERVICE: '운행 없음',
         NOTES_TITLE: '참고 사항',
         LAST_UPDATED: '최종 업데이트:',
