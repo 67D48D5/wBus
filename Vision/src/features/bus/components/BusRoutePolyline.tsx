@@ -11,7 +11,7 @@ import { getRouteInfo } from "@bus/api/getStaticData";
 
 import { useMultiPolyline } from "@bus/hooks/useBusMultiPolyline";
 import { useBusLocationData } from "@bus/hooks/useBusLocation";
-import { useRoutePreference } from "@bus/hooks/useRoutePreference";
+import { useBusRoutePreference } from "@bus/hooks/useBusRoutePreference";
 
 /**
  * Calculate the opacity for each polyline segment based on its index.
@@ -54,7 +54,7 @@ export default function BusRoutePolyline({ routeName }: { routeName: string }) {
     selectedRouteId,
     updateSelectedRouteId,
     availableRouteIds,
-  } = useRoutePreference(routeName, routeIds, liveRouteId);
+  } = useBusRoutePreference(routeName, routeIds, liveRouteId);
 
   const {
     activeUpSegments,

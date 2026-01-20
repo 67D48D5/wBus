@@ -1,20 +1,21 @@
 // src/features/bus/services/BusPollingService.ts
 
 import { API_CONFIG, APP_CONFIG } from "@core/config/env";
-import { LOG_MESSAGES } from "@core/config/locale";
 
 import { getBusLocationData } from "@bus/api/getRealtimeData";
 import { getRouteMap } from "@bus/api/getStaticData";
 
-import type { BusItem } from "@core/domain/live";
+import type { BusItem } from "@core/domain/bus";
 import type { BusDataError } from "@core/domain/error";
 
+// Valid error codes that can be emitted
 const VALID_ERROR_CODES: Set<Exclude<BusDataError, null>> = new Set([
   "ERR:NONE_RUNNING",
   "ERR:NETWORK",
   "ERR:INVALID_ROUTE",
 ]);
 
+// Listener type definitions
 type DataListener = (data: BusItem[]) => void;
 type ErrorListener = (error: BusDataError) => void;
 
@@ -102,7 +103,7 @@ export class BusPollingService {
       const vehicleIds = routeMap[routeName];
 
       if (!vehicleIds || vehicleIds.length === 0) {
-        throw new Error(LOG_MESSAGES.ROUTE_MISSING(routeName));
+        throw new Error("[BusPollingService] Route ID " + routeName + " not found in RouteMap.");
       }
 
       const results = await Promise.allSettled(
@@ -115,7 +116,7 @@ export class BusPollingService {
       );
 
       if (fulfilled.length === 0) {
-        throw new Error(LOG_MESSAGES.FETCH_FAILED("BusLocationData", 500));
+        throw new Error("[BusPollingService] Failed to fetch BusLocationData for all vehicle IDs.");
       }
 
       const buses = fulfilled.flatMap((r) => r.value);
@@ -132,7 +133,7 @@ export class BusPollingService {
       }
     } catch (err: unknown) {
       if (APP_CONFIG.IS_DEV)
-        console.error(LOG_MESSAGES.FETCH_FAILED("BusLocationData", 500), "[" + routeName + "]", err);
+        console.error("[BusPollingService] Failed to fetch BusLocationData for route:", "[" + routeName + "]", err);
 
       this.cache[routeName] = [];
       this.dataListeners[routeName]?.forEach((cb) => cb([]));

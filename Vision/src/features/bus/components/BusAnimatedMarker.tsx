@@ -1,4 +1,4 @@
-// src/features/bus/components/AnimatedBusMarker.tsx
+// src/features/bus/components/BusAnimatedMarker.tsx
 
 "use client";
 
@@ -9,9 +9,9 @@ import { MAP_SETTINGS } from "@core/config/env";
 
 import { useAnimatedPosition } from "@map/hooks/useAnimatedPosition";
 
-import RotatedBusMarker from "@bus/components/RotatedBusMarker";
+import BusRotatedMarker from "@bus/components/BusRotatedMarker";
 
-interface AnimatedBusMarkerProps {
+interface BusAnimatedMarkerProps {
     position: LatLngTuple;
     rotationAngle: number;
     icon: L.Icon | L.DivIcon;
@@ -26,7 +26,7 @@ interface AnimatedBusMarkerProps {
  * A bus marker that smoothly animates along a polyline when its position updates.
  * Uses requestAnimationFrame for smooth 60fps animation.
  */
-export function AnimatedBusMarker({
+export function BusAnimatedMarker({
     position,
     rotationAngle,
     icon,
@@ -34,7 +34,7 @@ export function AnimatedBusMarker({
     animationDuration = MAP_SETTINGS.ANIMATION.BUS_MOVE_MS,
     children,
     eventHandlers,
-}: AnimatedBusMarkerProps) {
+}: BusAnimatedMarkerProps) {
     const { position: animatedPosition, angle: animatedAngle } = useAnimatedPosition(
         position,
         rotationAngle,
@@ -46,13 +46,13 @@ export function AnimatedBusMarker({
     );
 
     return (
-        <RotatedBusMarker
+        <BusRotatedMarker
             position={animatedPosition}
             rotationAngle={animatedAngle % 360}
             icon={icon}
             eventHandlers={eventHandlers}
         >
             {children}
-        </RotatedBusMarker>
+        </BusRotatedMarker>
     );
 }

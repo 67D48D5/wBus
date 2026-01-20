@@ -1,15 +1,15 @@
 // src/core/domain/schedule.ts
 
-export interface BusTime {
+export interface RowItem {
     minute: string;  // Minute
     noteId?: string; // Note identifier
 }
 
 export interface HourlySchedule {
-    [destination: string]: BusTime[];
+    [destination: string]: RowItem[];
 }
 
-export interface BusData {
+export interface BusSchedule {
     routeId: string;
     routeName: string;
     description: string;

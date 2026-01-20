@@ -2,12 +2,11 @@
 
 import { useMemo, useCallback, useEffect, useState } from "react";
 
-import { useBusStop } from "@bus/hooks/useBusStop";
-
-import { LOG_MESSAGES } from "@core/config/locale";
 import { APP_CONFIG, MAP_SETTINGS } from "@core/config/env";
 
 import { getRouteDetails, getRouteInfo } from "@bus/api/getStaticData";
+
+import { useBusStop } from "@bus/hooks/useBusStop";
 
 /** Direction codes for bus routes */
 // Normalize to 1 (up) and 0 (down) to match icon expectations
@@ -65,7 +64,7 @@ export function useBusDirection(routeName: string) {
         }
       } catch (err) {
         if (APP_CONFIG.IS_DEV) {
-          console.error(LOG_MESSAGES.ROUTE_MISSING(routeName), err);
+          console.error(`[useBusDirection] Route missing: ${routeName}`, err);
         }
         if (isMounted) setRouteSequences([]);
       }
@@ -215,7 +214,7 @@ export async function getDirectionFromRouteDetails(
     return null;
   } catch (err) {
     if (APP_CONFIG.IS_DEV) {
-      console.error(LOG_MESSAGES.ROUTE_MISSING(routeid), err);
+      console.error("[getDirectionFromRouteDetails] Error fetching route details", err);
     }
     return null;
   }

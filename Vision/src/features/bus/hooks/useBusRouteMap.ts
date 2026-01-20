@@ -1,9 +1,8 @@
-// src/features/bus/hooks/useRouteMap.ts
+// src/features/bus/hooks/useBusRouteMap.ts
 
 import { useEffect, useState, useRef } from "react";
 
 import { APP_CONFIG } from "@core/config/env";
-import { LOG_MESSAGES } from "@core/config/locale";
 
 import { getRouteMap } from "@bus/api/getStaticData";
 
@@ -11,7 +10,7 @@ import { getRouteMap } from "@bus/api/getStaticData";
  * Get (routeName) -> routeIds[] mapping for bus routes.
  * Example: { "30": ["30100123", "30100124"] }
  */
-export function useRouteMap(): Record<string, string[]> | null {
+export function useBusRouteMap(): Record<string, string[]> | null {
   const [data, setData] = useState<Record<string, string[]> | null>(null);
   const hasFetched = useRef(false);
 
@@ -25,7 +24,7 @@ export function useRouteMap(): Record<string, string[]> | null {
       })
       .catch((err) => {
         if (APP_CONFIG.IS_DEV)
-          console.error(LOG_MESSAGES.FETCH_FAILED("RouteMap", 500), err);
+          console.error("[useBusRouteMap] Error fetching route map", err);
       });
   }, []);
 

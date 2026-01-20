@@ -1,13 +1,13 @@
 // src/features/schedule/api/getScheduleData.ts
 
+import path from 'path';
+import { promises as fs } from 'fs';
+
 import { fetchAPI } from '@core/network/fetchAPI';
-import { BusData } from '@core/domain/schedule';
 
 import { API_CONFIG, APP_CONFIG } from '@core/config/env';
-import { LOG_MESSAGES } from '@core/config/locale';
 
-import { promises as fs } from 'fs';
-import path from 'path';
+import type { BusSchedule } from "@core/domain/schedule";
 
 // Types & Interfaces
 export interface Notice {
@@ -19,10 +19,10 @@ export interface Notice {
 }
 
 // Parsed bus data cache
-const dataCache = new Map<string, BusData>();
+const dataCache = new Map<string, BusSchedule>();
 
 // Route list and notice caches
-let routeListCache: BusData[] | null = null;
+let routeListCache: BusSchedule[] | null = null;
 let availableRouteIds: string[] | null = null;
 let noticeCache: Notice[] | null = null;
 
@@ -68,19 +68,19 @@ function getScheduleDataSource(routeId: string): { isRemote: boolean; location: 
 /**
  * Fetch schedule data (Remote Fetch or Local File Read)
  */
-async function fetchScheduleData(routeId: string): Promise<BusData | null> {
+async function fetchScheduleData(routeId: string): Promise<BusSchedule | null> {
     try {
         const { isRemote, location } = getScheduleDataSource(routeId);
 
         if (isRemote) {
-            return await fetchAPI<BusData>(location, {
+            return await fetchAPI<BusSchedule>(location, {
                 baseUrl: '', // location is already a complete URL, so baseUrl is empty
                 init: { next: { revalidate: API_CONFIG.STATIC.REVALIDATE_SEC } }
             });
         } else {
             // Server-side Local File Read
             const fileContent = await fs.readFile(location, 'utf8');
-            return JSON.parse(fileContent) as BusData;
+            return JSON.parse(fileContent) as BusSchedule;
         }
     } catch (error) {
         // If the file does not exist (e.g., 404), return null
@@ -88,7 +88,7 @@ async function fetchScheduleData(routeId: string): Promise<BusData | null> {
             return null;
         }
         if (APP_CONFIG.IS_DEV) {
-            console.error(LOG_MESSAGES.FETCH_FAILED(routeId, 500), error);
+            console.error("[getScheduleData] Failed to fetch schedule data for routeId: " + routeId, error);
         }
         return null;
     }
@@ -117,7 +117,7 @@ async function fetchNoticeData(): Promise<{ notices: Notice[] } | null> {
             return null;
         }
         if (APP_CONFIG.IS_DEV) {
-            console.error(LOG_MESSAGES.FETCH_FAILED('notice.json', 500), error);
+            console.error("[getScheduleData] Failed to fetch notice data from `notice.json`", error);
         }
         return null;
     }
@@ -145,7 +145,7 @@ async function getAvailableRouteIds(): Promise<string[]> {
         return availableRouteIds;
     } catch (error) {
         if (APP_CONFIG.IS_DEV) {
-            console.error(LOG_MESSAGES.FETCH_FAILED('getAvailableRouteIds', 500), error);
+            console.error("[getScheduleData] Failed to fetch available route IDs:", error);
         }
         availableRouteIds = [];
         return availableRouteIds;
@@ -155,7 +155,7 @@ async function getAvailableRouteIds(): Promise<string[]> {
 /**
  * Load and parse a single route with caching
  */
-export async function getRouteData(routeId: string): Promise<BusData | null> {
+export async function getRouteData(routeId: string): Promise<BusSchedule | null> {
     if (dataCache.has(routeId)) {
         return dataCache.get(routeId)!;
     }
@@ -172,7 +172,7 @@ export async function getRouteData(routeId: string): Promise<BusData | null> {
 /**
  * Get all routes with caching
  */
-export async function getAllRoutes(): Promise<BusData[]> {
+export async function getAllRoutes(): Promise<BusSchedule[]> {
     if (routeListCache) {
         return routeListCache;
     }
@@ -183,12 +183,11 @@ export async function getAllRoutes(): Promise<BusData[]> {
     );
 
     routeListCache = results
-        .filter((result): result is PromiseFulfilledResult<BusData | null> =>
+        .filter((result): result is PromiseFulfilledResult<BusSchedule | null> =>
             result.status === 'fulfilled'
         )
         .map(result => result.value)
-        .filter((value): value is BusData => value !== null);
-
+        .filter((value): value is BusSchedule => value !== null);
     return routeListCache;
 }
 

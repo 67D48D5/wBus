@@ -1,6 +1,6 @@
 // src/features/bus/utils/errorMessages.ts
 
-import { UI_TEXT, LOG_MESSAGES } from "@core/config/locale";
+import { UI_TEXT } from "@core/config/locale";
 
 import type { BusDataError } from "@core/domain/error";
 
@@ -9,8 +9,8 @@ import type { BusDataError } from "@core/domain/error";
  */
 export const ERROR_MESSAGE_MAP: Record<string, string> = {
   "ERR:NONE_RUNNING": UI_TEXT.BUS_LIST.NO_RUNNING,
-  "ERR:NETWORK": LOG_MESSAGES.FETCH_FAILED("Bus Data", 500),
-  "ERR:INVALID_ROUTE": LOG_MESSAGES.ROUTE_MISSING("Unknown Route"),
+  "ERR:NETWORK": UI_TEXT.ERROR.FETCH_FAILED("Bus Data", 500),
+  "ERR:INVALID_ROUTE": UI_TEXT.ERROR.ROUTE_MISSING("Unknown Route"),
 };
 
 /**
@@ -20,7 +20,7 @@ export const ERROR_MESSAGE_MAP: Record<string, string> = {
  */
 export function getBusErrorMessage(error: BusDataError): string {
   if (!error) return "";
-  return ERROR_MESSAGE_MAP[error] ?? LOG_MESSAGES.UNHANDLED_EXCEPTION;
+  return ERROR_MESSAGE_MAP[error] ?? UI_TEXT.ERROR.UNKNOWN(error);
 }
 
 /**

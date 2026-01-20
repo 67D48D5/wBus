@@ -10,7 +10,7 @@ import { UI_TEXT } from "@core/config/locale";
 import { useBusContext } from "@map/context/MapContext";
 
 import { BusListItem } from "@bus/components/BusListItem";
-import { useSortedBusList } from "@bus/hooks/useSortedBusList";
+import { useBusSortedList } from "@bus/hooks/useBusSortedList";
 import { getBusErrorMessage, isWarningError } from "@bus/utils/errorMessages";
 
 import Pill from "@shared/ui/Pill";
@@ -22,7 +22,7 @@ type BusListProps = {
   onRouteChange: (route: string) => void;
 };
 
-type RouteData = ReturnType<typeof useSortedBusList>;
+type RouteData = ReturnType<typeof useBusSortedList>;
 
 /**
  * Component to fetch data for a single route and pass it up to the parent.
@@ -35,7 +35,7 @@ const RouteDataCollector = React.memo(({
   routeName: string;
   onDataUpdate: (name: string, data: RouteData) => void
 }) => {
-  const data = useSortedBusList(routeName);
+  const data = useBusSortedList(routeName);
 
   useEffect(() => {
     // Immediately update with current data, even if empty

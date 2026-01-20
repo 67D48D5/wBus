@@ -2,8 +2,7 @@
 
 /**
  * Localization & Text Constants
- * * - UI_TEXT: User-facing strings (Korean)
- * - LOG_MESSAGES: Internal system logs/errors (English, for developers)
+ * * UI_TEXT: User-facing strings (Korean)
  */
 
 // ============================================================================
@@ -70,12 +69,14 @@ export const UI_TEXT = {
     // User-facing Error Messages
     ERROR: {
         TITLE: '문제가 발생했습니다',
-        NETWORK: '네트워크 연결 상태를 확인해주세요.',
+        NETWORK: (detail: string) => `네트워크 연결 상태를 확인해주세요. (${detail})`,
         LOCATION_DENIED: '위치 권한을 허용해주세요.',
         ROUTE_NOT_FOUND: '요청하신 노선 정보를 찾을 수 없습니다.',
         NO_ARRIVAL_INFO: '도착 정보를 불러올 수 없습니다.',
         SERVICE_ENDED: '운행이 종료되었습니다.',
-        UNKNOWN: '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+        FETCH_FAILED: (resource: string, status: number) => `${resource} 정보를 불러오는 데 실패했습니다. (상태 코드: ${status})`,
+        ROUTE_MISSING: (route: string) => `노선 정보를 찾을 수 없습니다: ${route}`,
+        UNKNOWN: (detail: string) => `일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요. (${detail})`,
     },
 
     METADATA: {
@@ -98,28 +99,6 @@ export const UI_TEXT = {
         DISCLAIMER: '본 서비스는 참고용이며, 실제 운행 정보와 다를 수 있습니다.',
     }
 } as const;
-
-
-// ============================================================================
-// System Log Messages (English / Internal Use)
-// ============================================================================
-
-export const LOG_MESSAGES = {
-    // API & Network
-    API_URL_MISSING: (key: string) => `[Config] Environment variable ${key} is missing.`,
-    FETCH_FAILED: (url: string, status: number) => `[Fetch] Failed to load ${url} (Status: ${status})`,
-
-    // Data Integrity
-    ROUTE_MISSING: (routeId: string) => `[Data] Route ID ${routeId} not found in RouteMap.`,
-    STOP_MISSING: (nodeId: string) => `[Data] Stop Node ID ${nodeId} not found in active route.`,
-
-    // Components
-    CONTEXT_MISSING: (hookName: string, providerName: string) => `[React] ${hookName} must be used within ${providerName}.`,
-
-    // Critical
-    UNHANDLED_EXCEPTION: '[ErrorBoundary] Caught an unhandled exception:',
-} as const;
-
 
 // ============================================================================
 // Domain Constants (Labels used in logic/display mix)

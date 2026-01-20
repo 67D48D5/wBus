@@ -1,4 +1,4 @@
-// src/features/bus/hooks/useRoutePreference.ts
+// src/features/bus/hooks/useBusRoutePreference.ts
 
 import { useCallback, useEffect, useState } from "react";
 
@@ -8,7 +8,7 @@ import { APP_CONFIG, STORAGE_KEYS } from "@core/config/env";
  * Hook to manage user's selected routeId preference using localStorage.
  * Remembers which route variant the user last selected.
  */
-export function useRoutePreference(
+export function useBusRoutePreference(
     routeName: string,
     availableRouteIds: string[],
     liveRouteId: string | null
@@ -47,7 +47,7 @@ export function useRoutePreference(
                 } catch (e) {
                     // localStorage might not be available
                     if (APP_CONFIG.IS_DEV)
-                        console.warn("[useRoutePreference] Failed to save route preference to localStorage:", e);
+                        console.warn("[useBusRoutePreference] Failed to save route preference to localStorage:", e);
                 }
             }
         },

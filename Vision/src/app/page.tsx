@@ -7,7 +7,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { APP_CONFIG, MAP_SETTINGS, STORAGE_KEYS } from "@core/config/env";
 
 import { busPollingService } from "@bus/services/BusPollingService";
-import { useRouteMap } from "@bus/hooks/useRouteMap";
+import { useBusRouteMap } from "@bus/hooks/useBusRouteMap";
 
 import MapWrapper from "@map/components/MapWrapper";
 
@@ -26,7 +26,7 @@ export default function HomePage() {
     const [isSplashVisible, setIsSplashVisible] = useState(true);
     const [selectedRoute, setSelectedRoute] = useState<string>(MAP_SETTINGS.DEFAULT_ROUTE);
 
-    const routeMap = useRouteMap();
+    const routeMap = useBusRouteMap();
     const allRoutes = useMemo(() => routeMap ? Object.keys(routeMap) : [], [routeMap]);
 
     // Persist route selection to localStorage
@@ -38,7 +38,7 @@ export default function HomePage() {
             } catch (e) {
                 // localStorage might not be available
                 if (APP_CONFIG.IS_DEV) {
-                    console.warn("[HomePage] Failed to save route preference to localStorage", e);
+                    console.warn("[handleRouteChange] Failed to save route preference to localStorage", e);
                 }
             }
         }
@@ -51,7 +51,7 @@ export default function HomePage() {
             if (saved) setSelectedRoute(saved);
         } catch (e) {
             if (APP_CONFIG.IS_DEV) {
-                console.warn("[HomePage] Failed to load route preference from localStorage", e);
+                console.warn("[handleRouteChange] Failed to load route preference from localStorage", e);
             }
         }
     }, []);

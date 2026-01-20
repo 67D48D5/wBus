@@ -5,7 +5,7 @@ import {
     projectPointOnSegment
 } from "@map/utils/geoUtils";
 
-import { GeoPolylineData } from "@core/domain/live";
+import type { GeoPolyline } from "@core/domain/polyline";
 
 /**
 * Helper: Calculate squared Euclidean distance (Faster than sqrt)
@@ -21,7 +21,7 @@ function getSqDist(p1: [number, number], p2: [number, number]): number {
 * Transform GeoJSON data into separate polylines for up and down directions.
 * [Important] Data may not come in order, so sorting by seq or similar properties is necessary.
 */
-export function transformPolyline(data: GeoPolylineData) {
+export function transformPolyline(data: GeoPolyline) {
     const upSegments: { coords: [number, number][], seq: number }[] = [];
     const downSegments: { coords: [number, number][], seq: number }[] = [];
 

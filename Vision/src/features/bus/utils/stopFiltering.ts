@@ -1,6 +1,6 @@
 // src/features/bus/utils/stopFiltering.ts
 
-import type { BusStop } from "@core/domain/live";
+import type { BusStop } from "@core/domain/station";
 
 import type { LatLngBounds } from "leaflet";
 

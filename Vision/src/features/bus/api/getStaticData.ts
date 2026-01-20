@@ -4,11 +4,10 @@ import { fetchAPI, HttpError } from "@core/network/fetchAPI";
 import { CacheManager } from "@core/cache/CacheManager";
 
 import { API_CONFIG, APP_CONFIG } from "@core/config/env";
-import { LOG_MESSAGES } from "@core/config/locale";
 
-import { GeoPolylineData } from "@core/domain/live";
-
-import type { BusStop, RouteInfo, RouteDetail } from "@core/domain/live";
+import type { BusStop } from "@core/domain/station";
+import type { GeoPolyline } from "@core/domain/polyline";
+import type { RouteInfo, RouteDetail } from "@core/domain/route";
 
 /**
  * Models for cached data
@@ -28,7 +27,7 @@ interface StationData {
  */
 const routeMapCache = new CacheManager<RouteMapData>();
 const stationCache = new CacheManager<StationData>();
-const polylineCache = new CacheManager<GeoPolylineData | null>();
+const polylineCache = new CacheManager<GeoPolyline | null>();
 
 /**
  * Build URL for polyline data based on remote/local mode
@@ -71,12 +70,12 @@ export async function getRouteMap(): Promise<Record<string, string[]>> {
  * a specific route variant (falls back to `${routeName}` if no ID is provided).
  *
  * @param routeKey - filename-friendly key (ex: "30_WJB251000068")
- * @returns {Promise<GeoPolylineData | null>} - GeoJSON Data or null if not found
+ * @returns {Promise<GeoPolyline | null>} - GeoJSON Data or null if not found
  */
-export async function getPolyline(routeKey: string): Promise<GeoPolylineData | null> {
+export async function getPolyline(routeKey: string): Promise<GeoPolyline | null> {
   return polylineCache.getOrFetch(routeKey, async () => {
     try {
-      return await fetchAPI<GeoPolylineData>(getPolylineUrl(routeKey), { baseUrl: "" });
+      return await fetchAPI<GeoPolyline>(getPolylineUrl(routeKey), { baseUrl: "" });
     } catch (error) {
       // Gracefully handle missing polyline files (404 errors)
       if (error instanceof HttpError && error.status === 404) {
@@ -129,8 +128,9 @@ export async function getRouteInfo(
 
     if (!routeIds?.length) {
       if (APP_CONFIG.IS_DEV) {
-        console.warn(LOG_MESSAGES.ROUTE_MISSING(routeName));
+        console.warn(`[getRouteInfo] Route missing: ${routeName}`);
       }
+
       return null;
     }
 
@@ -141,8 +141,9 @@ export async function getRouteInfo(
     };
   } catch (err) {
     if (APP_CONFIG.IS_DEV) {
-      console.error(LOG_MESSAGES.ROUTE_MISSING(routeName), err);
+      console.error(`[getRouteInfo] Route missing: ${routeName}`, err);
     }
+
     return null;
   }
 }

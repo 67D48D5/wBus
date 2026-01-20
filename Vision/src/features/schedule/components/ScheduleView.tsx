@@ -7,9 +7,9 @@ import { useState, useMemo, useEffect, memo } from "react";
 import { DAY_TYPES, DayType } from "@core/config/env";
 import { UI_TEXT, DAY_LABELS } from "@core/config/locale";
 
-import { BusData, BusTime } from "@core/domain/schedule";
-
 import { getCurrentDayType } from "@schedule/utils/time";
+
+import type { BusSchedule, RowItem } from "@core/domain/schedule";
 
 /**
  * Get the localized label for a featured stops key
@@ -36,7 +36,7 @@ interface NextBusInfo {
 }
 
 function findNextBus(
-    schedule: Record<string, Record<string, BusTime[]>>,
+    schedule: Record<string, Record<string, RowItem[]>>,
     hours: string[],
     direction: string,
     now: Date
@@ -82,7 +82,7 @@ function findNextBus(
     return null;
 }
 
-function ScheduleView({ data, mode = "full" }: { data: BusData; mode?: "full" | "compact" }) {
+function ScheduleView({ data, mode = "full" }: { data: BusSchedule; mode?: "full" | "compact" }) {
     const isGeneralSchedule = !!data.schedule.general;
     const isCompact = mode === "compact";
 

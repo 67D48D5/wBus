@@ -1,6 +1,6 @@
 // src/features/schedule/utils/time.ts
 
-import { BusData } from '@core/domain/schedule';
+import type { BusSchedule } from '@core/domain/schedule';
 
 /**
  * Get current hour as zero-padded string (e.g., "09", "14")
@@ -47,7 +47,7 @@ export function timeToMinutes(timeStr: string): number {
 /**
  * Find the nearest upcoming bus time for a given route
  */
-export function getNearestBusTime(busData: BusData): { time: string; minutes: number; destination: string } | null {
+export function getNearestBusTime(busData: BusSchedule): { time: string; minutes: number; destination: string } | null {
     // Check for general schedule first, then fall back to day-specific schedule
     const schedule = busData.schedule.general || busData.schedule[getCurrentDayType()];
 

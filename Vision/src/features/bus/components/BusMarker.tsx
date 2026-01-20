@@ -18,7 +18,7 @@ import { useBusData } from "@bus/hooks/useBusData";
 import { getSnappedPosition } from "@bus/utils/getSnappedPos";
 import { getDirectionIcon } from "@bus/utils/directionIcons";
 
-import { AnimatedBusMarker } from "@bus/components/AnimatedBusMarker";
+import { BusAnimatedMarker } from "@bus/components/BusAnimatedMarker";
 
 import type { LatLngTuple } from "leaflet";
 
@@ -161,7 +161,7 @@ export default function BusMarker({
         const stopName = bus.nodenm || "";
 
         return (
-          <AnimatedBusMarker
+          <BusAnimatedMarker
             key={key}
             position={position}
             rotationAngle={angle % 360}
@@ -222,7 +222,7 @@ export default function BusMarker({
                 </div>
               </div>
             </Popup>
-          </AnimatedBusMarker>
+          </BusAnimatedMarker>
         );
       })}
     </>

@@ -1,4 +1,4 @@
-// src/features/bus/hooks/useSortedBusList.ts
+// src/features/bus/hooks/useBusSortedList.ts
 
 import { useMemo } from "react";
 
@@ -7,7 +7,7 @@ import { useBusLocationData } from "@bus/hooks/useBusLocation";
 import { useBusDirection } from "@bus/hooks/useBusDirection";
 import { useBusStop } from "@bus/hooks/useBusStop";
 
-export const useSortedBusList = (routeName: string) => {
+export const useBusSortedList = (routeName: string) => {
     const { data: mapList, error: mapError, hasFetched: locationFetched } = useBusLocationData(routeName);
 
     // Get bus stop data for the route

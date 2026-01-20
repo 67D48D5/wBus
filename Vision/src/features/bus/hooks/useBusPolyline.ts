@@ -3,16 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { APP_CONFIG } from "@core/config/env";
-import { LOG_MESSAGES } from "@core/config/locale";
 
 import { getPolyline } from "@bus/api/getStaticData";
 
 import { transformPolyline } from "@map/utils/polyUtils";
 
-import type { GeoPolylineData } from "@core/domain/live";
+import type { GeoPolyline } from "@core/domain/polyline";
 
-export function usePolyline(routeName: string, routeId?: string | null) {
-  const [data, setData] = useState<GeoPolylineData | null>(null);
+export function useBusPolyline(routeName: string, routeId?: string | null) {
+  const [data, setData] = useState<GeoPolyline | null>(null);
   const routeKey = useMemo(() => routeId, [routeId]);
 
   useEffect(() => {
@@ -27,7 +26,7 @@ export function usePolyline(routeName: string, routeId?: string | null) {
         // json can be null if polyline file is not found (404)
         setData(json);
       })
-      .catch((error) => { if (APP_CONFIG.IS_DEV) console.error(LOG_MESSAGES.FETCH_FAILED("Polyline", 500), "[" + routeKey + "]", error) });
+      .catch((error) => { if (APP_CONFIG.IS_DEV) console.error("[useBusPolyline] Error fetching polyline data for routeKey: " + routeKey, error) });
   }, [routeKey]);
 
   const { upPolyline, downPolyline } = useMemo(() => {

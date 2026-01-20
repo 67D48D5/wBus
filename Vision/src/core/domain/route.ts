@@ -1,0 +1,20 @@
+// src/core/domain/route.ts
+
+// Route Map
+export type RouteInfo = {
+  routeName: string; // The route name shown to users (e.g., "30")
+  representativeRouteId: string; // ID used for TAGO API requests
+  vehicleRouteIds: string[]; // List of IDs used for real-time bus location requests
+};
+
+// Route Detail Sequence Item
+export type SequenceItem = {
+  nodeord: number;
+  nodeid: string;
+  updowncd: number;
+};
+
+// Route Detail from routeMap
+export type RouteDetail = {
+  sequence: SequenceItem[];
+};

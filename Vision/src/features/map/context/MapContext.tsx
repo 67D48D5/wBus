@@ -4,8 +4,6 @@
 
 import React, { createContext, useContext, useState, useMemo } from "react";
 
-import { LOG_MESSAGES } from "@core/config/locale";
-
 import type { Map } from "leaflet";
 
 type MapContextType = {
@@ -26,7 +24,7 @@ const MapContext = createContext<MapContextType | undefined>(undefined);
 export function useBusContext(): MapContextType {
   const context = useContext(MapContext);
   if (!context) {
-    throw new Error(LOG_MESSAGES.CONTEXT_MISSING("MapContext", "useBusContext"));
+    throw new Error("[useBusContext] MapContext is missing. Please ensure useBusContext is used within a MapContextProvider.");
   }
   return context;
 }

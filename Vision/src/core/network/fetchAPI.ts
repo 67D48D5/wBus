@@ -1,7 +1,6 @@
 // src/core/network/fetchAPI.ts
 
 import { APP_CONFIG, API_CONFIG } from "@core/config/env";
-import { LOG_MESSAGES } from "@core/config/locale";
 
 // Set a delay function for retry logic
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -9,6 +8,7 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 // Custom Error Class for HTTP Errors
 export class HttpError extends Error {
   status: number;
+
   constructor(message: string, status: number) {
     super(message);
     this.name = "HttpError";
@@ -35,11 +35,11 @@ export async function fetchAPI<T = unknown>(
 
   if (customBaseUrl === undefined) {
     if (!isStatic && API_CONFIG.LIVE.URL === "NOT_SET") {
-      throw new Error(LOG_MESSAGES.API_URL_MISSING("LIVE_API_URL"));
+      throw new Error("[fetchAPI] Environment variable `LIVE_API_URL` is not set.");
     }
 
     if (isStatic && API_CONFIG.STATIC.BASE_URL === "NOT_SET") {
-      throw new Error(LOG_MESSAGES.API_URL_MISSING("STATIC_API_URL"));
+      throw new Error("[fetchAPI] Environment variable `STATIC_API_URL` is not set.");
     }
   }
 
@@ -60,7 +60,7 @@ export async function fetchAPI<T = unknown>(
       if (!response.ok) {
         const errorText = await response.text();
         throw new HttpError(
-          LOG_MESSAGES.FETCH_FAILED(url, response.status),
+          `[fetchAPI] Fetch failed for ${url} with status ${response.status}: ${errorText}`,
           response.status
         );
       }
@@ -74,12 +74,12 @@ export async function fetchAPI<T = unknown>(
           throw error;
         }
         const message = error instanceof Error ? error.message : String(error);
-        throw new Error(LOG_MESSAGES.FETCH_FAILED(url, -1) + ` - ${message}`);
+        throw new Error(`[fetchAPI] Fetch failed for ${url}: ${message}`);
       }
 
       await delay(retryDelay);
     }
   }
 
-  throw new Error(LOG_MESSAGES.UNHANDLED_EXCEPTION);
+  throw new Error("[fetchAPI] Unhandled exception occurred.");
 }

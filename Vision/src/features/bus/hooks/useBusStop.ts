@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 
 import { APP_CONFIG } from "@core/config/env";
-import { LOG_MESSAGES } from "@core/config/locale";
 
 import { CacheManager } from "@core/cache/CacheManager";
 
@@ -13,11 +12,13 @@ import { getBusStopLocationData } from "@bus/api/getStaticData";
 import { useBusContext } from "@map/context/MapContext";
 import { getHaversineDistance } from "@map/utils/geoUtils";
 
-import type { BusStop } from "@core/domain/live";
+import type { BusStop } from "@core/domain/station";
 
+// Cache Managers
 const stopCache = new CacheManager<BusStop[]>();
 const routeStopsCache = new CacheManager<BusStop[]>();
 
+// Minimum number of stops required to consider route filtering valid
 const MIN_VALID_STOPS = 4;
 
 export function useBusStop(routeName: string) {
@@ -39,7 +40,7 @@ export function useBusStop(routeName: string) {
         const routeInfo = await getRouteInfo(routeName);
         if (!routeInfo) {
           if (APP_CONFIG.IS_DEV) {
-            console.warn(LOG_MESSAGES.ROUTE_MISSING(routeName));
+            console.warn("[useBusStop] No route info found for routeName: " + routeName);
           }
           return;
         }
@@ -75,7 +76,7 @@ export function useBusStop(routeName: string) {
         if (isMounted) setStops(stopsToUse);
       } catch (err) {
         if (APP_CONFIG.IS_DEV) {
-          console.error(LOG_MESSAGES.FETCH_FAILED("Stations", 500), err);
+          console.error("[useBusStop] Error fetching bus stops for routeName: " + routeName, err);
         }
       }
     };

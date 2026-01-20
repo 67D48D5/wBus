@@ -3,14 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { getRouteInfo } from "@bus/api/getStaticData";
-import { mergePolylines } from "@map/utils/polyUtils";
 
-import { usePolyline } from "@bus/hooks/useBusPolyline";
+import { useBusPolyline } from "@bus/hooks/useBusPolyline";
 import { useBusDirection } from "@bus/hooks/useBusDirection";
 import { useBusLocationData } from "@bus/hooks/useBusLocation";
 
-import type { RouteInfo } from "@core/domain/live";
-import type { BusItem } from "@core/domain/live";
+import { mergePolylines } from "@map/utils/polyUtils";
+
+import type { RouteInfo } from "@core/domain/route";
+import type { BusItem } from "@core/domain/bus";
 
 export interface UseBusData {
   routeInfo: RouteInfo | null;
@@ -40,7 +41,7 @@ export function useBusData(routeName: string): UseBusData {
     return liveRouteId ?? routeInfo?.representativeRouteId ?? null;
   }, [busList, routeInfo]);
 
-  const { upPolyline, downPolyline } = usePolyline(routeName, activeRouteId);
+  const { upPolyline, downPolyline } = useBusPolyline(routeName, activeRouteId);
 
   const mergedUp = useMemo(() => mergePolylines(upPolyline), [upPolyline]);
   const mergedDown = useMemo(

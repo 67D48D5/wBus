@@ -5,13 +5,13 @@
 import { useEffect, useState } from "react";
 
 import { API_CONFIG, APP_CONFIG } from "@core/config/env";
-import { LOG_MESSAGES, UI_TEXT } from "@core/config/locale";
+import { UI_TEXT } from "@core/config/locale";
 
 import { fetchAPI, HttpError } from "@core/network/fetchAPI";
 
-import { BusData } from "@core/domain/schedule";
+import type { BusSchedule } from "@core/domain/schedule";
 
-const scheduleCache = new Map<string, BusData | null>();
+const scheduleCache = new Map<string, BusSchedule | null>();
 
 function getScheduleUrl(routeId: string): string {
   if (API_CONFIG.STATIC.USE_REMOTE && API_CONFIG.STATIC.BASE_URL) {
@@ -21,9 +21,9 @@ function getScheduleUrl(routeId: string): string {
   return `/data/schedules/${routeId}.json`;
 }
 
-async function fetchSchedule(routeId: string): Promise<BusData | null> {
+async function fetchSchedule(routeId: string): Promise<BusSchedule | null> {
   try {
-    return await fetchAPI<BusData>(getScheduleUrl(routeId), { baseUrl: "", retries: 1 });
+    return await fetchAPI<BusSchedule>(getScheduleUrl(routeId), { baseUrl: "", retries: 1 });
   } catch (error) {
     if (error instanceof HttpError && error.status === 404) {
       return null;
@@ -33,7 +33,7 @@ async function fetchSchedule(routeId: string): Promise<BusData | null> {
 }
 
 export function useScheduleData(routeId: string | null) {
-  const [data, setData] = useState<BusData | null>(null);
+  const [data, setData] = useState<BusSchedule | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [missing, setMissing] = useState(false);
@@ -76,9 +76,9 @@ export function useScheduleData(routeId: string | null) {
       .catch((err) => {
         if (!isActive) return;
         if (APP_CONFIG.IS_DEV) {
-          console.error(LOG_MESSAGES.FETCH_FAILED(routeId, 500), err);
+          console.error(UI_TEXT.ERROR.FETCH_FAILED("Schedule Data", 500), err);
         }
-        setError(UI_TEXT.ERROR.UNKNOWN);
+        setError(UI_TEXT.ERROR.UNKNOWN(err instanceof Error ? err.message : String(err)));
         setMissing(false);
       })
       .finally(() => {

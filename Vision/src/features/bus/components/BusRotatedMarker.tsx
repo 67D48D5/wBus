@@ -1,4 +1,4 @@
-// src/features/bus/components/RotatedMarker.tsx
+// src/features/bus/components/BusRotatedMarker.tsx
 
 "use client";
 
@@ -11,7 +11,7 @@ if (typeof window !== "undefined") {
   require("leaflet-rotatedmarker");
 }
 
-const RotatedBusMarker = forwardRef<
+const BusRotatedMarker = forwardRef<
   L.Marker,
   MarkerProps & { rotationAngle?: number; rotationOrigin?: string }
 >(({ rotationAngle = 0, rotationOrigin = "center", position, ...props }, ref) => {
@@ -51,6 +51,6 @@ const RotatedBusMarker = forwardRef<
   );
 });
 
-RotatedBusMarker.displayName = "RotatedBusMarker";
+BusRotatedMarker.displayName = "BusRotatedMarker";
 
-export default RotatedBusMarker;
+export default BusRotatedMarker;

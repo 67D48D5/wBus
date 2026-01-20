@@ -1,10 +1,10 @@
 // src/features/bus/utils/getSnappedPos.ts
 
-import type { LatLngTuple } from "leaflet";
-
-import type { BusItem } from "@core/domain/live";
-
 import { snapToPolyline } from "@map/utils/polyUtils";
+
+import type { BusItem } from "@core/domain/bus";
+
+import type { LatLngTuple } from "leaflet";
 
 // Snap max distance in meters
 const MAX_SNAP_DISTANCE = 50;

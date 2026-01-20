@@ -26,6 +26,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// @TODO: Make BASE_URL dynamic based on environment
 const BASE_URL = "https://wbus.vercel.app";
 
 // Page Metadata

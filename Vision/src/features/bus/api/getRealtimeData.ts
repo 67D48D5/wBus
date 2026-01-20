@@ -2,7 +2,8 @@
 
 import { fetchAPI } from "@core/network/fetchAPI";
 
-import type { BusItem, ArrivalInfo } from "@core/domain/live";
+import type { BusItem } from "@core/domain/bus";
+import type { BusStopArrival } from "@core/domain/station";
 
 /**
  * Fetches real-time bus location data for a specific route.
@@ -22,10 +23,10 @@ export async function getBusLocationData(routeId: string): Promise<BusItem[]> {
  * @param busStopId - The ID of the bus stop to fetch arrival information for
  * @returns A promise that resolves to an array of arrival information items
  */
-export async function getBusArrivalInfoData(busStopId: string): Promise<ArrivalInfo[]> {
+export async function getBusStopArrivalData(busStopId: string): Promise<BusStopArrival[]> {
   const data = await fetchAPI<{
-    response?: { body?: { items?: { item?: ArrivalInfo | ArrivalInfo[] } } };
-  }>(`/getBusArrivalInfo/${busStopId}`);
+    response?: { body?: { items?: { item?: BusStopArrival | BusStopArrival[] } } };
+  }>(`/getBusArrival/${busStopId}`);
   const rawItem = data.response?.body?.items?.item;
   if (!rawItem) {
     return [];

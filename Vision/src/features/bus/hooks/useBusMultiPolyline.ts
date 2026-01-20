@@ -3,12 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { APP_CONFIG } from "@core/config/env";
-import { LOG_MESSAGES } from "@core/config/locale";
 
 import { getPolyline } from "@bus/api/getStaticData";
+
 import { transformPolyline } from "@map/utils/polyUtils";
 
-import type { GeoPolylineData } from "@core/domain/live";
+import type { GeoPolyline } from "@core/domain/polyline";
 
 type PolylineSegment = {
     coords: [number, number][];
@@ -25,7 +25,7 @@ export function useMultiPolyline(
     routeIds: string[],
     activeRouteId?: string | null
 ) {
-    const [dataMap, setDataMap] = useState<Map<string, GeoPolylineData | null>>(new Map());
+    const [dataMap, setDataMap] = useState<Map<string, GeoPolyline | null>>(new Map());
 
     useEffect(() => {
         if (!routeName || routeIds.length === 0) {
@@ -41,14 +41,14 @@ export function useMultiPolyline(
                 return { routeId, data };
             } catch (error) {
                 if (APP_CONFIG.IS_DEV) {
-                    console.error(LOG_MESSAGES.FETCH_FAILED("Polyline", 500), "[" + routeId + "]", error);
+                    console.error("[useMultiPolyline] Error fetching polyline data for routeId: " + routeId, error);
                 }
                 return { routeId, data: null };
             }
         });
 
         Promise.all(loadPromises).then((results) => {
-            const newMap = new Map<string, GeoPolylineData | null>();
+            const newMap = new Map<string, GeoPolyline | null>();
             results.forEach(({ routeId, data }) => {
                 newMap.set(routeId, data);
             });

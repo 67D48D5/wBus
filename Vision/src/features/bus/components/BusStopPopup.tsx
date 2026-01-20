@@ -9,7 +9,7 @@ import { useBusArrivalInfo } from "@bus/hooks/useBusArrivalInfo";
 
 import { formatVehicleType, secondsToMinutes } from "@shared/utils/formatters";
 
-import type { ArrivalInfo } from "@core/domain/live";
+import type { BusStopArrival } from "@core/domain/station";
 
 // Sets the theme based on arrival time in minutes
 const getStatusTheme = (minutes: number) => {
@@ -40,7 +40,7 @@ function ArrivalItem({
     bus,
     onRouteChange
 }: {
-    bus: ArrivalInfo;
+    bus: BusStopArrival;
     onRouteChange?: (name: string) => void
 }) {
     const minutes = secondsToMinutes(bus.arrtime);
@@ -105,7 +105,7 @@ function ArrivalList({
 }: {
     loading: boolean;
     error: string | null;
-    arrivalData: ArrivalInfo[];
+    arrivalData: BusStopArrival[];
     onRouteChange?: (routeName: string) => void;
 }) {
     if (error) {

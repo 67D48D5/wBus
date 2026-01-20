@@ -5,12 +5,12 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { API_CONFIG, APP_CONFIG } from "@core/config/env";
 import { UI_TEXT } from "@core/config/locale";
 
-import { getBusArrivalInfoData } from "@bus/api/getRealtimeData";
+import { getBusStopArrivalData } from "@bus/api/getRealtimeData";
 
-import type { ArrivalInfo } from "@core/domain/live";
+import type { BusStopArrival } from "@core/domain/station";
 
 export function useBusArrivalInfo(busStopId: string | null) {
-  const [data, setData] = useState<ArrivalInfo[]>([]);
+  const [data, setData] = useState<BusStopArrival[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +28,7 @@ export function useBusArrivalInfo(busStopId: string | null) {
     setLoading(true);
     setError(null);
     try {
-      const result = await getBusArrivalInfoData(busStopId);
+      const result = await getBusStopArrivalData(busStopId);
       setData(result);
     } catch (e) {
       if (APP_CONFIG.IS_DEV) {
@@ -70,7 +70,7 @@ export function useBusArrivalInfo(busStopId: string | null) {
 }
 
 // For extracting arrival info for a specific route in a simple way
-export function getNextBusArrivalInfo(routeName: string, data: ArrivalInfo[]) {
+export function getNextBusArrivalInfo(routeName: string, data: BusStopArrival[]) {
   // Use a more robust check to handle different route formats
   const target = data.find((bus) =>
     bus.routeno.replace(/-/g, "").trim() === routeName.replace(/-/g, "").trim()

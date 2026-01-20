@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 import { busPollingService } from "@bus/services/BusPollingService";
 
-import type { BusItem } from "@core/domain/live";
+import type { BusItem } from "@core/domain/bus";
 import type { BusDataError } from "@core/domain/error";
 
 /**

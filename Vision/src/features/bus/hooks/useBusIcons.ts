@@ -5,7 +5,6 @@
 import { useMemo } from "react";
 
 import { APP_CONFIG, MAP_SETTINGS } from "@core/config/env";
-import { LOG_MESSAGES } from "@core/config/locale";
 
 // Check if we are in a client environment
 const isClient = typeof window !== "undefined";
@@ -28,7 +27,7 @@ export function useIcons(): Partial<IconMap> {
       L = require("leaflet");
     } catch (error) {
       if (APP_CONFIG.IS_DEV) {
-        console.error(LOG_MESSAGES.UNHANDLED_EXCEPTION, error);
+        console.error("[useIcons] Unhandled exception occurred", error);
       }
       return {};
     }

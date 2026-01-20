@@ -2,11 +2,10 @@
 
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { CalendarClock, ChevronDown } from "lucide-react";
 
 import { UI_TEXT } from "@core/config/locale";
-import { BusData } from "@core/domain/schedule";
 
 import { useBusContext } from "@map/context/MapContext";
 
@@ -16,6 +15,8 @@ import { formatTime, getNearestBusTime } from "@schedule/utils/time";
 import ScheduleView from "@schedule/components/ScheduleView";
 
 import Pill from "@shared/ui/Pill";
+
+import type { BusSchedule } from "@core/domain/schedule";
 
 type ScheduleOverlayProps = {
   routeId: string;
@@ -27,7 +28,7 @@ type NearestBus = {
   destination: string;
 };
 
-function SchedulePreview({ data, tone = "light" }: { data: BusData; tone?: "light" | "muted" }) {
+function SchedulePreview({ data, tone = "light" }: { data: BusSchedule; tone?: "light" | "muted" }) {
   const [nearestBus, setNearestBus] = useState<NearestBus | null>(null);
   const [mounted, setMounted] = useState(false);
 

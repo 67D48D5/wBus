@@ -5,7 +5,7 @@
 import React, { Component, ReactNode, ErrorInfo } from "react";
 
 import { APP_CONFIG } from "@core/config/env";
-import { UI_TEXT, LOG_MESSAGES } from "@core/config/locale";
+import { UI_TEXT } from "@core/config/locale";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -41,7 +41,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     // Log error details for debugging
     if (APP_CONFIG.IS_DEV) {
-      console.error(LOG_MESSAGES.UNHANDLED_EXCEPTION, error, errorInfo);
+      console.error(UI_TEXT.ERROR.UNKNOWN(error instanceof Error ? error.message : String(error)), errorInfo);
     }
 
     // Call optional error callback
@@ -75,7 +75,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               {UI_TEXT.ERROR.TITLE}
             </h2>
             <p className="text-gray-600 text-center mb-6">
-              {UI_TEXT.ERROR.UNKNOWN}
+              {UI_TEXT.ERROR.UNKNOWN(this.state.error instanceof Error ? this.state.error.message : String(this.state.error))}
             </p>
             {APP_CONFIG.IS_DEV && this.state.error && (
               <div className="bg-red-50 border border-red-200 rounded p-3 mb-4">
