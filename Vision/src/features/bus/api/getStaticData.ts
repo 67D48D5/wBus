@@ -5,8 +5,8 @@ import { CacheManager } from "@core/cache/CacheManager";
 
 import { API_CONFIG, APP_CONFIG } from "@core/config/env";
 
-import type { BusStop, StationLocation } from "@core/domain/station";
 import type { GeoPolyline } from "@core/domain/polyline";
+import type { BusStop, StationLocation } from "@core/domain/station";
 import type { RouteInfo, RouteDetail } from "@core/domain/route";
 
 /**

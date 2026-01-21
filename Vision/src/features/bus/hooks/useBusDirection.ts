@@ -53,7 +53,7 @@ export function useBusDirection(routeName: string) {
     let isMounted = true;
 
     const loadData = async () => {
-      // [CRITICAL FIX] Reset state immediately when routeName changes.
+      // Reset state immediately when routeName changes.
       // This prevents "stale data" from the previous route being used while the new one loads.
       setIsReady(false);
       setRouteState({ sequences: [], routeIdOrder: [] });

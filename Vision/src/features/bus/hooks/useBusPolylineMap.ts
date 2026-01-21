@@ -6,11 +6,7 @@ import { APP_CONFIG } from "@core/config/env";
 
 import { getPolyline, getRouteDetails, getStationMap } from "@bus/api/getStaticData";
 
-import {
-  hasExplicitPolylineDirections,
-  mergePolylines,
-  transformPolyline
-} from "@/features/bus/utils/polyUtils";
+import { transformPolyline } from "@bus/utils/polyUtils";
 import { shouldSwapPolylines } from "@bus/utils/polylineDirection";
 
 import type { StationLocation } from "@core/domain/station";
@@ -52,8 +48,16 @@ function processRouteData(
   const { upPolyline, downPolyline } = transformPolyline(data);
 
   // 2. Merge segments into continuous lines
-  const mergedUp = mergePolylines(upPolyline);
-  const mergedDown = mergePolylines(downPolyline);
+  const mergedUp = upPolyline.length > 0 ? upPolyline[0] : [];
+  const mergedDown = downPolyline.length > 0 ? downPolyline[0] : [];
+
+  // 3. Check if we need to swap directions
+  if (shouldSwapPolylines(routeDetail, stationMap, mergedUp, mergedDown)) {
+    return {
+      upPolyline: mergedDown, // Swap!
+      downPolyline: mergedUp,
+    };
+  }
 
   return {
     upPolyline: mergedUp,

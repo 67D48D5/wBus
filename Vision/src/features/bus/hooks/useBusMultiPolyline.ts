@@ -6,11 +6,7 @@ import { APP_CONFIG } from "@core/config/env";
 
 import { getPolyline, getRouteDetails, getStationMap } from "@bus/api/getStaticData";
 
-import {
-    hasExplicitPolylineDirections,
-    mergePolylines,
-    transformPolyline
-} from "@bus/utils/polyUtils";
+import { transformPolyline } from "@bus/utils/polyUtils";
 
 import { shouldSwapPolylines } from "@bus/utils/polylineDirection";
 
@@ -108,18 +104,14 @@ function processAllRoutes(
         let finalUp = upPolyline;
         let finalDown = downPolyline;
 
-        const hasExplicit = hasExplicitPolylineDirections(data);
+        const detail = fetched.detailMap.get(routeId) ?? null;
+        // We need merged lines for the swap check heuristic
+        const mergedUp = upPolyline.length > 0 ? upPolyline[0] : [];
+        const mergedDown = downPolyline.length > 0 ? downPolyline[0] : [];
 
-        if (!hasExplicit) {
-            const detail = fetched.detailMap.get(routeId) ?? null;
-            // We need merged lines for the swap check heuristic
-            const mergedUp = mergePolylines(upPolyline);
-            const mergedDown = mergePolylines(downPolyline);
-
-            if (shouldSwapPolylines(detail, fetched.stationMap, mergedUp, mergedDown)) {
-                finalUp = downPolyline;
-                finalDown = upPolyline;
-            }
+        if (shouldSwapPolylines(detail, fetched.stationMap, mergedUp, mergedDown)) {
+            finalUp = downPolyline;
+            finalDown = upPolyline;
         }
 
         // 3. Deduplicate / Merge

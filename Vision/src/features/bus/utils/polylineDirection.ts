@@ -1,6 +1,6 @@
 // src/features/bus/utils/polylineDirection.ts
 
-import { snapToPolyline } from "@/features/bus/utils/polyUtils";
+import { snapToPolyline } from "@bus/utils/polyUtils";
 
 import type { RouteDetail } from "@core/domain/route";
 import type { StationLocation } from "@core/domain/station";

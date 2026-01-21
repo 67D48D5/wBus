@@ -23,6 +23,8 @@ interface BusAnimatedMarkerProps {
     polyline?: LatLngTuple[];
     /** Animation duration in ms. Longer = smoother but more lag behind real-time data */
     animationDuration?: number;
+    /** Force a re-sync when external state (like route) changes. */
+    refreshKey?: string | number;
     eventHandlers?: LeafletEventHandlerFnMap;
     children?: React.ReactNode;
 }
@@ -53,6 +55,7 @@ function BusAnimatedMarker({
     icon,
     polyline = [],
     animationDuration = MAP_SETTINGS.ANIMATION.BUS_MOVE_MS,
+    refreshKey,
     eventHandlers,
     children,
 }: BusAnimatedMarkerProps) {
@@ -65,6 +68,7 @@ function BusAnimatedMarker({
             polyline,
             // Only attempt to snap if we have a valid line segment
             snapToPolyline: polyline.length >= 2,
+            resetKey: refreshKey,
         }
     );
 

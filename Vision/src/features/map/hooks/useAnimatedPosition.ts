@@ -23,6 +23,8 @@ interface UseAnimatedPositionOptions {
     polyline?: LatLngTuple[];
     /** If true, the marker is projected onto the polyline. */
     snapToPolyline?: boolean;
+    /** Forces an immediate re-sync when the key changes (e.g. route change). */
+    resetKey?: string | number;
 }
 
 const BACKWARD_T_EPSILON = 1e-3;
@@ -283,7 +285,8 @@ export function useAnimatedPosition(
     const {
         duration = MAP_SETTINGS.ANIMATION.BUS_MOVE_MS,
         polyline = [],
-        snapToPolyline: shouldSnap = true
+        snapToPolyline: shouldSnap = true,
+        resetKey,
     } = options;
 
     // State
@@ -311,6 +314,32 @@ export function useAnimatedPosition(
     const animationStartAngleRef = useRef<number>(targetAngle);
     const animationEndAngleRef = useRef<number>(targetAngle);
     const animationEndPosRef = useRef<LatLngTuple>(targetPosition);
+    const resetKeyRef = useRef<string | number | undefined>(resetKey);
+
+    useEffect(() => {
+        if (resetKeyRef.current === resetKey) return;
+        resetKeyRef.current = resetKey;
+
+        if (animationRef.current !== null) {
+            cancelAnimationFrame(animationRef.current);
+            animationRef.current = null;
+        }
+
+        const hasPolyline = polyline.length >= 2;
+        let nextPos = targetPosition;
+        let nextAngle = targetAngle;
+
+        if (shouldSnap && hasPolyline) {
+            const snapped = snapToPolylineSegment(targetPosition, polyline);
+            nextPos = snapped.position;
+            nextAngle = snapped.angle;
+        }
+
+        currentPosRef.current = nextPos;
+        currentAngleRef.current = nextAngle;
+        prevTargetRef.current = targetPosition;
+        setState({ position: nextPos, angle: nextAngle });
+    }, [resetKey, targetPosition, targetAngle, polyline, shouldSnap]);
 
     useEffect(() => {
         const hasPolyline = polyline.length >= 2;

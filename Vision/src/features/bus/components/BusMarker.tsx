@@ -190,6 +190,7 @@ export default function BusMarker({ routeName, onPopupOpen, onPopupClose }: BusM
     fallbackPolylines,
     activeRouteId
   } = useBusData(routeName);
+  const refreshKey = `${routeName}-${activeRouteId ?? "none"}`;
 
   // 3. Process Data (Snap & Prepare)
   const markers = useMemo(() => {
@@ -203,7 +204,7 @@ export default function BusMarker({ routeName, onPopupOpen, onPopupClose }: BusM
 
       // Calculate Snap
       const snapped = getSnappedPosition(bus, getDirection, upPolyline, downPolyline);
-      const activePolyline = snapped.direction === 0 ? upPolyline : downPolyline;
+      const activePolyline = snapped.direction === 1 ? upPolyline : downPolyline;
 
       return {
         key: `${routeName}-${bus.vehicleno}`,
@@ -240,6 +241,7 @@ export default function BusMarker({ routeName, onPopupOpen, onPopupClose }: BusM
             icon={icon}
             polyline={polyline}
             animationDuration={MAP_SETTINGS.ANIMATION.BUS_MOVE_MS}
+            refreshKey={refreshKey}
             eventHandlers={{
               popupopen: () => onPopupOpen?.(routeName),
               popupclose: () => onPopupClose?.(),
