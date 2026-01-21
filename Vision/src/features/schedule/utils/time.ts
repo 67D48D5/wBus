@@ -82,7 +82,7 @@ export function timeToMinutes(timeStr: string): number {
  */
 export function getNearestBusTime(busData: BusSchedule): NearestBusInfo | null {
     // Priority: General Schedule -> Day-specific Schedule (Weekday/Weekend)
-    const schedule = busData.schedule.general || busData.schedule[getCurrentDayType()];
+    const schedule = busData.schedule?.general || busData.schedule?.[getCurrentDayType()];
 
     if (!schedule) return null;
 

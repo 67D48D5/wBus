@@ -178,7 +178,17 @@ export default function BusList({ routeNames, allRoutes, selectedRoute, onRouteC
 
   const isBusExpanded = expandedPanel === "bus";
   const isScheduleExpanded = expandedPanel === "schedule";
-  const showSchedule = !scheduleMissing;
+  const schedulePayload = scheduleData?.schedule;
+  const hasScheduleData = Boolean(
+    schedulePayload && (schedulePayload.general || schedulePayload.weekday || schedulePayload.weekend)
+  );
+  const showSchedule = !scheduleMissing && (scheduleLoading || hasScheduleData);
+
+  useEffect(() => {
+    if (expandedPanel === "schedule" && !hasScheduleData) {
+      setExpandedPanel(null);
+    }
+  }, [expandedPanel, hasScheduleData]);
 
   // Handlers
   const handleRouteChange = useCallback((route: string) => {
@@ -294,9 +304,9 @@ export default function BusList({ routeNames, allRoutes, selectedRoute, onRouteC
         </div>
 
         {/* Expandable Content */}
-        {isScheduleExpanded && showSchedule && (
+        {isScheduleExpanded && showSchedule && hasScheduleData && scheduleData && (
           <div className={STYLES.SCHEDULE_CONTAINER}>
-            <ScheduleView data={scheduleData!} mode="full" />
+            <ScheduleView data={scheduleData} mode="full" />
           </div>
         )}
 
