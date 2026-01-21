@@ -2,116 +2,166 @@
 
 "use client";
 
-import "@maplibre/maplibre-gl-leaflet"
-
 import L from "leaflet";
+import "@maplibre/maplibre-gl-leaflet";
 
 import { useEffect, useRef } from "react";
 import { useMap } from "react-leaflet";
 
 import { APP_CONFIG } from "@core/config/env";
-
 import { getMapStyle } from "@map/api/getMapData";
 
-export default function MapLibreBaseLayer({ onReady }: { onReady?: () => void }) {
+// ----------------------------------------------------------------------
+// Types
+// ----------------------------------------------------------------------
+
+interface MapLibreBaseLayerProps {
+  /** Callback fired when the vector tiles and style are fully loaded and idle. */
+  onReady?: () => void;
+}
+
+/**
+ * Minimal type definition for the MapLibre instance exposed by the leaflet plugin.
+ * This covers the methods needed to check loading status.
+ */
+interface MapLibreGLInstance {
+  on?: (event: string, handler: () => void) => void;
+  once?: (event: string, handler: () => void) => void;
+  off?: (event: string, handler: () => void) => void;
+  loaded?: () => boolean;
+  areTilesLoaded?: () => boolean;
+  isStyleLoaded?: () => boolean;
+}
+
+/**
+ * Type extension for the Leaflet Layer to include the `getMap` method 
+ * provided by `@maplibre/maplibre-gl-leaflet`.
+ */
+type LeafletMapLibreLayer = L.Layer & {
+  getMap?: () => MapLibreGLInstance
+};
+
+// ----------------------------------------------------------------------
+// Component
+// ----------------------------------------------------------------------
+
+/**
+ * Renders the vector base map using MapLibre GL JS within a Leaflet container.
+ * Handles async style fetching and signals when the map is visually ready.
+ */
+export default function MapLibreBaseLayer({ onReady }: MapLibreBaseLayerProps) {
   const map = useMap();
-  const mapLibreLayerRef = useRef<L.Layer | null>(null);
-  const readyOnceRef = useRef(false);
-  const readyCleanupRef = useRef<(() => void) | null>(null);
+
+  // Refs to manage lifecycle and cleanup
+  const layerRef = useRef<LeafletMapLibreLayer | null>(null);
+  const isReadySignaledRef = useRef(false);
+  const cleanupListenersRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!map || typeof window === "undefined") return;
+
     let isActive = true;
 
+    // Helper: Safely call onReady only once
     const signalReady = () => {
-      if (readyOnceRef.current) return;
-      readyOnceRef.current = true;
+      if (isReadySignaledRef.current) return;
+      isReadySignaledRef.current = true;
       onReady?.();
     };
 
-    const attachMapLibreReady = (layer: L.Layer) => {
-      const maplibreLayer = layer as L.Layer & { getMap?: () => unknown };
-      const maplibreMap = maplibreLayer.getMap?.() as
-        | {
-          on?: (event: string, handler: () => void) => void;
-          once?: (event: string, handler: () => void) => void;
-          off?: (event: string, handler: () => void) => void;
-          loaded?: () => boolean;
-          areTilesLoaded?: () => boolean;
-          isStyleLoaded?: () => boolean;
-        }
-        | undefined;
+    // Helper: Bind events to the underlying MapLibre instance to detect when tiles are ready
+    const attachLoadListeners = (layer: LeafletMapLibreLayer) => {
+      const glMap = layer.getMap?.();
 
-      if (!maplibreMap) {
+      if (!glMap) {
+        // Fallback: If we can't access the GL instance, assume ready immediately to unblock UI
         signalReady();
         return;
       }
 
-      const isFullyLoaded = () => {
-        const styleReady = maplibreMap.isStyleLoaded?.() ?? maplibreMap.loaded?.() ?? true;
-        const tilesReady = maplibreMap.areTilesLoaded?.() ?? maplibreMap.loaded?.() ?? true;
+      // Check if map is already idle/loaded
+      const checkIsFullyLoaded = () => {
+        const styleReady = glMap.isStyleLoaded?.() ?? glMap.loaded?.() ?? true;
+        const tilesReady = glMap.areTilesLoaded?.() ?? glMap.loaded?.() ?? true;
         return styleReady && tilesReady;
       };
 
-      if (isFullyLoaded()) {
+      if (checkIsFullyLoaded()) {
         signalReady();
         return;
       }
 
-      const handleReady = () => {
+      // Handler for load/idle events
+      const handleLoadEvent = () => {
         if (!isActive) return;
-        if (!isFullyLoaded()) return;
-        signalReady();
+        if (checkIsFullyLoaded()) {
+          signalReady();
+        }
       };
 
-      const bind = maplibreMap.once ?? maplibreMap.on;
-      if (!bind) {
+      // Bind listeners
+      // Note: 'idle' is the most reliable event for "rendering finished"
+      const bind = glMap.once ?? glMap.on;
+      if (bind) {
+        bind("idle", handleLoadEvent);
+        bind("load", handleLoadEvent);
+
+        // Store cleanup function
+        cleanupListenersRef.current = () => {
+          glMap.off?.("idle", handleLoadEvent);
+          glMap.off?.("load", handleLoadEvent);
+        };
+      } else {
         signalReady();
-        return;
       }
-
-      bind("idle", handleReady);
-      bind("load", handleReady);
-
-      readyCleanupRef.current = () => {
-        maplibreMap.off?.("idle", handleReady);
-        maplibreMap.off?.("load", handleReady);
-      };
     };
 
-    const initializeMapLayer = async () => {
+    // Main initialization logic
+    const initializeLayer = async () => {
       try {
         const style = await getMapStyle();
-        if (!isActive || mapLibreLayerRef.current) return;
 
-        const maplibreLayer = L.maplibreGL({ style });
-        maplibreLayer.addTo(map);
-        mapLibreLayerRef.current = maplibreLayer;
+        // Prevent race conditions if component unmounted during fetch
+        if (!isActive || layerRef.current) return;
 
-        attachMapLibreReady(maplibreLayer);
+        // Initialize the Leaflet-MapLibre adapter
+        // @ts-ignore - L.maplibreGL is injected by the import side-effect
+        const glLayer = L.maplibreGL({ style }) as LeafletMapLibreLayer;
+
+        glLayer.addTo(map);
+        layerRef.current = glLayer;
+
+        attachLoadListeners(glLayer);
       } catch (error) {
         if (APP_CONFIG.IS_DEV) {
-          console.error("[MapLibreBaseLayer] Failed to load map style", error);
+          console.error("[MapLibreBaseLayer] Failed to load map style:", error);
         }
-
+        // Even on error, signal ready so the splash screen doesn't hang forever
         signalReady();
       }
     };
 
-    map.whenReady(initializeMapLayer);
+    // Wait for Leaflet map to be ready before adding the GL layer
+    map.whenReady(initializeLayer);
 
+    // Cleanup on unmount
     return () => {
       isActive = false;
-      if (readyCleanupRef.current) {
-        readyCleanupRef.current();
-        readyCleanupRef.current = null;
+
+      // Remove event listeners
+      if (cleanupListenersRef.current) {
+        cleanupListenersRef.current();
+        cleanupListenersRef.current = null;
       }
-      if (mapLibreLayerRef.current) {
-        map.removeLayer(mapLibreLayerRef.current);
-        mapLibreLayerRef.current = null;
+
+      // Remove layer from map
+      if (layerRef.current) {
+        map.removeLayer(layerRef.current);
+        layerRef.current = null;
       }
     };
   }, [map, onReady]);
 
+  // This is a logic-only component, it renders nothing to the DOM itself
   return null;
 }

@@ -3,10 +3,13 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-
 import { MAP_SETTINGS } from "@core/config/env";
 
 import type { LatLngTuple } from "leaflet";
+
+// ----------------------------------------------------------------------
+// Types & Constants
+// ----------------------------------------------------------------------
 
 interface AnimatedPositionState {
     position: LatLngTuple;
@@ -14,16 +17,25 @@ interface AnimatedPositionState {
 }
 
 interface UseAnimatedPositionOptions {
-    /** Duration of the animation in milliseconds. Longer = smoother but more lag behind real-time data */
+    /** Animation duration in ms. Defaults to global setting. */
     duration?: number;
-    /** Polyline to snap the animation path to */
+    /** The route path to snap the marker to. */
     polyline?: LatLngTuple[];
-    /** Whether to animate along the polyline or directly */
+    /** If true, the marker is projected onto the polyline. */
     snapToPolyline?: boolean;
 }
 
+const BACKWARD_T_EPSILON = 1e-3;
+const BACKWARD_JITTER_METERS = 12;
+
+// ----------------------------------------------------------------------
+// Math Helpers (Pure Functions)
+// ----------------------------------------------------------------------
+
 /**
- * Calculate the squared distance between two points (faster than sqrt for comparison)
+ * Calculates squared distance between two points.
+ * Faster than standard distance (no sqrt) for comparisons.
+ * @param lngScale - Correction factor for longitude based on latitude (cos(lat)).
  */
 function getSquaredDistance(p1: LatLngTuple, p2: LatLngTuple, lngScale: number = 1): number {
     const dLat = p2[0] - p1[0];
@@ -32,7 +44,7 @@ function getSquaredDistance(p1: LatLngTuple, p2: LatLngTuple, lngScale: number =
 }
 
 /**
- * Calculate the distance between two points
+ * Calculates standard Euclidean distance between two lat/lng points.
  */
 function getDistance(p1: LatLngTuple, p2: LatLngTuple): number {
     const dLat = p2[0] - p1[0];
@@ -41,7 +53,19 @@ function getDistance(p1: LatLngTuple, p2: LatLngTuple): number {
 }
 
 /**
- * Calculate the bearing (angle) between two points
+ * Approximates distance in meters using a spherical earth model.
+ * Sufficient for jitter threshold checks.
+ */
+function getApproxDistanceMeters(p1: LatLngTuple, p2: LatLngTuple): number {
+    const latRad = ((p1[0] + p2[0]) * 0.5 * Math.PI) / 180;
+    const lngScale = Math.cos(latRad);
+    const distDeg = Math.sqrt(getSquaredDistance(p1, p2, lngScale));
+    return distDeg * 111_000; // ~111km per degree
+}
+
+/**
+ * Calculates the bearing (angle in degrees) from one point to another.
+ * Normalized to 0-360 degrees.
  */
 function getBearing(from: LatLngTuple, to: LatLngTuple): number {
     const toRad = (d: number) => (d * Math.PI) / 180;
@@ -61,21 +85,20 @@ function getBearing(from: LatLngTuple, to: LatLngTuple): number {
 }
 
 /**
- * Find the closest point on a polyline segment to a given point.
- * Returns the projected position and segment index.
+ * Projects a point onto the nearest segment of a polyline.
+ * 
+ * * @param point - The raw GPS point (which might be slightly off-road).
+ * @param polyline - The route path.
+ * @returns The projected point, segment index, and progress along that segment (t).
  */
 function snapToPolylineSegment(
     point: LatLngTuple,
     polyline: LatLngTuple[]
 ): { position: LatLngTuple; segmentIndex: number; t: number; angle: number } {
-    if (polyline.length === 0) {
-        return { position: point, segmentIndex: 0, t: 0, angle: 0 };
-    }
-    if (polyline.length === 1) {
-        return { position: polyline[0], segmentIndex: 0, t: 0, angle: 0 };
-    }
+    if (polyline.length === 0) return { position: point, segmentIndex: 0, t: 0, angle: 0 };
+    if (polyline.length === 1) return { position: polyline[0], segmentIndex: 0, t: 0, angle: 0 };
 
-    // Scale longitude by cos(latitude) to account for Earth's curvature
+    // Scale longitude to account for Earth's curvature at this latitude
     const latRad = (point[0] * Math.PI) / 180;
     const lngScale = Math.cos(latRad);
 
@@ -84,15 +107,17 @@ function snapToPolylineSegment(
     let bestSegmentIndex = 0;
     let bestT = 0;
 
+    // Iterate all segments to find the closest projection
     for (let i = 0; i < polyline.length - 1; i++) {
         const A = polyline[i];
         const B = polyline[i + 1];
 
-        // Project point onto segment
+        // Vector AP (Start -> Point) and AB (Start -> End)
         const AP = [point[0] - A[0], point[1] - A[1]];
         const AB = [B[0] - A[0], B[1] - A[1]];
         const ab2 = AB[0] * AB[0] + AB[1] * AB[1];
 
+        // Project AP onto AB to find 't' (0 to 1)
         let t = 0;
         if (ab2 > 0) {
             const dot = AP[0] * AB[0] + AP[1] * AB[1];
@@ -110,6 +135,7 @@ function snapToPolylineSegment(
         }
     }
 
+    // Calculate angle of the specific segment we snapped to
     const A = polyline[bestSegmentIndex];
     const B = polyline[bestSegmentIndex + 1] || A;
     const angle = getBearing(A, B);
@@ -118,9 +144,23 @@ function snapToPolylineSegment(
 }
 
 /**
- * Build a path along the polyline from start to end position.
- * IMPORTANT: Buses should NEVER go backward, so if endSegIdx < startSegIdx,
- * we snap directly to the end position (no backward animation).
+ * Detects if the new position is "behind" the previous position along the path.
+ */
+function isBackwardProgress(
+    startSegIdx: number,
+    startT: number,
+    endSegIdx: number,
+    endT: number
+): boolean {
+    if (endSegIdx < startSegIdx) return true;
+    if (endSegIdx > startSegIdx) return false;
+    // Same segment: check if t decreased significantly
+    return endT < startT - BACKWARD_T_EPSILON;
+}
+
+/**
+ * Constructs the animation path along the polyline.
+ * Handles "backward" data by snapping instead of animating reverse.
  */
 function buildPolylinePath(
     polyline: LatLngTuple[],
@@ -131,24 +171,22 @@ function buildPolylinePath(
 ): LatLngTuple[] {
     const path: LatLngTuple[] = [startPos];
 
+    // Case 1: Same segment - direct line
     if (startSegIdx === endSegIdx) {
-        // Same segment - just go directly
         path.push(endPos);
         return path;
     }
 
-    const forward = endSegIdx > startSegIdx;
+    const isForward = endSegIdx > startSegIdx;
 
-    if (forward) {
-        // Go forward through vertices
+    if (isForward) {
+        // Case 2: Forward - Add all intermediate vertices
         for (let i = startSegIdx + 1; i <= endSegIdx; i++) {
             path.push(polyline[i]);
         }
         path.push(endPos);
     } else {
-        // Backward movement detected - buses don't go backward!
-        // Instead of animating backward, just snap directly to end position
-        // This handles cases like GPS jitter or data errors
+        // Case 3: Backward - Do not animate backward. Just snap to new pos.
         path.push(endPos);
     }
 
@@ -156,33 +194,28 @@ function buildPolylinePath(
 }
 
 /**
- * Interpolate position along a path based on progress (0-1)
+ * Interpolates position and angle at a specific progress (0.0 to 1.0) along a multi-segment path.
  */
 function interpolateAlongPath(
     path: LatLngTuple[],
     progress: number
 ): { position: LatLngTuple; angle: number } {
-    if (path.length === 0) {
-        return { position: [0, 0], angle: 0 };
-    }
-    if (path.length === 1) {
-        return { position: path[0], angle: 0 };
-    }
+    if (path.length === 0) return { position: [0, 0], angle: 0 };
+    if (path.length === 1) return { position: path[0], angle: 0 };
 
-    // Calculate cumulative distances
+    // 1. Calculate total length
     const distances: number[] = [0];
     for (let i = 1; i < path.length; i++) {
         distances.push(distances[i - 1] + getDistance(path[i - 1], path[i]));
     }
     const totalDistance = distances[distances.length - 1];
 
-    if (totalDistance === 0) {
-        return { position: path[path.length - 1], angle: 0 };
-    }
+    if (totalDistance === 0) return { position: path[path.length - 1], angle: 0 };
 
+    // 2. Find target distance
     const targetDistance = totalDistance * Math.max(0, Math.min(1, progress));
 
-    // Find which segment we're on
+    // 3. Find active segment
     let segIdx = 0;
     for (let i = 1; i < distances.length; i++) {
         if (distances[i] >= targetDistance) {
@@ -192,6 +225,7 @@ function interpolateAlongPath(
         segIdx = i - 1;
     }
 
+    // 4. Interpolate within segment
     const segStart = distances[segIdx];
     const segEnd = distances[segIdx + 1] || segStart;
     const segLen = segEnd - segStart;
@@ -215,40 +249,46 @@ function interpolateAlongPath(
 }
 
 /**
- * Smoothly interpolate rotation angle, handling the 360° wrap-around
+ * Smoothly interpolates angles, correctly handling the 359 -> 0 degree wrap-around.
  */
 function interpolateAngle(from: number, to: number, progress: number): number {
     from = ((from % 360) + 360) % 360;
     to = ((to % 360) + 360) % 360;
 
     let diff = to - from;
+    // Take the shortest path (e.g., 350 -> 10 is +20, not -340)
     if (diff > 180) diff -= 360;
     if (diff < -180) diff += 360;
 
     return ((from + diff * progress) + 360) % 360;
 }
 
-/**
- * Easing function for smooth animation (ease-out cubic)
- */
 function easeOutCubic(t: number): number {
     return 1 - Math.pow(1 - t, 3);
 }
 
+// ----------------------------------------------------------------------
+// Hook Definition
+// ----------------------------------------------------------------------
+
 /**
- * Hook that provides smooth animated position transitions along a polyline.
- * The bus marker will always stay on the polyline during animation.
+ * Hook to animate a marker's position smoothly.
+ * Supports snapping the marker to a polyline path for realistic vehicle movement.
  */
 export function useAnimatedPosition(
     targetPosition: LatLngTuple,
     targetAngle: number,
     options: UseAnimatedPositionOptions = {}
 ): AnimatedPositionState {
-    const { duration = MAP_SETTINGS.ANIMATION.BUS_MOVE_MS, polyline = [], snapToPolyline: shouldSnap = true } = options;
+    const {
+        duration = MAP_SETTINGS.ANIMATION.BUS_MOVE_MS,
+        polyline = [],
+        snapToPolyline: shouldSnap = true
+    } = options;
 
-    // Current animated state
+    // State
     const [state, setState] = useState<AnimatedPositionState>(() => {
-        // Initialize with snapped position
+        // Initial state: Snap immediately if data is available
         if (shouldSnap && polyline.length >= 2) {
             const snapped = snapToPolylineSegment(targetPosition, polyline);
             return { position: snapped.position, angle: targetAngle };
@@ -256,18 +296,16 @@ export function useAnimatedPosition(
         return { position: targetPosition, angle: targetAngle };
     });
 
-    // Animation refs - stable across renders
+    // Refs (Mutable values for animation loop)
     const animationRef = useRef<number | null>(null);
     const isFirstRender = useRef(true);
-
-    // Store previous target to detect changes
     const prevTargetRef = useRef<LatLngTuple>(targetPosition);
 
-    // Store current position for animation start (separate from React state)
+    // The "Current" visual state (updated every frame)
     const currentPosRef = useRef<LatLngTuple>(targetPosition);
     const currentAngleRef = useRef<number>(targetAngle);
 
-    // Store animation path - this is the key to smooth animation
+    // Animation Path Data
     const animationPathRef = useRef<LatLngTuple[]>([]);
     const animationStartTimeRef = useRef<number>(0);
     const animationStartAngleRef = useRef<number>(targetAngle);
@@ -277,16 +315,14 @@ export function useAnimatedPosition(
     useEffect(() => {
         const hasPolyline = polyline.length >= 2;
 
-        // First render - set initial position
+        // 1. First Render Initialization
         if (isFirstRender.current) {
             isFirstRender.current = false;
+            let initPos: LatLngTuple = targetPosition;
 
-            let initPos: LatLngTuple;
             if (shouldSnap && hasPolyline) {
                 const snapped = snapToPolylineSegment(targetPosition, polyline);
                 initPos = snapped.position;
-            } else {
-                initPos = targetPosition;
             }
 
             currentPosRef.current = initPos;
@@ -296,36 +332,57 @@ export function useAnimatedPosition(
             return;
         }
 
-        // Check if target position actually changed
+        // 2. Check if update is needed
         const prev = prevTargetRef.current;
-        if (targetPosition[0] === prev[0] && targetPosition[1] === prev[1]) {
-            // Position didn't change, just update angle directly
+        const isSamePosition = targetPosition[0] === prev[0] && targetPosition[1] === prev[1];
+
+        if (isSamePosition) {
+            // Only angle changed? Update immediately (buses rotate in place rarely, usually moving)
             currentAngleRef.current = targetAngle;
             setState(s => ({ ...s, angle: targetAngle }));
             return;
         }
 
-        // Cancel any ongoing animation
+        // 3. Prepare Animation
         if (animationRef.current !== null) {
             cancelAnimationFrame(animationRef.current);
-            animationRef.current = null;
         }
-
         prevTargetRef.current = targetPosition;
 
-        // Get starting position (use ref, not state, to avoid stale closure)
         const startPos = currentPosRef.current;
         const startAngle = currentAngleRef.current;
 
-        // Calculate animation path
         let path: LatLngTuple[];
         let endPos: LatLngTuple;
         let endAngle: number;
 
+        // 4. Calculate Path (Linear or Polyline-Snapped)
         if (shouldSnap && hasPolyline) {
-            // Get current position snapped to polyline
             const startSnapped = snapToPolylineSegment(startPos, polyline);
             const endSnapped = snapToPolylineSegment(targetPosition, polyline);
+
+            // Check for illegal backward movement (GPS jitter)
+            const isBackward = isBackwardProgress(
+                startSnapped.segmentIndex,
+                startSnapped.t,
+                endSnapped.segmentIndex,
+                endSnapped.t
+            );
+
+            if (isBackward) {
+                const backMeters = getApproxDistanceMeters(startSnapped.position, endSnapped.position);
+
+                // Small jitter? Ignore update.
+                if (backMeters <= BACKWARD_JITTER_METERS) {
+                    return;
+                }
+
+                // Large jump backward? Snap immediately (teleport).
+                currentPosRef.current = endSnapped.position;
+                currentAngleRef.current = endSnapped.angle;
+                setState({ position: endSnapped.position, angle: endSnapped.angle });
+                return;
+            }
 
             path = buildPolylinePath(
                 polyline,
@@ -337,20 +394,19 @@ export function useAnimatedPosition(
             endPos = endSnapped.position;
             endAngle = endSnapped.angle;
         } else {
-            // Simple linear path
+            // Direct interpolation
             path = [startPos, targetPosition];
             endPos = targetPosition;
             endAngle = targetAngle;
         }
 
-        // Store animation parameters
+        // 5. Start Animation Loop
         animationPathRef.current = path;
         animationStartTimeRef.current = performance.now();
         animationStartAngleRef.current = startAngle;
         animationEndAngleRef.current = endAngle;
         animationEndPosRef.current = endPos;
 
-        // Animation loop
         const tick = (currentTime: number) => {
             const elapsed = currentTime - animationStartTimeRef.current;
             const rawProgress = Math.min(elapsed / duration, 1);
@@ -363,7 +419,6 @@ export function useAnimatedPosition(
                 progress
             );
 
-            // Update refs immediately
             currentPosRef.current = pathResult.position;
             currentAngleRef.current = angle;
 
@@ -375,7 +430,7 @@ export function useAnimatedPosition(
             if (rawProgress < 1) {
                 animationRef.current = requestAnimationFrame(tick);
             } else {
-                // Animation complete - ensure we end exactly at target
+                // Ensure final frame is exact
                 currentPosRef.current = animationEndPosRef.current;
                 currentAngleRef.current = animationEndAngleRef.current;
                 setState({
@@ -388,14 +443,12 @@ export function useAnimatedPosition(
 
         animationRef.current = requestAnimationFrame(tick);
 
-        // Cleanup
         return () => {
             if (animationRef.current !== null) {
                 cancelAnimationFrame(animationRef.current);
-                animationRef.current = null;
             }
         };
-        // IMPORTANT: Don't include state in dependencies to avoid re-triggering during animation
+        // Dependency array explicitly excludes state to avoid loops
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [targetPosition[0], targetPosition[1], targetAngle, duration, polyline, shouldSnap]);
 
