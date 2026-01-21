@@ -53,7 +53,7 @@ export const BusListItem = React.memo(({ bus, routeName, getDirection, onClick }
                         List items are narrower than popups, so we set maxLength to around 6-8 for tight fit.
                         We set max-w to prevent overly long stop names from encroaching on the vehicle number. 
                     */}
-                    <div className="text-[10px] sm:text-xs font-medium max-w-[90px] sm:max-w-[120px]">
+                    <div className="text-[10px] sm:text-xs font-medium max-w-[80px] sm:max-w-[80px]">
                         <PopupMarquee text={stopName} maxLength={8} />
                     </div>
 
