@@ -25,12 +25,14 @@ interface MapLibreBaseLayerProps {
  * This covers the methods needed to check loading status.
  */
 interface MapLibreGLInstance {
-  on?: (event: string, handler: () => void) => void;
-  once?: (event: string, handler: () => void) => void;
-  off?: (event: string, handler: () => void) => void;
+  on?: (event: string, handler: (event?: unknown) => void) => void;
+  once?: (event: string, handler: (event?: unknown) => void) => void;
+  off?: (event: string, handler: (event?: unknown) => void) => void;
   loaded?: () => boolean;
   areTilesLoaded?: () => boolean;
   isStyleLoaded?: () => boolean;
+  addImage?: (id: string, image: { width: number; height: number; data: Uint8Array }) => void;
+  hasImage?: (id: string) => boolean;
 }
 
 /**
@@ -91,6 +93,16 @@ export default function MapLibreBaseLayer({ onReady }: MapLibreBaseLayerProps) {
         return;
       }
 
+      const handleMissingImage = (event?: unknown) => {
+        const missingId = (event as { id?: string } | undefined)?.id;
+        if (!missingId || glMap.hasImage?.(missingId)) return;
+        glMap.addImage?.(missingId, {
+          width: 1,
+          height: 1,
+          data: new Uint8Array([0, 0, 0, 0]),
+        });
+      };
+
       // Handler for load/idle events
       const handleLoadEvent = () => {
         if (!isActive) return;
@@ -105,11 +117,13 @@ export default function MapLibreBaseLayer({ onReady }: MapLibreBaseLayerProps) {
       if (bind) {
         bind("idle", handleLoadEvent);
         bind("load", handleLoadEvent);
+        glMap.on?.("styleimagemissing", handleMissingImage);
 
         // Store cleanup function
         cleanupListenersRef.current = () => {
           glMap.off?.("idle", handleLoadEvent);
           glMap.off?.("load", handleLoadEvent);
+          glMap.off?.("styleimagemissing", handleMissingImage);
         };
       } else {
         signalReady();
