@@ -9,8 +9,8 @@ import type { BusDataError } from "@core/domain/error";
  */
 export const ERROR_MESSAGE_MAP: Record<string, string> = {
   "ERR:NONE_RUNNING": UI_TEXT.BUS_LIST.NO_RUNNING,
-  "ERR:NETWORK": UI_TEXT.ERROR.FETCH_FAILED("Bus Data", 500),
-  "ERR:INVALID_ROUTE": UI_TEXT.ERROR.ROUTE_MISSING("Unknown Route"),
+  "ERR:NETWORK": UI_TEXT.ERROR.FETCH_FAILED("ERR:NETWORK", 400),
+  "ERR:INVALID_ROUTE": UI_TEXT.ERROR.ROUTE_MISSING("Unknown Route ID"),
 };
 
 /**
