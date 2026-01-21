@@ -107,6 +107,17 @@ export async function getBusStopLocationData(): Promise<BusStop[]> {
 }
 
 /**
+ * Fetches the station map keyed by nodeid.
+ * Useful for lookup-heavy operations that only need coordinates.
+ */
+export async function getStationMap(): Promise<Record<string, BusStop>> {
+  const data = await stationCache.getOrFetch("Stations", async () => {
+    return fetchAPI<StationData>(getRouteMapUrl(), { baseUrl: "" });
+  });
+  return data.stations;
+}
+
+/**
  * Returns a list of available route names (only routes with vehicle IDs).
  */
 export async function getAvailableRoutes(): Promise<string[]> {

@@ -4,11 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 
 import { APP_CONFIG } from "@core/config/env";
 
-import { getPolyline } from "@bus/api/getStaticData";
+import { getPolyline, getRouteDetails, getStationMap } from "@bus/api/getStaticData";
 
-import { transformPolyline } from "@map/utils/polyUtils";
+import { mergePolylines, transformPolyline } from "@map/utils/polyUtils";
+
+import { shouldSwapPolylines } from "@bus/utils/polylineDirection";
 
 import type { GeoPolyline } from "@core/domain/polyline";
+import type { RouteDetail } from "@core/domain/route";
+import type { BusStop } from "@core/domain/station";
 
 type PolylineSegment = {
     coords: [number, number][];
@@ -26,34 +30,67 @@ export function useMultiPolyline(
     activeRouteId?: string | null
 ) {
     const [dataMap, setDataMap] = useState<Map<string, GeoPolyline | null>>(new Map());
+    const [routeDetailMap, setRouteDetailMap] = useState<Map<string, RouteDetail | null>>(new Map());
+    const [stationMap, setStationMap] = useState<Record<string, BusStop> | null>(null);
 
     useEffect(() => {
         if (!routeName || routeIds.length === 0) {
             setDataMap(new Map());
+            setRouteDetailMap(new Map());
+            setStationMap(null);
             return;
         }
 
         // Load all polylines in parallel
-        const loadPromises = routeIds.map(async (routeId) => {
-            const routeKey = `${routeId}`;
+        let cancelled = false;
+
+        const loadData = async () => {
+            let stations: Record<string, BusStop> | null = null;
+
             try {
-                const data = await getPolyline(routeKey);
-                return { routeId, data };
+                stations = await getStationMap();
             } catch (error) {
                 if (APP_CONFIG.IS_DEV) {
-                    console.error("[useMultiPolyline] Error fetching polyline data for routeId: " + routeId, error);
+                    console.error("[useMultiPolyline] Error fetching station map", error);
                 }
-                return { routeId, data: null };
             }
-        });
 
-        Promise.all(loadPromises).then((results) => {
-            const newMap = new Map<string, GeoPolyline | null>();
-            results.forEach(({ routeId, data }) => {
-                newMap.set(routeId, data);
+            const results = await Promise.all(routeIds.map(async (routeId) => {
+                const routeKey = `${routeId}`;
+                try {
+                    const [data, routeDetail] = await Promise.all([
+                        getPolyline(routeKey),
+                        getRouteDetails(routeId),
+                    ]);
+                    return { routeId, data, routeDetail };
+                } catch (error) {
+                    if (APP_CONFIG.IS_DEV) {
+                        console.error("[useMultiPolyline] Error fetching polyline data for routeId: " + routeId, error);
+                    }
+                    return { routeId, data: null, routeDetail: null };
+                }
+            }));
+
+            if (cancelled) return;
+
+            const newDataMap = new Map<string, GeoPolyline | null>();
+            const newDetailMap = new Map<string, RouteDetail | null>();
+
+            results.forEach(({ routeId, data, routeDetail }) => {
+                newDataMap.set(routeId, data);
+                newDetailMap.set(routeId, routeDetail ?? null);
             });
-            setDataMap(newMap);
-        });
+
+            setDataMap(newDataMap);
+            setRouteDetailMap(newDetailMap);
+            setStationMap(stations);
+        };
+
+        void loadData();
+
+        return () => {
+            cancelled = true;
+        };
     }, [routeName, routeIds]);
 
     const segments = useMemo(() => {
@@ -74,9 +111,26 @@ export function useMultiPolyline(
             if (!data) return;
 
             const { upPolyline, downPolyline } = transformPolyline(data);
+            const isRoundTrip =
+                data.features.length === 1 &&
+                data.features[0]?.properties?.is_turning_point === true;
+
+            let finalUp = upPolyline;
+            let finalDown = downPolyline;
+
+            if (isRoundTrip) {
+                const routeDetail = routeDetailMap.get(routeId) ?? null;
+                const mergedUp = mergePolylines(upPolyline);
+                const mergedDown = mergePolylines(downPolyline);
+
+                if (shouldSwapPolylines(routeDetail, stationMap, mergedUp, mergedDown)) {
+                    finalUp = downPolyline;
+                    finalDown = upPolyline;
+                }
+            }
 
             // Process up direction segments
-            upPolyline.forEach((coords) => {
+            finalUp.forEach((coords) => {
                 const key = createSegmentKey(coords);
                 if (segmentMap.has(key)) {
                     // Segment already exists, add this routeId to it
@@ -97,7 +151,7 @@ export function useMultiPolyline(
             });
 
             // Process down direction segments
-            downPolyline.forEach((coords) => {
+            finalDown.forEach((coords) => {
                 const key = createSegmentKey(coords);
                 if (segmentMap.has(key)) {
                     // Segment already exists, add this routeId to it
@@ -119,7 +173,7 @@ export function useMultiPolyline(
         });
 
         return { upSegments, downSegments };
-    }, [dataMap, routeIds]);
+    }, [dataMap, routeDetailMap, routeIds, stationMap]);
 
     // Classify segments into active and inactive
     // A segment is ACTIVE if:

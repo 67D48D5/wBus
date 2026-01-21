@@ -4,9 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 
 import { APP_CONFIG } from "@core/config/env";
 
-import { getPolyline } from "@bus/api/getStaticData";
+import { getPolyline, getRouteDetails, getStationMap } from "@bus/api/getStaticData";
 
 import { mergePolylines, transformPolyline } from "@map/utils/polyUtils";
+
+import { shouldSwapPolylines } from "@bus/utils/polylineDirection";
 
 import type { LatLngTuple } from "leaflet";
 
@@ -30,11 +32,24 @@ export function useBusPolylineMap(routeIds: string[]) {
     let cancelled = false;
 
     const loadPolylines = async () => {
+      let stationMap = null;
+
+      try {
+        stationMap = await getStationMap();
+      } catch (error) {
+        if (APP_CONFIG.IS_DEV) {
+          console.error("[useBusPolylineMap] Error fetching station map", error);
+        }
+      }
+
       const results = await Promise.all(
         routeIds.map(async (routeId) => {
           try {
-            const data = await getPolyline(routeId);
-            return { routeId, data };
+            const [data, routeDetail] = await Promise.all([
+              getPolyline(routeId),
+              getRouteDetails(routeId),
+            ]);
+            return { routeId, data, routeDetail };
           } catch (error) {
             if (APP_CONFIG.IS_DEV) {
               console.error(
@@ -43,7 +58,7 @@ export function useBusPolylineMap(routeIds: string[]) {
                 error
               );
             }
-            return { routeId, data: null };
+            return { routeId, data: null, routeDetail: null };
           }
         })
       );
@@ -51,12 +66,22 @@ export function useBusPolylineMap(routeIds: string[]) {
       if (cancelled) return;
 
       const nextMap = new Map<string, BusPolylineSet>();
-      results.forEach(({ routeId, data }) => {
+      results.forEach(({ routeId, data, routeDetail }) => {
         if (!data) return;
         const { upPolyline, downPolyline } = transformPolyline(data);
+        const mergedUp = mergePolylines(upPolyline);
+        const mergedDown = mergePolylines(downPolyline);
+        const isRoundTrip =
+          data.features.length === 1 &&
+          data.features[0]?.properties?.is_turning_point === true;
+
+        const shouldSwap = isRoundTrip
+          ? shouldSwapPolylines(routeDetail, stationMap, mergedUp, mergedDown)
+          : false;
+
         nextMap.set(routeId, {
-          upPolyline: mergePolylines(upPolyline),
-          downPolyline: mergePolylines(downPolyline),
+          upPolyline: shouldSwap ? mergedDown : mergedUp,
+          downPolyline: shouldSwap ? mergedUp : mergedDown,
         });
       });
 
