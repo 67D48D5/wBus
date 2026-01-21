@@ -5,8 +5,9 @@
 import L from "leaflet";
 import "@maplibre/maplibre-gl-leaflet";
 
-import { useEffect, useRef } from "react";
 import { useMap } from "react-leaflet";
+import { useEffect, useRef } from "react";
+import { MapStyleImageMissingEvent } from "maplibre-gl";
 
 import { APP_CONFIG } from "@core/config/env";
 import { getMapStyle } from "@map/api/getMapData";
@@ -31,6 +32,13 @@ interface MapLibreGLInstance {
   loaded?: () => boolean;
   areTilesLoaded?: () => boolean;
   isStyleLoaded?: () => boolean;
+
+  // Fix: Sprite image management methods
+  hasImage?: (id: string) => boolean;
+  addImage?: (
+    id: string,
+    image: { width: number; height: number; data: Uint8Array }
+  ) => void;
 }
 
 /**
@@ -84,6 +92,24 @@ export default function MapLibreBaseLayer({ onReady }: MapLibreBaseLayerProps) {
         const styleReady = glMap.isStyleLoaded?.() ?? glMap.loaded?.() ?? true;
         const tilesReady = glMap.areTilesLoaded?.() ?? glMap.loaded?.() ?? true;
         return styleReady && tilesReady;
+      };
+
+      const handleMissingImage = (e?: MapStyleImageMissingEvent) => {
+        const id = e?.id;
+        if (!id) return;
+
+        if (APP_CONFIG.IS_DEV) {
+          console.warn("[MapLibre missing image]", id);
+        }
+
+        if (glMap.hasImage?.(id)) return;
+
+        // Add a transparent 1x1 pixel as a placeholder
+        glMap.addImage?.(id, {
+          width: 1,
+          height: 1,
+          data: new Uint8Array([0, 0, 0, 0]),
+        });
       };
 
       if (checkIsFullyLoaded()) {
