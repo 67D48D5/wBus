@@ -9,7 +9,10 @@ import { API_CONFIG, APP_CONFIG } from '@core/config/env';
 
 import type { BusSchedule } from "@core/domain/schedule";
 
+// ------------------------------------------------------------------
 // Types & Interfaces
+// ------------------------------------------------------------------
+
 export interface Notice {
     id: string;
     type: 'info' | 'warning' | 'urgent';
@@ -18,25 +21,43 @@ export interface Notice {
     date: string;
 }
 
-// Parsed bus data cache
-const dataCache = new Map<string, BusSchedule>();
+interface NoticeResponse {
+    notices: Notice[];
+}
 
-// Route list and notice caches
-let routeListCache: BusSchedule[] | null = null;
-let availableRouteIds: string[] | null = null;
-let noticeCache: Notice[] | null = null;
+interface ResourceLocation {
+    isRemote: boolean;
+    pathOrUrl: string;
+}
+
+// ------------------------------------------------------------------
+// State & Caching
+// ------------------------------------------------------------------
 
 /**
- * Determine the server-side base URL for remote API fetching.
- * - In local development, if '/dev' (relative path) is set, it converts to the actual remote address (REMOTE_API_URL) for server fetch.
- * - Without this function, server-side fetch with relative paths causes infinite loading due to unrecognized relative paths.
+ * In-memory cache to prevent redundant file reads or API calls during the server lifecycle.
+ */
+const GlobalCache = {
+    schedules: new Map<string, BusSchedule>(),
+    routeList: null as BusSchedule[] | null,
+    availableRouteIds: null as string[] | null,
+    notices: null as Notice[] | null,
+};
+
+// ------------------------------------------------------------------
+// Internal Helpers
+// ------------------------------------------------------------------
+
+/**
+ * Resolves the server-side base URL for remote API fetching.
+ * Handles cases where the base URL is a relative path (e.g., '/dev') in local development.
  */
 function getServerBaseUrl(): string {
     const { BASE_URL } = API_CONFIG.STATIC;
 
-    // When `BASE_URL` starts with a relative path like '/dev'
+    // Check if BASE_URL is relative (starts with '/')
     if (BASE_URL && BASE_URL.startsWith('/')) {
-        // If REMOTE_API_URL is set, use it; otherwise, fallback to BASE_URL (may cause issues)
+        // Fallback to REMOTE_API_URL or return BASE_URL (which might cause generic fetch issues if not absolute)
         return process.env.REMOTE_API_URL || BASE_URL;
     }
 
@@ -44,169 +65,156 @@ function getServerBaseUrl(): string {
 }
 
 /**
- * Generate the source (remote URL or local file path) for schedule data.
+ * Determines the location (Remote URL or Local File Path) for a requested resource.
+ * @param resourcePath - Relative path to the resource (e.g., 'schedules/101.json' or 'notice.json')
  */
-function getScheduleDataSource(routeId: string): { isRemote: boolean; location: string } {
-    // Remote mode
+function resolveResourceLocation(resourcePath: string): ResourceLocation {
+    // 1. Remote Mode
     if (API_CONFIG.STATIC.USE_REMOTE) {
         const baseUrl = getServerBaseUrl();
-        // Remote: https://.../schedules/{routeId}.json
+        // Construct remote URL: e.g., https://api.example.com/schedules/101.json
+        // Note: Removing leading slash from resourcePath if present to avoid double slashes
+        const normalizedPath = resourcePath.startsWith('/') ? resourcePath.slice(1) : resourcePath;
+
         return {
             isRemote: true,
-            location: `${baseUrl}/${API_CONFIG.STATIC.PATHS.SCHEDULES}/${routeId}.json`
+            pathOrUrl: `${baseUrl}/${normalizedPath}`
         };
     }
 
-    // Local mode
-    // Local: public/data/schedules/{routeId}.json
+    // 2. Local File System Mode
+    // Construct local path: e.g., /User/project/public/data/schedules/101.json
     return {
         isRemote: false,
-        location: path.join(process.cwd(), 'public/data/schedules', `${routeId}.json`)
+        pathOrUrl: path.join(process.cwd(), 'public/data', resourcePath)
     };
 }
 
 /**
- * Fetch schedule data (Remote Fetch or Local File Read)
+ * Generic data loader that handles both Remote Fetching and Local File Reading.
+ * Includes error handling for 404s and missing files.
  */
-async function fetchScheduleData(routeId: string): Promise<BusSchedule | null> {
-    try {
-        const { isRemote, location } = getScheduleDataSource(routeId);
+async function loadJsonData<T>(resourcePath: string, contextLabel: string): Promise<T | null> {
+    const { isRemote, pathOrUrl } = resolveResourceLocation(resourcePath);
 
+    try {
         if (isRemote) {
-            return await fetchAPI<BusSchedule>(location, {
-                baseUrl: '', // location is already a complete URL, so baseUrl is empty
+            // Remote Fetch
+            return await fetchAPI<T>(pathOrUrl, {
+                baseUrl: '', // pathOrUrl is already absolute
                 init: { next: { revalidate: API_CONFIG.STATIC.REVALIDATE_SEC } }
             });
         } else {
-            // Server-side Local File Read
-            const fileContent = await fs.readFile(location, 'utf8');
-            return JSON.parse(fileContent) as BusSchedule;
+            // Local File Read
+            const fileContent = await fs.readFile(pathOrUrl, 'utf8');
+            return JSON.parse(fileContent) as T;
         }
     } catch (error) {
-        // If the file does not exist (e.g., 404), return null
-        if ((error as any).code === 'ENOENT' || (error instanceof HttpError && (error.status === 404 || error.status === 403))) {
+        // Handle "File Not Found" scenarios (ENOENT for fs, 404/403 for HTTP)
+        const isNotFound =
+            (error as any).code === 'ENOENT' ||
+            (error instanceof HttpError && (error.status === 404 || error.status === 403));
+
+        if (isNotFound) {
             if (APP_CONFIG.IS_DEV) {
-                console.warn(`[getScheduleData] Schedule file not found for routeId: ${routeId}`);
+                console.warn(`[${contextLabel}] Resource not found: ${resourcePath}`);
             }
             return null;
         }
 
+        // Log unexpected errors
         if (APP_CONFIG.IS_DEV) {
-            console.error("[getScheduleData] Failed to fetch schedule data for routeId: " + routeId, error);
+            console.error(`[${contextLabel}] Failed to load data from: ${pathOrUrl}`, error);
         }
 
         return null;
     }
 }
 
-/**
- * Fetch notice data
- */
-async function fetchNoticeData(): Promise<{ notices: Notice[] } | null> {
-    try {
-        if (API_CONFIG.STATIC.USE_REMOTE) {
-            const baseUrl = getServerBaseUrl();
-            const location = `${baseUrl}/notice.json`;
-
-            return await fetchAPI<{ notices: Notice[] }>(location, {
-                baseUrl: '',
-                init: { next: { revalidate: API_CONFIG.STATIC.REVALIDATE_SEC } }
-            });
-        } else {
-            const location = path.join(process.cwd(), 'public/data', 'notice.json');
-            const fileContent = await fs.readFile(location, 'utf8');
-            return JSON.parse(fileContent) as { notices: Notice[] };
-        }
-    } catch (error) {
-        if ((error as any).code === 'ENOENT') {
-            return null;
-        }
-
-        if (APP_CONFIG.IS_DEV) {
-            console.error("[getScheduleData] Failed to fetch notice data from `notice.json`", error);
-        }
-
-        return null;
-    }
-}
+// ------------------------------------------------------------------
+// Exported API Functions
+// ------------------------------------------------------------------
 
 /**
  * Get available route IDs by scanning the local directory.
- * Removes dependency on routeMap.json and directly checks the file system.
+ * NOTE: This relies on the local file system even if USE_REMOTE is true, 
+ * serving as the source of truth for which routes exist.
  */
-async function getAvailableRouteIds(): Promise<string[]> {
-    if (availableRouteIds) {
-        return availableRouteIds;
+export async function getAvailableRouteIds(): Promise<string[]> {
+    if (GlobalCache.availableRouteIds) {
+        return GlobalCache.availableRouteIds;
     }
 
     try {
-        // Scan the public/data/schedules directory
         const schedulesDir = path.join(process.cwd(), 'public/data/schedules');
         const files = await fs.readdir(schedulesDir);
 
-        availableRouteIds = files
-            // Filter only .json files and remove the extension (exclude .keep files, etc.)
+        GlobalCache.availableRouteIds = files
             .filter(file => file.endsWith('.json') && file !== '.keep')
             .map(file => file.replace('.json', ''));
 
-        return availableRouteIds;
+        return GlobalCache.availableRouteIds;
     } catch (error) {
         if (APP_CONFIG.IS_DEV) {
-            console.error("[getScheduleData] Failed to fetch available route IDs:", error);
+            console.error("[getScheduleData] Failed to scan schedule directory:", error);
         }
-        availableRouteIds = [];
-        return availableRouteIds;
+        return [];
     }
 }
 
 /**
- * Load and parse a single route with caching
+ * Load and parse a single route schedule with caching.
  */
 export async function getRouteData(routeId: string): Promise<BusSchedule | null> {
-    if (dataCache.has(routeId)) {
-        return dataCache.get(routeId)!;
+    if (GlobalCache.schedules.has(routeId)) {
+        return GlobalCache.schedules.get(routeId)!;
     }
 
-    const data = await fetchScheduleData(routeId);
+    const resourcePath = `${API_CONFIG.STATIC.PATHS.SCHEDULES}/${routeId}.json`;
+    const data = await loadJsonData<BusSchedule>(resourcePath, 'getRouteData');
 
     if (data) {
-        dataCache.set(routeId, data);
+        GlobalCache.schedules.set(routeId, data);
     }
 
     return data;
 }
 
 /**
- * Get all routes with caching
+ * Get all routes (bulk load).
  */
 export async function getAllRoutes(): Promise<BusSchedule[]> {
-    if (routeListCache) {
-        return routeListCache;
+    if (GlobalCache.routeList) {
+        return GlobalCache.routeList;
     }
 
     const routeIds = await getAvailableRouteIds();
+
+    // Fetch all routes in parallel
     const results = await Promise.allSettled(
         routeIds.map(id => getRouteData(id))
     );
 
-    routeListCache = results
+    GlobalCache.routeList = results
         .filter((result): result is PromiseFulfilledResult<BusSchedule | null> =>
             result.status === 'fulfilled'
         )
         .map(result => result.value)
         .filter((value): value is BusSchedule => value !== null);
-    return routeListCache;
+
+    return GlobalCache.routeList;
 }
 
 /**
- * Get all route IDs for static generation (Used in getStaticPaths)
+ * Get all route IDs for static path generation.
+ * (Alias for getAvailableRouteIds to maintain API consistency).
  */
 export async function getAllRouteIds(): Promise<string[]> {
     return await getAvailableRouteIds();
 }
 
 /**
- * Check if a route exists
+ * Check if a specific route exists in the system.
  */
 export async function routeExists(routeId: string): Promise<boolean> {
     const routeIds = await getAvailableRouteIds();
@@ -214,18 +222,19 @@ export async function routeExists(routeId: string): Promise<boolean> {
 }
 
 /**
- * Get notices
+ * Fetch system notices.
  */
 export async function getNotices(): Promise<Notice[]> {
-    if (noticeCache) {
-        return noticeCache;
+    if (GlobalCache.notices) {
+        return GlobalCache.notices;
     }
 
-    const data = await fetchNoticeData();
+    // "notice.json" is expected to be at the root of the data folder
+    const data = await loadJsonData<NoticeResponse>('notice.json', 'getNotices');
 
     if (data?.notices) {
-        noticeCache = data.notices;
-        return noticeCache;
+        GlobalCache.notices = data.notices;
+        return GlobalCache.notices;
     }
 
     return [];

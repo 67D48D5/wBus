@@ -2,84 +2,124 @@
 
 import type { BusSchedule } from '@core/domain/schedule';
 
+// ----------------------------------------------------------------------
+// Constants & Types
+// ----------------------------------------------------------------------
+
+const MINUTES_IN_HOUR = 60;
+const MINUTES_IN_DAY = 1440; // 24 * 60
+
+export interface NearestBusInfo {
+    /** formatted time string (HH:mm) */
+    time: string;
+    /** minutes remaining until this bus arrives */
+    minutesUntil: number;
+    /** destination of the bus */
+    destination: string;
+}
+
+// ----------------------------------------------------------------------
+// Utility Functions
+// ----------------------------------------------------------------------
+
 /**
- * Get current hour as zero-padded string (e.g., "09", "14")
+ * Get the current hour as a zero-padded string (e.g., "09", "14").
+ * @param date - Optional date object (defaults to now)
  */
-export function getCurrentHour(): string {
-    return String(new Date().getHours()).padStart(2, '0');
+export function getCurrentHour(date: Date = new Date()): string {
+    return String(date.getHours()).padStart(2, '0');
 }
 
 /**
- * Get current day type based on day of week
+ * Determine if the current day is a 'weekday' or 'weekend'.
+ * Note: Does not currently account for public holidays.
+ * @param date - Optional date object (defaults to now)
  */
-export function getCurrentDayType(): 'weekday' | 'weekend' {
-    const day = new Date().getDay();
+export function getCurrentDayType(date: Date = new Date()): 'weekday' | 'weekend' {
+    const day = date.getDay(); // 0 is Sunday, 6 is Saturday
     return day === 0 || day === 6 ? 'weekend' : 'weekday';
 }
 
 /**
- * Format time string for display
+ * Format hour and minute strings into a display format (HH:mm).
  */
 export function formatTime(hour: string, minute: string): string {
     return `${hour}:${minute.padStart(2, '0')}`;
 }
 
 /**
- * Get current minutes since midnight
+ * Get the total minutes passed since midnight for the current time.
+ * @param date - Optional date object (defaults to now)
  */
-export function getCurrentMinutes(): number {
-    const now = new Date();
-    return now.getHours() * 60 + now.getMinutes();
+export function getCurrentMinutes(date: Date = new Date()): number {
+    return date.getHours() * MINUTES_IN_HOUR + date.getMinutes();
 }
 
 /**
- * Convert time string (HH or HH:mm) to minutes since midnight
+ * Convert a time string (HH:mm or HH) to total minutes since midnight.
+ * @param timeStr - e.g., "14:30" or "14"
  */
 export function timeToMinutes(timeStr: string): number {
     const colonIndex = timeStr.indexOf(':');
+
+    // If format is just "HH"
     if (colonIndex === -1) {
-        return parseInt(timeStr, 10) * 60;
+        return parseInt(timeStr, 10) * MINUTES_IN_HOUR;
     }
-    return parseInt(timeStr.substring(0, colonIndex), 10) * 60 +
-        parseInt(timeStr.substring(colonIndex + 1), 10);
+
+    // If format is "HH:mm"
+    const hours = parseInt(timeStr.substring(0, colonIndex), 10);
+    const minutes = parseInt(timeStr.substring(colonIndex + 1), 10);
+
+    return (hours * MINUTES_IN_HOUR) + minutes;
 }
 
 /**
- * Find the nearest upcoming bus time for a given route
+ * Find the nearest upcoming bus time from the provided schedule data.
+ * This function handles wrapping around midnight (finding the first bus of tomorrow if none are left today).
+ * * @param busData - The full bus schedule object
+ * @returns The nearest bus info or null if no schedule is available
  */
-export function getNearestBusTime(busData: BusSchedule): { time: string; minutes: number; destination: string } | null {
-    // Check for general schedule first, then fall back to day-specific schedule
+export function getNearestBusTime(busData: BusSchedule): NearestBusInfo | null {
+    // Priority: General Schedule -> Day-specific Schedule (Weekday/Weekend)
     const schedule = busData.schedule.general || busData.schedule[getCurrentDayType()];
 
     if (!schedule) return null;
 
-    const currentMinutes = getCurrentMinutes();
-    const MINUTES_PER_DAY = 1440; // 24 * 60
+    const currentTotalMinutes = getCurrentMinutes();
+
     let minDifference = Infinity;
-    let nearestTime: { time: string; minutes: number; destination: string } | null = null;
+    let nearestBus: NearestBusInfo | null = null;
 
-    // Iterate through all hours and minutes to find the next bus
-    for (const [hour, hourlySchedule] of Object.entries(schedule)) {
-        const hourNum = parseInt(hour, 10);
-        const hourMinutes = hourNum * 60;
+    // Iterate through hours (Keys are "06", "07", etc.)
+    for (const [hourStr, hourlySchedule] of Object.entries(schedule)) {
+        const hourNum = parseInt(hourStr, 10);
+        const baseHourMinutes = hourNum * MINUTES_IN_HOUR;
 
+        // Iterate through destinations
         for (const [destination, busTimes] of Object.entries(hourlySchedule)) {
+            // Iterate through specific bus times
             for (const { minute } of busTimes) {
-                const busMinutes = hourMinutes + parseInt(minute, 10);
+                const busTotalMinutes = baseHourMinutes + parseInt(minute, 10);
 
-                // Calculate difference (prefer future times, wrap to next day if needed)
-                const difference = busMinutes >= currentMinutes
-                    ? busMinutes - currentMinutes
-                    : MINUTES_PER_DAY + busMinutes - currentMinutes;
+                // Calculate time difference
+                // If the bus time is earlier than now, we assume it's for the next day (wrap around)
+                // e.g. Now: 23:50, Bus: 06:00 -> difference is (06:00 + 24h) - 23:50
+                const difference = busTotalMinutes >= currentTotalMinutes
+                    ? busTotalMinutes - currentTotalMinutes
+                    : MINUTES_IN_DAY + busTotalMinutes - currentTotalMinutes;
 
                 if (difference < minDifference) {
                     minDifference = difference;
-                    nearestTime = { time: `${hour}:${minute}`, minutes: difference, destination };
+                    nearestBus = {
+                        time: `${hourStr}:${minute}`,
+                        minutesUntil: difference,
+                        destination
+                    };
                 }
             }
         }
     }
 
-    return nearestTime;
+    return nearestBus;
 }
-
