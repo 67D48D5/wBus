@@ -19,33 +19,47 @@ function getSqDist(p1: [number, number], p2: [number, number]): number {
 
 /**
 * Transform GeoJSON data into separate polylines for up and down directions.
-* [Important] Data may not come in order, so sorting by seq or similar properties is necessary.
+* [Important] Data may not come in order, so sorting by start_node_ord is necessary.
+* 
+* New schema:
+* - direction: 0 = up (상행), 1 = down (하행)
+* - start_node_ord: ordering number for segments
+* - is_turning_point: indicates if this segment is a turning point
 */
 export function transformPolyline(data: GeoPolyline) {
-    const upSegments: { coords: [number, number][], seq: number }[] = [];
-    const downSegments: { coords: [number, number][], seq: number }[] = [];
+    const upSegments: { coords: [number, number][], seq: number, isTurningPoint: boolean }[] = [];
+    const downSegments: { coords: [number, number][], seq: number, isTurningPoint: boolean }[] = [];
 
-    // 1. Iterate through data to separate up/down directions and extract order (seq)
+    // 1. Iterate through data to separate up/down directions and extract order
     data.features.forEach((feature) => {
         // Leaflet uses [lat, lng], GeoJSON uses [lng, lat]
         const coords = feature.geometry.coordinates.map(
             ([lng, lat]) => [lat, lng] as [number, number]
         );
 
-        const props = feature.properties as any;
+        const props = feature.properties;
 
-        // If there is order info (seq, turn_seq, section_id, etc.) in the data, use it (default 0)
-        const seq = Number(props.seq || props.turn_seq || props.section_id || 0);
+        // Use start_node_ord for ordering (fallback to legacy props if needed)
+        const seq = Number(
+            props.start_node_ord ??
+            (props as any).seq ??
+            (props as any).turn_seq ??
+            (props as any).section_id ??
+            0
+        );
+        const isTurningPoint = props.is_turning_point ?? false;
 
-        // Support both new scheme (dir: "up"/"down") and legacy scheme (updnDir: "1"/"0")
-        if (props.dir === "up" || props.updnDir === "1") {
-            upSegments.push({ coords, seq });
-        } else if (props.dir === "down" || props.updnDir === "0") {
-            downSegments.push({ coords, seq });
+        // New schema: direction 0 = up, direction 1 = down
+        // Also support legacy schemas for backward compatibility
+        const legacyProps = props as any;
+        if (props.direction === 0 || legacyProps.dir === "up" || legacyProps.updnDir === "1") {
+            upSegments.push({ coords, seq, isTurningPoint });
+        } else if (props.direction === 1 || legacyProps.dir === "down" || legacyProps.updnDir === "0") {
+            downSegments.push({ coords, seq, isTurningPoint });
         }
     });
 
-    // 2. Sort by order (seq) to avoid zigzag connections in the polyline
+    // 2. Sort by order (start_node_ord) to avoid zigzag connections in the polyline
     upSegments.sort((a, b) => a.seq - b.seq);
     downSegments.sort((a, b) => a.seq - b.seq);
 
