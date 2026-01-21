@@ -41,7 +41,7 @@ export const API_CONFIG = {
     USE_REMOTE: getEnvBoolean(process.env.NEXT_PUBLIC_USE_REMOTE_STATIC_DATA, false),
     REVALIDATE_SEC: 3600,
     PATHS: {
-      MAP_STYLE: "mapStyle.json",
+      MAP_STYLE: "config.json",
       ROUTE_MAP: "routeMap.json",
       POLYLINES: "polylines",
       SCHEDULES: "schedules",
@@ -52,7 +52,7 @@ export const API_CONFIG = {
 
 export const MAP_SETTINGS = {
   BOUNDS: {
-    MAX: getEnvBounds(process.env.NEXT_PUBLIC_MAP_MAX_BOUNDS, "37.22,127.8,37.52,128.05"),
+    MAX: getEnvBounds(process.env.NEXT_PUBLIC_MAP_MAX_BOUNDS, "37.10,127.60,37.60,128.30"),
     DEFAULT_CENTER: [defaultLat, defaultLng] as [number, number],
   },
   ZOOM: {

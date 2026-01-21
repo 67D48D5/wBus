@@ -21,7 +21,7 @@ export function getMapStyleUrl(): string {
     }
 
     // If the file path is not set, fall back to default
-    const stylePath = STATIC.PATHS.MAP_STYLE || "mapStyle.json";
+    const stylePath = STATIC.PATHS.MAP_STYLE || "config.json";
 
     // Remote mode (USE_REMOTE=true)
     if (STATIC.USE_REMOTE) {
@@ -36,7 +36,7 @@ export function getMapStyleUrl(): string {
     }
 
     // [Default] Local mode
-    // If STATIC.BASE_URL is set to "/data", "/data/mapStyle.json" will be returned
+    // If STATIC.BASE_URL is set to "/data", "/data/config.json" will be returned
     return joinUrl(STATIC.BASE_URL || "/data", stylePath);
 }
 
