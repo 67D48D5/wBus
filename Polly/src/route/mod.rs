@@ -4,27 +4,57 @@ use std::collections::{BTreeMap, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::time::Duration;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use chrono::Local;
 use futures::stream::{self, StreamExt};
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
-use tokio::time::sleep;
 
 use super::utils;
 
-// Default constants if env vars are missing
+// ============================================================================
+// Constants & Configuration
+// ============================================================================
+
 const TAGO_URL: &str = "http://apis.data.go.kr/1613000/BusRouteInfoInqireService";
+
+// OSRM 'route' service is used to generate smooth, road-snapped polylines.
 const OSRM_URL: &str = "http://router.project-osrm.org/route/v1/driving";
 
-/// Holds data collected from a single route processing task
+// Concurrency limits to manage API rate limits and server load.
+const CONCURRENCY_FETCH: usize = 10; // Tago API (Public Data Portal) limit
+const CONCURRENCY_SNAP: usize = 4; // OSRM Server (CPU intensive) limit
+
+// OSRM URL character/point limit. We chunk stops to avoid 414 URI Too Long errors.
+const OSRM_CHUNK_SIZE: usize = 140;
+
+// ============================================================================
+// Data Models
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct Stop {
+    node_id: String,
+    node_nm: String,
+    node_ord: i64, // Sequence order of the stop within the route
+    node_no: String,
+    gps_lat: f64,
+    gps_long: f64,
+    up_down_cd: i64, // 0: Down/Descending, 1: Up/Ascending (Directional code)
+}
+
+/// Holds aggregated data for a single processed route.
 struct RouteData {
     route_id: String,
     route_no: String,
-    details: Value,
-    stops: Vec<(String, Value)>, // (node_id, node_data)
+    details: Value,                  // Metadata for route_details (JSON)
+    stops_map: Vec<(String, Value)>, // List of (NodeID, NodeData) for the station map
 }
+
+// ============================================================================
+// Main Execution
+// ============================================================================
 
 pub async fn run(
     city_code: String,
@@ -33,20 +63,18 @@ pub async fn run(
     station_map_only: bool,
     osrm_only: bool,
 ) -> Result<()> {
-    // Validate API Key
+    // 1. Environment Verification
     let service_key = utils::get_env("DATA_GO_KR_SERVICE_KEY");
     if service_key.is_empty() {
-        anyhow::bail!("DATA_GO_KR_SERVICE_KEY is not set in .env");
+        anyhow::bail!("DATA_GO_KR_SERVICE_KEY is missing in .env");
     }
 
-    // Setup directories
     let raw_dir = output_dir.join("raw_routes");
     let snapped_dir = output_dir.join("snapped_routes");
 
     utils::ensure_dir(&raw_dir)?;
     utils::ensure_dir(&snapped_dir)?;
 
-    // Initialize Processor (wrapped in Arc for thread safety in async blocks)
     let processor = Arc::new(BusRouteProcessor {
         service_key,
         city_code,
@@ -54,17 +82,16 @@ pub async fn run(
         snapped_dir: snapped_dir.clone(),
         mapping_file: output_dir.join("routeMap.json"),
         tago_base_url: resolve_url("TAGO_API_URL", TAGO_URL),
-        osrm_base_url: resolve_url("OSRM_ROUTE_API_URL", OSRM_URL),
+        osrm_base_url: resolve_url("OSRM_API_URL", OSRM_URL),
     });
 
-    // Phase 1: Data Collection
+    // 2. Phase 1: Data Collection (Fetch from Public API)
     if !osrm_only {
-        println!("\n[Phase 1: Data Collection]");
-
+        println!("\n[Phase 1: Data Collection & Stop Ordering]");
         let routes = processor.get_all_routes().await?;
 
-        // Filter target routes
-        let targets: Vec<Value> = if let Some(target_no) = specific_route.as_ref() {
+        // Filter for specific route if requested (by Route Number, e.g., "10-1")
+        let target_routes: Vec<Value> = if let Some(target_no) = specific_route.as_ref() {
             routes
                 .into_iter()
                 .filter(|r| parse_flexible_string(&r["routeno"]) == *target_no)
@@ -72,102 +99,104 @@ pub async fn run(
         } else {
             routes
         };
+        println!(" Targeting {} routes...", target_routes.len());
 
-        println!("  Targeting {} routes...", targets.len());
-
-        // Concurrent Processing Configuration
-        let concurrency_limit = 5; // Adjust based on API rate limits
-        let mut route_stream = stream::iter(targets)
+        // Process routes concurrently
+        let mut route_stream = stream::iter(target_routes)
             .map(|route| {
                 let proc = Arc::clone(&processor);
                 async move { proc.process_single_route(route, !station_map_only).await }
             })
-            .buffer_unordered(concurrency_limit);
+            .buffer_unordered(CONCURRENCY_FETCH);
 
-        // Aggregation structures
+        // Aggregation structures for the master map
         let mut all_stops = BTreeMap::new();
         let mut route_details_map = HashMap::new();
         let mut route_mapping: BTreeMap<String, Vec<String>> = BTreeMap::new();
-
-        let mut count = 0;
+        let mut count = 0usize;
 
         while let Some(result) = route_stream.next().await {
-            count += 1;
             match result {
                 Ok(Some(data)) => {
-                    // Update aggregations
+                    count += 1;
+
+                    // Aggregate data
                     route_details_map.insert(data.route_id.clone(), data.details);
                     route_mapping
                         .entry(data.route_no)
                         .or_default()
                         .push(data.route_id);
 
-                    for (id, val) in data.stops {
+                    for (id, val) in data.stops_map {
                         all_stops.insert(id, val);
                     }
+
                     if count % 10 == 0 {
-                        println!("  ... Processed {} routes", count);
+                        print!(".");
                     }
                 }
-                Ok(None) => {} // Skipped route
-                Err(e) => eprintln!("  Error processing route: {:?}", e),
+                Ok(None) => {} // Skipped (empty or invalid)
+                Err(e) => eprintln!("\n Error processing route: {:?}", e),
             }
         }
+        println!("\n Processed {} routes.", count);
 
-        // Save metadata map
+        // Save the master route map JSON
         processor.save_route_map_json(&route_mapping, &route_details_map, &all_stops)?;
 
         if station_map_only {
-            println!("✓ Station map only mode completed.");
+            println!("✓ Station map generation complete.");
             return Ok(());
         }
     }
 
-    // Phase 2: OSRM Snapping
-    println!("\n[Phase 2: Route Snapping via OSRM]");
+    // 3. Phase 2: OSRM Snapping (Map Matching / Routing)
+    println!("\n[Phase 2: Route Snapping via OSRM Match]");
 
-    let entries: Vec<_> = fs::read_dir(&raw_dir)?
-        .filter_map(|e| e.ok()) // Ignore entries with errors
-        .collect();
+    let raw_entries: Vec<_> = fs::read_dir(&raw_dir)?.filter_map(|e| e.ok()).collect();
 
-    // Set concurrency for snapping
-    let snap_concurrency = 5;
-
-    let mut snap_stream = stream::iter(entries)
+    let mut snap_stream = stream::iter(raw_entries)
         .map(|entry| {
             let proc = Arc::clone(&processor);
             let specific = specific_route.clone();
-
             async move {
                 let path = entry.path();
-                if path.extension().map_or(false, |ext| ext == "geojson") {
-                    let file_name = path.file_name().unwrap().to_string_lossy();
+                // Process only .json files (raw stop lists), convert to .geojson
+                if path.extension().map_or(false, |ext| ext == "json") {
+                    let fname = path.file_name().unwrap().to_string_lossy();
 
+                    // Apply filter if needed (Matches against filename/Route ID)
                     if let Some(ref target) = specific {
-                        if !file_name.contains(target) {
+                        // Note: Since filenames are now only Route IDs (e.g. WJB...),
+                        // filtering by Route Number (e.g. "10") here won't work unless
+                        // the file content is checked.
+                        if !fname.contains(target) {
                             return Ok(());
                         }
                     }
 
-                    println!("  Snapping {}...", file_name);
+                    println!(" Snapping {}...", fname);
                     proc.snap_route_file(&path).await
                 } else {
                     Ok(())
                 }
             }
         })
-        .buffer_unordered(snap_concurrency);
+        .buffer_unordered(CONCURRENCY_SNAP);
 
-    while let Some(result) = snap_stream.next().await {
-        if let Err(e) = result {
-            eprintln!("  Snap error: {:?}", e);
+    while let Some(res) = snap_stream.next().await {
+        if let Err(e) = res {
+            eprintln!(" Snap failed: {:?}", e);
         }
     }
 
-    println!("✓ All done!");
-
+    println!("✓ Work Complete.");
     Ok(())
 }
+
+// ============================================================================
+// Processor Implementation
+// ============================================================================
 
 struct BusRouteProcessor {
     service_key: String,
@@ -180,29 +209,26 @@ struct BusRouteProcessor {
 }
 
 impl BusRouteProcessor {
-    /// Fetch the list of all routes for the city
+    /// Fetches the complete list of route IDs for the target city.
     async fn get_all_routes(&self) -> Result<Vec<Value>> {
         let params = [
             ("cityCode", self.city_code.as_str()),
-            ("numOfRows", "1024"),
+            ("numOfRows", "2000"), // Ensure capacity for all routes
             ("pageNo", "1"),
             ("serviceKey", self.service_key.as_str()),
             ("_type", "json"),
         ];
-
         let url = format!("{}/getRouteNoList", self.tago_base_url);
         let resp = reqwest::Client::new()
             .get(&url)
             .query(&params)
             .send()
-            .await
-            .context("Failed to fetch route list")?;
-
+            .await?;
         let json: Value = resp.json().await?;
         extract_items(&json)
     }
 
-    /// Process a single route: fetch stops, build GeoJSON, and return metadata
+    /// Fetches stop data for a single route, sorts it, and saves the raw JSON.
     async fn process_single_route(
         &self,
         route_info: Value,
@@ -214,19 +240,17 @@ impl BusRouteProcessor {
             .to_string();
         let route_no = parse_flexible_string(&route_info["routeno"]);
 
-        if route_no.is_empty() || route_no == "UNKNOWN" || route_id.is_empty() {
+        if route_no == "UNKNOWN" || route_id.is_empty() {
             return Ok(None);
         }
 
-        // Fetch stops for this route
         let params = [
             ("cityCode", self.city_code.as_str()),
             ("routeId", route_id.as_str()),
-            ("numOfRows", "1024"),
+            ("numOfRows", "1024"), // Max stops per route (approximate)
             ("serviceKey", self.service_key.as_str()),
             ("_type", "json"),
         ];
-
         let url = format!("{}/getRouteAcctoThrghSttnList", self.tago_base_url);
         let resp = reqwest::Client::new()
             .get(&url)
@@ -234,315 +258,434 @@ impl BusRouteProcessor {
             .send()
             .await?;
 
-        // Handle potential JSON errors gracefully
         let json: Value = match resp.json().await {
             Ok(v) => v,
             Err(_) => return Ok(None),
         };
 
-        let mut items = extract_items(&json)?;
+        let items = extract_items(&json)?;
         if items.is_empty() {
             return Ok(None);
         }
 
-        // Sort by node order to ensure correct sequence
-        items.sort_by_key(|v| v["nodeord"].as_i64().unwrap_or(0));
+        // Map JSON items to internal Stop structs
+        let mut stops: Vec<Stop> = items
+            .iter()
+            .map(|item| Stop {
+                node_id: item["nodeid"].as_str().unwrap_or("").to_string(),
+                node_nm: item["nodenm"].as_str().unwrap_or("").to_string(),
+                node_ord: item["nodeord"].as_i64().unwrap_or(0),
+                node_no: item["nodeno"]
+                    .as_i64()
+                    .map(|n| n.to_string())
+                    .unwrap_or_else(|| item["nodeno"].as_str().unwrap_or("").to_string()),
+                gps_lat: item["gpslati"].as_f64().unwrap_or(0.0),
+                gps_long: item["gpslong"].as_f64().unwrap_or(0.0),
+                up_down_cd: item["updowncd"]
+                    .as_i64()
+                    .or_else(|| item["updowncd"].as_str().and_then(|s| s.parse().ok()))
+                    .unwrap_or(0),
+            })
+            .collect();
 
-        let mut sequence = Vec::new();
-        let mut stops_data = Vec::new();
+        // STRICT ORDERING: Sort by node_ord to ensure a linear path sequence
+        stops.sort_by_key(|s| s.node_ord);
 
-        // Process stops
-        for item in &items {
-            let node_id = item["nodeid"].as_str().unwrap_or("");
-            if node_id.is_empty() {
-                continue;
-            }
-
-            // Collect stop metadata
-            stops_data.push((
-                node_id.to_string(),
+        // Generate metadata
+        let sequence_meta: Vec<Value> = stops
+            .iter()
+            .map(|s| {
                 json!({
-                   "nodenm": item["nodenm"],
-                   "nodeno": item["nodeno"],
-                   "gpslati": item["gpslati"],
-                   "gpslong": item["gpslong"]
-                }),
-            ));
+                "nodeid": s.node_id,
+                "nodeord": s.node_ord,
+                "updowncd": s.up_down_cd
+                })
+            })
+            .collect();
 
-            sequence.push(json!({
-                "nodeid": node_id,
-                "nodeord": item["nodeord"],
-                "updowncd": item["updowncd"]
-            }));
+        let stops_map_data: Vec<(String, Value)> = stops
+            .iter()
+            .map(|s| {
+                (
+                    s.node_id.clone(),
+                    json!({
+                    "nodenm": s.node_nm,
+                    "nodeno": s.node_no,
+                    "gpslati": s.gps_lat,
+                    "gpslong": s.gps_long
+                    }),
+                )
+            })
+            .collect();
+
+        let details = json!({ "routeno": route_no, "sequence": sequence_meta });
+
+        // Save JSON file
+        if save_file {
+            let file_path = self.raw_dir.join(format!("{}_{}.json", route_no, route_id));
+            fs::write(file_path, serde_json::to_string_pretty(&stops)?)?;
         }
-
-        let route_detail_obj = json!({
-            "routeno": route_no,
-            "sequence": sequence
-        });
-
-        // If we don't need to save the GeoJSON file, return early
-        if !save_file {
-            return Ok(Some(RouteData {
-                route_id,
-                route_no,
-                details: route_detail_obj,
-                stops: stops_data,
-            }));
-        }
-
-        // Build GeoJSON features
-        let features = self.build_geojson_features(&items);
-        if features.is_empty() {
-            return Ok(None);
-        }
-
-        let geojson = json!({
-            "type": "FeatureCollection",
-            "features": features
-        });
-
-        // Save Raw GeoJSON
-        let file_path = self
-            .raw_dir
-            .join(format!("{}_{}.geojson", route_no, route_id));
-        fs::write(file_path, serde_json::to_string_pretty(&geojson)?)?;
 
         Ok(Some(RouteData {
             route_id,
             route_no,
-            details: route_detail_obj,
-            stops: stops_data,
+            details,
+            stops_map: stops_map_data,
         }))
     }
 
-    /// Helper to separate UP and DOWN lines and create LineStrings
-    fn build_geojson_features(&self, items: &[Value]) -> Vec<Value> {
-        let extract_coords = |target_updown: i64| -> Vec<Vec<f64>> {
-            items
-                .iter()
-                .filter(|i| {
-                    let val = &i["updowncd"];
-                    // API might return "0"/"1" string or 0/1 integer
-                    let val_int = if let Some(s) = val.as_str() {
-                        s.parse::<i64>().unwrap_or(-1)
-                    } else {
-                        val.as_i64().unwrap_or(-1)
-                    };
-                    val_int == target_updown
-                })
-                .map(|i| {
-                    vec![
-                        i["gpslong"].as_f64().unwrap_or(0.0),
-                        i["gpslati"].as_f64().unwrap_or(0.0),
-                    ]
-                })
-                .collect()
-        };
+    /// Reads raw stop JSON, generates a road-following polyline via OSRM, and exports GeoJSON.
+    async fn snap_route_file(&self, path: &Path) -> Result<()> {
+        let content = fs::read_to_string(path)?;
+        let stops: Vec<Stop> = serde_json::from_str(&content)?;
 
-        // 0: Down (usually), 1: Up (usually). Sometimes reversed depending on city.
-        let up_coords = extract_coords(1);
-        let down_coords = extract_coords(0);
+        // Preprocess: Sanitize stop locations to main corridor
+        // Mitigates alley/service-road deviations caused by poor stop coordinates.
+        let mut stops = stops;
+        self.sanitize_stops_to_corridor(&mut stops).await;
 
-        let mut features = Vec::new();
-
-        if !up_coords.is_empty() {
-            features.push(json!({
-                "type": "Feature",
-                "properties": {"dir": "up"},
-                "geometry": {"type": "LineString", "coordinates": up_coords}
-            }));
+        if stops.len() < 2 {
+            return Ok(());
         }
-        if !down_coords.is_empty() {
-            features.push(json!({
-                "type": "Feature",
-                "properties": {"dir": "down"},
-                "geometry": {"type": "LineString", "coordinates": down_coords}
-            }));
+
+        // Logic 1: Identify Turning Point (where direction changes)
+        let mut turning_point_idx = stops.len() - 1;
+        for i in 0..stops.len() - 1 {
+            if stops[i].up_down_cd != stops[i + 1].up_down_cd {
+                turning_point_idx = i;
+                break;
+            }
         }
-        features
+
+        // Logic 2: Chunk Processing for OSRM (Respects URL length limits)
+        let mut final_features = Vec::new();
+        let mut start_idx = 0;
+
+        while start_idx < stops.len() - 1 {
+            let end_idx = (start_idx + OSRM_CHUNK_SIZE).min(stops.len());
+            let chunk = &stops[start_idx..end_idx];
+
+            if chunk.len() < 2 {
+                break;
+            }
+
+            // Fetch route geometry from OSRM
+            if let Some(coords) = self.fetch_osrm_route(chunk).await {
+                let is_past_turning_point = start_idx > turning_point_idx;
+                let direction_val = if is_past_turning_point { 1 } else { 0 };
+
+                let contains_tp = (start_idx..end_idx).contains(&turning_point_idx);
+
+                final_features.push(json!({
+                "type": "Feature",
+                "properties": {
+                "direction": direction_val,
+                "is_turning_point": contains_tp,
+                "start_node_ord": chunk[0].node_ord
+                },
+                "geometry": {
+                "type": "LineString",
+                "coordinates": coords
+                }
+                }));
+            }
+
+            // Overlap by 1 point to ensure visual continuity between chunks
+            start_idx = end_idx - 1;
+        }
+
+        // Save result as GeoJSON
+        // Input: {ROUTE_NAME}_{ROUTE_ID}.json -> Output: {ROUTE_ID}.geojson
+        let file_name = path.file_name().unwrap().to_string_lossy();
+        let clean_name = file_name
+            .splitn(2, '_')
+            .nth(1)
+            .unwrap_or(&file_name)
+            .replace(".json", ".geojson");
+        let output_path = self.snapped_dir.join(clean_name);
+
+        fs::write(
+            output_path,
+            serde_json::to_string_pretty(&json!({
+            "type": "FeatureCollection",
+            "features": final_features
+            }))?,
+        )?;
+
+        Ok(())
     }
 
-    /// Saves the Master JSON file containing all metadata
+    /// Snaps "off-road" stops onto the direct corridor between the previous and next stops.
+    /// Used to correct GPS drift or stops placed on side service roads.
+    async fn sanitize_stops_to_corridor(&self, stops: &mut [Stop]) {
+        if stops.len() < 3 {
+            return;
+        }
+
+        // Thresholds (tunable)
+        let snap_if_within_m = 90.0; // If stop is this close to corridor, snap it.
+        let do_not_move_if_far_m = 250.0; // If stop is too far, assume it's a real deviation.
+
+        for i in 1..stops.len() - 1 {
+            let prev = stops[i - 1].clone();
+            let next = stops[i + 1].clone();
+
+            // Calculate corridor between Prev and Next
+            let corridor = match self.fetch_osrm_route_between(&prev, &next).await {
+                Some(c) => c,
+                None => continue,
+            };
+
+            let p = (stops[i].gps_long, stops[i].gps_lat);
+            let Some(((cx, cy), dist_m)) = closest_point_on_polyline(p, &corridor) else {
+                continue;
+            };
+
+            // Heuristic: Snap only if plausibly on the same main road
+            if dist_m <= snap_if_within_m {
+                stops[i].gps_long = cx;
+                stops[i].gps_lat = cy;
+            } else if dist_m > do_not_move_if_far_m {
+                // Keep original coordinates (likely a true branch deviation)
+            }
+        }
+    }
+
+    /// Calculates a 2-point corridor route between two stops (prev <-> next).
+    async fn fetch_osrm_route_between(&self, a: &Stop, b: &Stop) -> Option<Vec<Vec<f64>>> {
+        if !(a.gps_lat > 30.0 && a.gps_long > 120.0 && b.gps_lat > 30.0 && b.gps_long > 120.0) {
+            return None;
+        }
+
+        let coords_param = format!(
+            "{:.6},{:.6};{:.6},{:.6}",
+            a.gps_long, a.gps_lat, b.gps_long, b.gps_lat
+        );
+
+        let base = if self.osrm_base_url.contains("/route/v1/driving") {
+            self.osrm_base_url.clone()
+        } else {
+            self.osrm_base_url
+                .replace("/match/v1/driving", "/route/v1/driving")
+        };
+
+        let url = format!(
+            "{base}/{coords}?overview=full&geometries=geojson&steps=false&continue_straight=true",
+            base = base,
+            coords = coords_param
+        );
+
+        let resp = reqwest::get(&url).await.ok()?;
+        if !resp.status().is_success() {
+            return None;
+        }
+
+        let json: Value = resp.json().await.ok()?;
+        if json["code"] != "Ok" {
+            return None;
+        }
+
+        let routes = json["routes"].as_array()?;
+        let geom = routes
+            .get(0)?
+            .get("geometry")?
+            .get("coordinates")?
+            .as_array()?;
+        let coords: Vec<Vec<f64>> = serde_json::from_value(Value::Array(geom.clone())).ok()?;
+        if coords.is_empty() {
+            None
+        } else {
+            Some(coords)
+        }
+    }
+
+    /// Generates a road-following polyline using OSRM /route.
+    /// Preferred over /match for sparse inputs (e.g., bus stops) to ensure clean linear paths.
+    async fn fetch_osrm_route(&self, stops: &[Stop]) -> Option<Vec<Vec<f64>>> {
+        // Filter out invalid coordinates
+        let stops_filtered: Vec<&Stop> = stops
+            .iter()
+            .filter(|s| s.gps_lat > 30.0 && s.gps_long > 120.0)
+            .collect();
+
+        if stops_filtered.len() < 2 {
+            return None;
+        }
+
+        // Build coordinate parameter: "lon,lat;lon,lat;..."
+        let coords_param = stops_filtered
+            .iter()
+            .map(|s| format!("{:.6},{:.6}", s.gps_long, s.gps_lat))
+            .collect::<Vec<_>>()
+            .join(";");
+
+        // Normalize URL to use /route/v1/driving
+        let base = if self.osrm_base_url.contains("/route/v1/driving") {
+            self.osrm_base_url.clone()
+        } else {
+            self.osrm_base_url
+                .replace("/match/v1/driving", "/route/v1/driving")
+        };
+
+        // Parameters:
+        // - overview=full: Retain full polyline fidelity
+        // - geometries=geojson: Return coordinates array
+        // - steps=false: Disable turn-by-turn instructions
+        // - continue_straight=true: Minimize unnecessary detours at intersections
+        let final_url = format!(
+            "{base}/{coords}?overview=full&geometries=geojson&steps=false&continue_straight=true",
+            base = base,
+            coords = coords_param
+        );
+
+        match reqwest::get(&final_url).await {
+            Ok(resp) => {
+                if !resp.status().is_success() {
+                    // Fallback to straight-line connection if OSRM fails
+                    return Some(
+                        stops_filtered
+                            .iter()
+                            .map(|s| vec![s.gps_long, s.gps_lat])
+                            .collect(),
+                    );
+                }
+
+                let json: Value = match resp.json().await {
+                    Ok(v) => v,
+                    Err(_) => {
+                        return Some(
+                            stops_filtered
+                                .iter()
+                                .map(|s| vec![s.gps_long, s.gps_lat])
+                                .collect(),
+                        );
+                    }
+                };
+
+                if json["code"] == "Ok" {
+                    if let Some(routes) = json["routes"].as_array() {
+                        if let Some(geom) = routes
+                            .get(0)
+                            .and_then(|r| r["geometry"]["coordinates"].as_array())
+                        {
+                            let coords: Vec<Vec<f64>> =
+                                serde_json::from_value(Value::Array(geom.clone()))
+                                    .unwrap_or_default();
+                            if !coords.is_empty() {
+                                return Some(coords);
+                            }
+                        }
+                    }
+                }
+            }
+            Err(e) => eprintln!(" ! Net Error: {}", e),
+        }
+
+        // Final fallback: raw stop coordinates (straight lines)
+        Some(
+            stops_filtered
+                .iter()
+                .map(|s| vec![s.gps_long, s.gps_lat])
+                .collect(),
+        )
+    }
+
     fn save_route_map_json(
         &self,
-        route_mapping: &BTreeMap<String, Vec<String>>,
-        route_details: &HashMap<String, Value>,
-        all_stops: &BTreeMap<String, Value>,
+        map: &BTreeMap<String, Vec<String>>,
+        details: &HashMap<String, Value>,
+        stops: &BTreeMap<String, Value>,
     ) -> Result<()> {
         let final_data = json!({
-            "lastUpdated": Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
-            "route_numbers": route_mapping,
-            "route_details": route_details,
-            "stations": all_stops
+        "lastUpdated": Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+        "route_numbers": map,
+        "route_details": details,
+        "stations": stops
         });
-
         fs::write(
             &self.mapping_file,
             serde_json::to_string_pretty(&final_data)?,
         )?;
-        println!("  ✓ Saved routeMap.json");
         Ok(())
-    }
-
-    async fn snap_route_file(&self, path: &Path) -> Result<()> {
-        let content = fs::read_to_string(path)?;
-        let mut geojson: Value = serde_json::from_str(&content)?;
-        let features = geojson["features"]
-            .as_array_mut()
-            .context("No features found")?;
-
-        let mut new_features = Vec::new();
-
-        for feature in features {
-            let coords_val = &feature["geometry"]["coordinates"];
-            let raw_coords: Vec<Vec<f64>> = serde_json::from_value(coords_val.clone())?;
-
-            if raw_coords.len() < 2 {
-                continue;
-            }
-
-            let snapped = self.fetch_osrm_match(&raw_coords).await;
-
-            new_features.push(json!({
-                "type": "Feature",
-                "properties": feature["properties"],
-                "geometry": {
-                    "type": "LineString",
-                    "coordinates": snapped
-                }
-            }));
-        }
-
-        // Clean filename (e.g., "100_ROUTEID.geojson" -> "ROUTEID.geojson")
-        let file_name = path.file_name().unwrap().to_string_lossy();
-        let clean_name = if file_name.contains('_') {
-            file_name.splitn(2, '_').last().unwrap()
-        } else {
-            &file_name
-        };
-
-        let output_path = self.snapped_dir.join(clean_name);
-        let final_json = json!({
-            "type": "FeatureCollection",
-            "features": new_features
-        });
-
-        fs::write(output_path, serde_json::to_string_pretty(&final_json)?)?;
-        Ok(())
-    }
-
-    /// Breaks coordinates into chunks and queries OSRM
-    async fn fetch_osrm_match(&self, coords: &[Vec<f64>]) -> Vec<Vec<f64>> {
-        let chunk_size = 80; // OSRM default limit is often ~100, keeping it safe
-        let mut final_coords = Vec::new();
-
-        // Iterate over chunks
-        for (i, chunk) in coords.chunks(chunk_size).enumerate() {
-            if chunk.len() < 2 {
-                continue;
-            }
-
-            // OSRM format: lon,lat;lon,lat
-            let coord_str = chunk
-                .iter()
-                .map(|c| format!("{:.6},{:.6}", c[0], c[1]))
-                .collect::<Vec<_>>()
-                .join(";");
-
-            let url = format!(
-                "{}/{}?overview=full&geometries=geojson",
-                self.osrm_base_url, coord_str
-            );
-
-            // Fetch from OSRM
-            match reqwest::get(&url).await {
-                Ok(resp) => {
-                    let mut success = false;
-                    if let Ok(json) = resp.json::<Value>().await {
-                        if json["code"] == "Ok" {
-                            if let Some(routes) = json["routes"].as_array() {
-                                if let Some(geom) = routes[0]["geometry"]["coordinates"].as_array()
-                                {
-                                    let snapped: Vec<Vec<f64>> =
-                                        serde_json::from_value(Value::Array(geom.clone()))
-                                            .unwrap_or_default();
-
-                                    // Avoid point duplication between chunks
-                                    if i > 0 && !snapped.is_empty() {
-                                        final_coords.extend(snapped.into_iter().skip(1));
-                                    } else {
-                                        final_coords.extend(snapped);
-                                    }
-                                    success = true;
-                                }
-                            }
-                        }
-                    }
-                    // Fallback to raw coords if OSRM failed
-                    if !success {
-                        if i > 0 {
-                            final_coords.extend(chunk.to_vec().into_iter().skip(1));
-                        } else {
-                            final_coords.extend(chunk.to_vec());
-                        }
-                    }
-                }
-                Err(_) => {
-                    // Fallback on network error
-                    if i > 0 {
-                        final_coords.extend(chunk.to_vec().into_iter().skip(1));
-                    } else {
-                        final_coords.extend(chunk.to_vec());
-                    }
-                }
-            }
-
-            // Be polite to the OSRM server especially if using public OSRM instance
-            // In my case, I use local OSRM, so this can be adjusted as needed
-            sleep(Duration::from_millis(10)).await;
-        }
-
-        final_coords
     }
 }
 
-// Helper Functions
+// ============================================================================
+// Utility Functions
+// ============================================================================
 
-/// Resolves environment variables with a fallback
-fn resolve_url(env_key: &str, default: &str) -> String {
-    let val = utils::get_env(env_key);
-    if val.is_empty() {
-        default.to_string()
-    } else {
-        val
-    }
+fn resolve_url(key: &str, default: &str) -> String {
+    let v = utils::get_env(key);
+    if v.is_empty() { default.to_string() } else { v }
 }
 
-/// Handles the API's quirk where 'items' is an Object (single result) or Array (multiple)
+/// Handles API quirk where 'items' can be an Array, Object, or Null.
 fn extract_items(json: &Value) -> Result<Vec<Value>> {
-    let body = &json["response"]["body"];
-    let items_node = &body["items"]["item"];
-
-    if let Some(arr) = items_node.as_array() {
+    let items = &json["response"]["body"]["items"]["item"];
+    if let Some(arr) = items.as_array() {
         Ok(arr.clone())
-    } else if let Some(obj) = items_node.as_object() {
+    } else if let Some(obj) = items.as_object() {
         Ok(vec![Value::Object(obj.clone())])
     } else {
-        // If items is null or empty string, return empty vector
         Ok(vec![])
     }
 }
 
-/// Robustly extracts a string from a JSON Value (handles String, Int, Float)
+/// Robustness wrapper to parse strings/numbers from flexible JSON fields.
 fn parse_flexible_string(v: &Value) -> String {
     if let Some(s) = v.as_str() {
         s.to_string()
     } else if let Some(n) = v.as_i64() {
         n.to_string()
-    } else if let Some(f) = v.as_f64() {
-        f.to_string()
     } else {
         "UNKNOWN".to_string()
     }
+}
+
+fn meters_between(lon1: f64, lat1: f64, lon2: f64, lat2: f64) -> f64 {
+    // Fast Haversine approximation (sufficient for short distances)
+    let r = 6371000.0;
+    let x = (lon2 - lon1).to_radians() * ((lat1 + lat2) * 0.5).to_radians().cos();
+    let y = (lat2 - lat1).to_radians();
+    (x * x + y * y).sqrt() * r
+}
+
+/// Returns the closest point (lon, lat) on a polyline and its distance in meters.
+fn closest_point_on_polyline(point: (f64, f64), line: &Vec<Vec<f64>>) -> Option<((f64, f64), f64)> {
+    if line.len() < 2 {
+        return None;
+    }
+
+    let (px, py) = point;
+
+    let mut best = None::<((f64, f64), f64)>;
+
+    for seg in line.windows(2) {
+        let (x1, y1) = (seg[0][0], seg[0][1]);
+        let (x2, y2) = (seg[1][0], seg[1][1]);
+
+        // Project P onto segment AB in lon/lat space (approximate)
+        let dx = x2 - x1;
+        let dy = y2 - y1;
+        let denom = dx * dx + dy * dy;
+        if denom == 0.0 {
+            continue;
+        }
+
+        let t = ((px - x1) * dx + (py - y1) * dy) / denom;
+        let t = t.clamp(0.0, 1.0);
+
+        let cx = x1 + t * dx;
+        let cy = y1 + t * dy;
+
+        let d = meters_between(px, py, cx, cy);
+
+        match best {
+            None => best = Some(((cx, cy), d)),
+            Some((_, bd)) if d < bd => best = Some(((cx, cy), d)),
+            _ => {}
+        }
+    }
+
+    best
 }
