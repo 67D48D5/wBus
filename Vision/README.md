@@ -36,8 +36,7 @@ Vision reads static files from `public/data` by default:
 
 ```text
 public/data/
-  mapStyle.json
-  notice.json
+  config.json
   routeMap.json
   polylines/
   schedules/
