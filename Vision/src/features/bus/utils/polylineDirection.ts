@@ -1,90 +1,144 @@
 // src/features/bus/utils/polylineDirection.ts
 
-import { snapToPolyline } from "@map/utils/polyUtils";
+import { snapToPolyline } from "@/features/bus/utils/polyUtils";
 
 import type { RouteDetail } from "@core/domain/route";
-import type { BusStop } from "@core/domain/station";
+import type { StationLocation } from "@core/domain/station";
 
-import type { LatLngTuple } from "leaflet";
+// ----------------------------------------------------------------------
+// Constants & Types
+// ----------------------------------------------------------------------
+
+type Coordinate = [number, number]; // [Latitude, Longitude]
 
 const MAX_SAMPLE_STOPS = 20;
-const SWAP_RATIO = 0.9;
 
-function sampleStops(stops: LatLngTuple[]): LatLngTuple[] {
-  if (stops.length <= MAX_SAMPLE_STOPS) return stops;
+// Swap threshold: If the alternative route is 10% closer (0.9), consider swapping.
+// Since we use squared distances, we square the ratio: 0.9 * 0.9 = 0.81
+const SWAP_RATIO_SQ = 0.81;
 
-  const step = Math.ceil(stops.length / MAX_SAMPLE_STOPS);
-  const sampled: LatLngTuple[] = [];
+// ----------------------------------------------------------------------
+// Helpers
+// ----------------------------------------------------------------------
 
-  for (let i = 0; i < stops.length; i += step) {
-    sampled.push(stops[i]);
+/**
+ * Calculates the squared Euclidean distance from a point to the nearest segment on a polyline.
+ * * Optimization: Returns squared distance to avoid expensive Math.sqrt().
+ */
+function getSquaredDistanceToPolyline(
+  point: Coordinate,
+  polyline: Coordinate[]
+): number {
+  const snapped = snapToPolyline(point, polyline);
+
+  const dLat = point[0] - snapped.position[0];
+  const dLng = point[1] - snapped.position[1];
+
+  return dLat * dLat + dLng * dLng;
+}
+
+/**
+ * Reduces the number of stops to process by sampling.
+ * Essential for performance when routes have 100+ stops.
+ */
+function sampleCoordinates(coords: Coordinate[]): Coordinate[] {
+  if (coords.length <= MAX_SAMPLE_STOPS) return coords;
+
+  const step = Math.ceil(coords.length / MAX_SAMPLE_STOPS);
+  const sampled: Coordinate[] = [];
+
+  for (let i = 0; i < coords.length; i += step) {
+    sampled.push(coords[i]);
+    // Safety break to respect limit strictly
     if (sampled.length >= MAX_SAMPLE_STOPS) break;
   }
 
   return sampled;
 }
 
-function distanceToPolyline(point: LatLngTuple, polyline: LatLngTuple[]): number {
-  const snapped = snapToPolyline(point as [number, number], polyline as [number, number][]);
-  const dLat = point[0] - snapped.position[0];
-  const dLng = point[1] - snapped.position[1];
+/**
+ * Calculates the average *squared* distance from a set of points to a polyline.
+ */
+function calculateMeanSquaredError(
+  points: Coordinate[],
+  polyline: Coordinate[]
+): number | null {
+  if (points.length === 0 || polyline.length < 2) return null;
 
-  // Use degrees as a relative distance to avoid expensive conversions.
-  return Math.hypot(dLat, dLng);
+  let totalDistSq = 0;
+
+  for (const point of points) {
+    totalDistSq += getSquaredDistanceToPolyline(point, polyline);
+  }
+
+  return totalDistSq / points.length;
 }
 
-function averageDistance(stops: LatLngTuple[], polyline: LatLngTuple[]): number | null {
-  if (stops.length === 0 || polyline.length < 2) return null;
+// ----------------------------------------------------------------------
+// Main Logic
+// ----------------------------------------------------------------------
 
-  const total = stops.reduce((sum, stop) => sum + distanceToPolyline(stop, polyline), 0);
-  return total / stops.length;
-}
-
+/**
+ * Determines if the Up/Down polylines are swapped based on station proximity.
+ * * * Logic:
+ * If "Up Stops" are significantly closer to the "Down Polyline" AND
+ * "Down Stops" are significantly closer to the "Up Polyline",
+ * it returns `true` (suggesting a swap).
+ */
 export function shouldSwapPolylines(
   routeDetail: RouteDetail | null,
-  stationMap: Record<string, BusStop> | null,
-  upPolyline: LatLngTuple[],
-  downPolyline: LatLngTuple[]
+  stationMap: Record<string, StationLocation> | null,
+  upPolyline: Coordinate[],
+  downPolyline: Coordinate[]
 ): boolean {
+  // 1. Validation
   if (!routeDetail || !stationMap) return false;
   if (upPolyline.length < 2 || downPolyline.length < 2) return false;
 
-  const upStops: LatLngTuple[] = [];
-  const downStops: LatLngTuple[] = [];
+  // 2. Extract Station Coordinates by Direction
+  const upStops: Coordinate[] = [];
+  const downStops: Coordinate[] = [];
 
   for (const stop of routeDetail.sequence) {
     const station = stationMap[stop.nodeid];
     if (!station) continue;
 
-    const point: LatLngTuple = [station.gpslati, station.gpslong];
-    if (stop.updowncd === 1) {
-      upStops.push(point);
-    } else if (stop.updowncd === 0) {
-      downStops.push(point);
+    const coord: Coordinate = [station.gpslati, station.gpslong];
+
+    if (stop.updowncd === 1) {       // 1 = Up (상행)
+      upStops.push(coord);
+    } else if (stop.updowncd === 0) { // 0 = Down (하행)
+      downStops.push(coord);
     }
   }
 
   if (upStops.length === 0 || downStops.length === 0) return false;
 
-  const upSample = sampleStops(upStops);
-  const downSample = sampleStops(downStops);
+  // 3. Sampling for Performance
+  const upSample = sampleCoordinates(upStops);
+  const downSample = sampleCoordinates(downStops);
 
-  const upToUp = averageDistance(upSample, upPolyline);
-  const upToDown = averageDistance(upSample, downPolyline);
-  const downToUp = averageDistance(downSample, upPolyline);
-  const downToDown = averageDistance(downSample, downPolyline);
+  // 4. Calculate Errors (Cross-Checking)
+  // MSE: Mean Squared Error
+  const mseUpToUp = calculateMeanSquaredError(upSample, upPolyline);
+  const mseUpToDown = calculateMeanSquaredError(upSample, downPolyline);
+  const mseDownToUp = calculateMeanSquaredError(downSample, upPolyline);
+  const mseDownToDown = calculateMeanSquaredError(downSample, downPolyline);
 
   if (
-    upToUp === null ||
-    upToDown === null ||
-    downToUp === null ||
-    downToDown === null
+    mseUpToUp === null || mseUpToDown === null ||
+    mseDownToUp === null || mseDownToDown === null
   ) {
     return false;
   }
 
-  const upPrefersDown = upToDown < upToUp * SWAP_RATIO;
-  const downPrefersUp = downToUp < downToDown * SWAP_RATIO;
+  // 5. Verify Hypothesis
+  // "Is the Up route actually closer to the Down line?"
+  const upStopsMatchDownPoly = mseUpToDown < (mseUpToUp * SWAP_RATIO_SQ);
 
-  return upPrefersDown && downPrefersUp;
+  // "Is the Down route actually closer to the Up line?"
+  const downStopsMatchUpPoly = mseDownToUp < (mseDownToDown * SWAP_RATIO_SQ);
+
+  // Only swap if BOTH conditions are met to be conservative
+  return upStopsMatchDownPoly && downStopsMatchUpPoly;
 }

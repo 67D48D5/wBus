@@ -8,209 +8,212 @@ import { getRouteDetails, getRouteInfo } from "@bus/api/getStaticData";
 
 import { useBusStop } from "@bus/hooks/useBusStop";
 
-/** Direction codes for bus routes */
-// Normalize to 1 (up) and 0 (down) to match icon expectations
+// ----------------------------------------------------------------------
+// Constants & Types
+// ----------------------------------------------------------------------
+
 export const Direction = {
   UP: 1,
   DOWN: 0,
 } as const;
 
-export type DirectionCode = (typeof Direction)[keyof typeof Direction] | null;
+export type DirectionCode = typeof Direction[keyof typeof Direction] | null;
 
 const ALWAYS_UPWARD_NODEIDS = new Set(MAP_SETTINGS.ALWAYS_UPWARD_NODE_IDS);
 
-type SequenceLookupMap = Map<
-  string,
-  Array<{ routeid: string; nodeord: number; updowncd: number }>
->;
+interface RouteSequenceData {
+  routeid: string;
+  sequence: { nodeid: string; nodeord: number; updowncd: number }[];
+}
+
+interface LoadedRouteState {
+  sequences: RouteSequenceData[];
+  routeIdOrder: string[]; // Keep track of fallback order (Up -> Down usually)
+}
+
+type SequenceLookupMap = Map<string, Array<{ routeid: string; nodeord: number; updowncd: number }>>;
+
+// ----------------------------------------------------------------------
+// Main Hook: useBusDirection
+// ----------------------------------------------------------------------
 
 /**
- * Custom hook that provides a function to determine the direction (up/down) of a bus
- * based on its current stop ID and order in the route.
- *
- * @param routeName - The name of the bus route (e.g., "30", "34")
- * @returns A memoized function that returns the direction code for a given stop
- *
- * @example
- * const getDirection = useBusDirection("30");
- * const direction = getDirection("WJB251000001", 5); // Returns 1 (up) or 0 (down)
+ * Determines the direction (Up/Down) of a bus based on its current Stop ID and Order.
+ * Matches realtime bus data against static route definitions.
  */
 export function useBusDirection(routeName: string) {
-  const [routeSequences, setRouteSequences] = useState<
-    Array<{ routeid: string; sequence: { nodeid: string; nodeord: number; updowncd: number }[] }>
-  >([]);
-  const [routeIdOrder, setRouteIdOrder] = useState<string[]>([]);
+  const [isReady, setIsReady] = useState(false);
+  const [routeState, setRouteState] = useState<LoadedRouteState>({
+    sequences: [],
+    routeIdOrder: [],
+  });
 
-  // Preload route details for the selected route (uses routeMap.json)
+  // 1. Load Route Data
   useEffect(() => {
     let isMounted = true;
 
-    const load = async () => {
+    const loadData = async () => {
+      // [CRITICAL FIX] Reset state immediately when routeName changes.
+      // This prevents "stale data" from the previous route being used while the new one loads.
+      setIsReady(false);
+      setRouteState({ sequences: [], routeIdOrder: [] });
+
       try {
-        const routeInfo = await getRouteInfo(routeName);
-        if (!routeInfo) {
-          if (isMounted) {
-            setRouteSequences([]);
-            setRouteIdOrder([]);
-          }
+        const info = await getRouteInfo(routeName);
+        if (!info) {
+          if (isMounted) setRouteState({ sequences: [], routeIdOrder: [] });
           return;
         }
 
         const details = await Promise.all(
-          routeInfo.vehicleRouteIds.map(async (routeid) => {
-            const detail = await getRouteDetails(routeid);
-            return detail ? { routeid, sequence: detail.sequence } : null;
+          info.vehicleRouteIds.map(async (id) => {
+            const d = await getRouteDetails(id);
+            return d ? { routeid: id, sequence: d.sequence } : null;
           })
         );
 
         if (isMounted) {
-          const filtered = details.filter(Boolean) as Array<{ routeid: string; sequence: { nodeid: string; nodeord: number; updowncd: number }[] }>;
-          setRouteSequences(filtered);
-          setRouteIdOrder(filtered.map(({ routeid }) => routeid));
+          const validDetails = details.filter(Boolean) as RouteSequenceData[];
+          setRouteState({
+            sequences: validDetails,
+            routeIdOrder: validDetails.map((d) => d.routeid),
+          });
+          setIsReady(true);
         }
       } catch (err) {
         if (APP_CONFIG.IS_DEV) {
-          console.error(`[useBusDirection] Route missing: ${routeName}`, err);
+          console.error(`[useBusDirection] Failed to load route: ${routeName}`, err);
         }
-        if (isMounted) {
-          setRouteSequences([]);
-          setRouteIdOrder([]);
-        }
+        if (isMounted) setRouteState({ sequences: [], routeIdOrder: [] });
       }
     };
 
-    load();
+    loadData();
 
     return () => {
       isMounted = false;
     };
   }, [routeName]);
 
-  // Build lookup: nodeid -> possible sequences (scoped to this route's IDs)
-  const sequenceLookupMap = useMemo<SequenceLookupMap>(() => {
-    const map: SequenceLookupMap = new Map();
+  // 2. Build Lookup Maps (Memoized)
 
-    for (const { routeid, sequence } of routeSequences) {
-      for (const { nodeid, nodeord, updowncd } of sequence) {
-        const existing = map.get(nodeid) ?? [];
-        existing.push({ routeid, nodeord, updowncd });
-        map.set(nodeid, existing);
+  // Lookup: NodeID -> List of potential sequence items
+  const sequenceLookupMap = useMemo<SequenceLookupMap>(() => {
+    if (!isReady) return new Map(); // Return empty map if not ready
+    const map: SequenceLookupMap = new Map();
+    for (const { routeid, sequence } of routeState.sequences) {
+      for (const item of sequence) {
+        const list = map.get(item.nodeid) ?? [];
+        list.push({ routeid, nodeord: item.nodeord, updowncd: item.updowncd });
+        map.set(item.nodeid, list);
       }
     }
-
     return map;
-  }, [routeSequences]);
+  }, [routeState.sequences]);
 
-  const activeRouteIds = useMemo(() => new Set(routeSequences.map(({ routeid }) => routeid)), [routeSequences]);
-
-  const routeIdHasMixedDirection = useMemo(() => {
+  // Lookup: RouteID -> Does this route contain both Up(1) and Down(0) stops?
+  const routeMixedDirMap = useMemo(() => {
     const map = new Map<string, boolean>();
-    for (const { routeid, sequence } of routeSequences) {
-      const directions = new Set(sequence.map((item) => item.updowncd));
+    for (const { routeid, sequence } of routeState.sequences) {
+      const directions = new Set(sequence.map((s) => s.updowncd));
       map.set(routeid, directions.size > 1);
     }
     return map;
-  }, [routeSequences]);
+  }, [routeState.sequences]);
 
-  const routeIdFallbackDirection = useMemo(() => {
+  // Fallback: If route is split into two IDs (e.g. A -> B), assume 1st is Up, 2nd is Down.
+  const fallbackDirMap = useMemo(() => {
     const map = new Map<string, DirectionCode>();
-    if (routeIdOrder.length === 2) {
-      // When up/down is encoded by separate routeIds, fall back to their order.
-      map.set(routeIdOrder[0], Direction.UP);
-      map.set(routeIdOrder[1], Direction.DOWN);
+    if (routeState.routeIdOrder.length === 2) {
+      map.set(routeState.routeIdOrder[0], Direction.UP);
+      map.set(routeState.routeIdOrder[1], Direction.DOWN);
     }
     return map;
-  }, [routeIdOrder]);
+  }, [routeState.routeIdOrder]);
 
-  /**
-   * Returns the up/down direction code for a bus stop based on its ID and order in the route.
-   *
-   * @param nodeid - The unique identifier of the bus stop
-   * @param nodeord - The order/sequence number of the stop in the route
-   * @param routeid - Optional route ID from realtime data (helps disambiguate shared stops)
-   * @returns Direction code (1 = up, 0 = down) or null if unable to determine
-   */
+  const activeRouteIds = useMemo(
+    () => new Set(routeState.sequences.map((s) => s.routeid)),
+    [routeState.sequences]
+  );
+
+  // 3. The Direction Resolver Function
   const getDirection = useCallback(
     (
       nodeid: string | null | undefined,
       nodeord: number,
       routeid?: string | null
     ): DirectionCode => {
-      // Validate nodeid input
-      if (!nodeid || typeof nodeid !== "string" || nodeid.trim() === "") {
-        return null;
-      }
+      // Basic Validation
+      if (!isReady) return null;
+      if (!nodeid || typeof nodeid !== "string") return null;
+      const normalizedNodeId = nodeid.trim();
+      if (!normalizedNodeId) return null;
 
-      const normalizedNodeord = Number(nodeord);
-      if (!Number.isFinite(normalizedNodeord)) {
-        return null;
-      }
+      const targetOrd = Number(nodeord);
+      if (!Number.isFinite(targetOrd)) return null;
 
-      const normalizedNodeid = nodeid.trim();
-
-      // Check override list first - always upward stops
-      if (ALWAYS_UPWARD_NODEIDS.has(normalizedNodeid)) {
+      // Rule 1: Always Upward Nodes (Hardcoded overrides)
+      if (ALWAYS_UPWARD_NODEIDS.has(normalizedNodeId)) {
         return Direction.UP;
       }
 
-      const normalize = (updowncd: number): DirectionCode =>
-        updowncd === 0 ? Direction.DOWN : Direction.UP;
+      // Rule 2: Lookup Candidates
+      const candidates = sequenceLookupMap.get(normalizedNodeId);
+      if (!candidates || candidates.length === 0) return null;
 
-      const candidates = sequenceLookupMap.get(normalizedNodeid);
-
-      if (!candidates || candidates.length === 0) {
-        return null;
-      }
-
-      // Prefer candidates that match the routeid we received from realtime data
+      // Filter by routeID scope
+      // If we know the bus's routeID, strictly match it. Otherwise use any active routeID.
       const scopedCandidates = routeid
         ? candidates.filter((c) => c.routeid === routeid)
         : candidates.filter((c) => activeRouteIds.has(c.routeid));
 
       const pool = scopedCandidates.length > 0 ? scopedCandidates : candidates;
 
-      // First try exact nodeord match, otherwise choose the closest by distance (tie -> lower nodeord)
-      const exact = pool.find((c) => c.nodeord === normalizedNodeord);
-      const chosen =
-        exact ||
-        pool.reduce((best, curr) => {
-          const bestDist = Math.abs(best.nodeord - normalizedNodeord);
-          const currDist = Math.abs(curr.nodeord - normalizedNodeord);
+      // Rule 3: Find Best Match (Exact Order > Closest Order)
+      // We look for the stop in the sequence that matches the bus's current order (nodeord).
+      const exactMatch = pool.find((c) => c.nodeord === targetOrd);
 
-          if (currDist < bestDist) return curr;
-          if (currDist === bestDist && curr.nodeord < best.nodeord) return curr;
-          return best;
-        }, pool[0]);
+      const bestMatch = exactMatch || pool.reduce((best, curr) => {
+        const bestDiff = Math.abs(best.nodeord - targetOrd);
+        const currDiff = Math.abs(curr.nodeord - targetOrd);
 
-      if (!chosen) return null;
+        // Pick the one with smaller order difference. 
+        // Tie-breaker: prefer smaller nodeord (earlier in route).
+        if (currDiff < bestDiff) return curr;
+        if (currDiff === bestDiff && curr.nodeord < best.nodeord) return curr;
+        return best;
+      }, pool[0]);
 
-      const hasMixed = routeIdHasMixedDirection.get(chosen.routeid) ?? false;
-      const fallback = routeIdFallbackDirection.get(chosen.routeid);
+      if (!bestMatch) return null;
 
-      if (!hasMixed && fallback !== undefined) {
+      // Rule 4: Determine Final Direction
+      // If the routeID is known to be strictly single-direction (not mixed),
+      // we might use the fallback map (e.g. Route A=Up, Route B=Down).
+      const isMixed = routeMixedDirMap.get(bestMatch.routeid) ?? false;
+      const fallback = fallbackDirMap.get(bestMatch.routeid);
+
+      if (!isMixed && fallback !== undefined) {
         return fallback;
       }
 
-      return normalize(chosen.updowncd);
+      // Default: Use the specific stop's direction code
+      return bestMatch.updowncd === 0 ? Direction.DOWN : Direction.UP;
     },
-    [activeRouteIds, routeIdFallbackDirection, routeIdHasMixedDirection, sequenceLookupMap]
+    [sequenceLookupMap, activeRouteIds, routeMixedDirMap, fallbackDirMap]
   );
 
   return getDirection;
 }
 
-/**
- * Check if a stop exists in the current route's stop data
- * Useful for filtering out buses at stops that aren't in our database
- * @param routeName - The name of the bus route
- * @returns A function that checks if a nodeid exists
- */
+// ----------------------------------------------------------------------
+// Helper Hook: useStopExists
+// ----------------------------------------------------------------------
+
 export function useStopExists(routeName: string) {
   const stops = useBusStop(routeName);
 
-  const stopSet = useMemo(() => {
-    return new Set(stops.map((stop) => stop.nodeid));
-  }, [stops]);
+  // Create Set once for O(1) lookups
+  const stopSet = useMemo(() => new Set(stops.map((s) => s.nodeid)), [stops]);
 
   return useCallback((nodeid: string | null | undefined): boolean => {
     if (!nodeid || typeof nodeid !== "string") return false;
@@ -218,40 +221,26 @@ export function useStopExists(routeName: string) {
   }, [stopSet]);
 }
 
-/**
- * Helper function to get direction from route_details using routeid and nodeord.
- * This is a standalone async function that uses the new routeMap schema.
- * 
- * @param routeid - The route ID from realtime bus data (e.g., "WJB251000068")
- * @param nodeord - The current node order from realtime bus data
- * @returns Direction code (1 = up, 0 = down) or null if unable to determine
- * 
- * @example
- * const direction = await getDirectionFromRouteDetails(bus.routeid, bus.nodeord);
- */
+// ----------------------------------------------------------------------
+// Standalone Helper
+// ----------------------------------------------------------------------
+
 export async function getDirectionFromRouteDetails(
   routeid: string,
   nodeord: number
 ): Promise<DirectionCode> {
   try {
-    const routeDetail = await getRouteDetails(routeid);
+    const detail = await getRouteDetails(routeid);
+    if (!detail?.sequence) return null;
 
-    if (!routeDetail || !routeDetail.sequence) {
-      return null;
+    const match = detail.sequence.find((s) => s.nodeord === nodeord);
+    if (match) {
+      return match.updowncd === 0 ? Direction.DOWN : Direction.UP;
     }
-
-    // Find the stop in the sequence with matching nodeord
-    const stopInfo = routeDetail.sequence.find(s => s.nodeord === nodeord);
-
-    if (stopInfo) {
-      // updowncd: 0 = down, 1 = up, 2 = cycle (treat cycle as up for our purposes)
-      return stopInfo.updowncd === 0 ? Direction.DOWN : Direction.UP;
-    }
-
     return null;
   } catch (err) {
     if (APP_CONFIG.IS_DEV) {
-      console.error("[getDirectionFromRouteDetails] Error fetching route details", err);
+      console.error("[getDirectionFromRouteDetails] Failed:", err);
     }
     return null;
   }

@@ -137,7 +137,9 @@ export default function BusStopMarker({
   return (
     <>
       {visibleStops.map((stop, index) => {
-        const key = stop.nodeid ? `${stop.nodeid}-${stop.updowncd}` : `stop-${index}`;
+        const key = stop.nodeid
+          ? `${stop.nodeid}-${stop.updowncd ?? "na"}`
+          : `stop-${index}`;
         return (
           <BusStopMarkerItem
             key={key}

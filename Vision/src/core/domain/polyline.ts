@@ -2,22 +2,50 @@
 
 /**
  * GeoJSON Feature for bus route polylines.
- * 
- * Schema:
- * - Single Feature contains the entire route (up + down combined)
- * - direction: 0 (reserved, actual direction is derived from turning point)
- * - is_turning_point: true indicates this is a round-trip route
- * - start_node_ord: ordering number (1 for single-feature routes)
- * 
- * The turning point is automatically detected by finding the farthest point
- * from the start of the route.
+ *
+ * Supported schemas:
+ * - Legacy: multi-feature with explicit direction/start order.
+ * - Legacy: single-feature with turning point heuristic.
+ * - Indexed: single-feature with `indices.turn_idx` (new schema).
  */
 export type GeoFeature = {
     type: "Feature";
     properties: {
-        direction: number;  // 0 or 1 (when multiple features with explicit directions)
-        is_turning_point: boolean;
-        start_node_ord: number;
+        direction?: number;  // 0 or 1 (when multiple features with explicit directions)
+        is_turning_point?: boolean;
+        start_node_ord?: number;
+        schema?: string;
+        route_id?: string;
+        route_no?: string;
+        stops?: Array<{
+            id: string;
+            name: string;
+            ord: number;
+            up_down: number; // 0 = down, 1 = up
+        }>;
+        indices?: {
+            turn_idx?: number;
+            stop_to_coord?: number[];
+        };
+        meta?: {
+            total_dist?: number;
+            bbox?: [number, number, number, number];
+            source_ver?: string;
+        };
+        derived?: {
+            geometry_index?: {
+                turn_coord_idx?: number;
+                segments?: Array<{
+                    dir: "up" | "down";
+                    from: number;
+                    to: number;
+                }>;
+                stop_to_coord_idx?: Array<{
+                    node_id: string;
+                    coord_idx: number;
+                }>;
+            };
+        };
     };
     geometry: { type: "LineString"; coordinates: [number, number][] };
 };

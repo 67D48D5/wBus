@@ -30,9 +30,21 @@ export function filterStopsByViewport(
   });
 
   if (shouldFilterByDistance && filtered.length > 0) {
-    // Sort by nodeord to ensure consistent filtering
+    // Sort by nodeord (fallback to nodeno) to ensure consistent filtering
     filtered = filtered
-      .sort((a, b) => a.nodeord - b.nodeord)
+      .sort((a, b) => {
+        const aOrd = Number.isFinite(Number(a.nodeord))
+          ? Number(a.nodeord)
+          : Number(a.nodeno);
+        const bOrd = Number.isFinite(Number(b.nodeord))
+          ? Number(b.nodeord)
+          : Number(b.nodeno);
+
+        if (!Number.isFinite(aOrd) && !Number.isFinite(bOrd)) return 0;
+        if (!Number.isFinite(aOrd)) return 1;
+        if (!Number.isFinite(bOrd)) return -1;
+        return aOrd - bOrd;
+      })
       .filter((_, index) => index % filterInterval === 0);
   }
 

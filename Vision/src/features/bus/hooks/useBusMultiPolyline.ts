@@ -6,208 +6,257 @@ import { APP_CONFIG } from "@core/config/env";
 
 import { getPolyline, getRouteDetails, getStationMap } from "@bus/api/getStaticData";
 
-import { mergePolylines, transformPolyline } from "@map/utils/polyUtils";
+import {
+    hasExplicitPolylineDirections,
+    mergePolylines,
+    transformPolyline
+} from "@bus/utils/polyUtils";
 
 import { shouldSwapPolylines } from "@bus/utils/polylineDirection";
 
 import type { GeoPolyline } from "@core/domain/polyline";
 import type { RouteDetail } from "@core/domain/route";
-import type { BusStop } from "@core/domain/station";
+import type { StationLocation } from "@core/domain/station";
 
-type PolylineSegment = {
-    coords: [number, number][];
-    routeIds: string[];  // Track ALL routeIds that share this segment
+// ----------------------------------------------------------------------
+// Types
+// ----------------------------------------------------------------------
+
+type Coordinate = [number, number];
+
+export interface PolylineSegment {
+    coords: Coordinate[];
+    routeIds: string[]; // List of routes sharing this specific geometry
     direction: "up" | "down";
-};
+}
+
+interface FetchedData {
+    dataMap: Map<string, GeoPolyline>;
+    detailMap: Map<string, RouteDetail | null>;
+    stationMap: Record<string, StationLocation> | null;
+}
+
+interface SegmentBucket {
+    upSegments: PolylineSegment[];
+    downSegments: PolylineSegment[];
+}
+
+// ----------------------------------------------------------------------
+// Helpers: Pure Logic
+// ----------------------------------------------------------------------
 
 /**
- * Load polylines for multiple routeIds and remove duplicate segments.
- * Returns unique segments with metadata for styling.
+ * Generates a unique string key for a coordinate array to detect duplicates.
+ * Using toFixed(6) handles floating point precision issues.
  */
+function generateSegmentKey(coords: Coordinate[]): string {
+    // Optimization: Only use start, mid, and end points for hash if segments are long?
+    // For safety, we currently stringify the whole path.
+    return coords.map(([lat, lng]) => `${lat.toFixed(6)},${lng.toFixed(6)}`).join("|");
+}
+
+/**
+ * Merges new segments into an existing map of unique segments.
+ * If a segment exists (geometry matches), we just append the routeId.
+ */
+function mergeIntoSegmentMap(
+    segmentMap: Map<string, PolylineSegment>,
+    coordsList: Coordinate[][],
+    routeId: string,
+    direction: "up" | "down"
+) {
+    coordsList.forEach((coords) => {
+        if (coords.length < 2) return;
+
+        const key = generateSegmentKey(coords);
+        const existing = segmentMap.get(key);
+
+        if (existing) {
+            if (!existing.routeIds.includes(routeId)) {
+                existing.routeIds.push(routeId);
+            }
+        } else {
+            segmentMap.set(key, {
+                coords,
+                routeIds: [routeId],
+                direction,
+            });
+        }
+    });
+}
+
+/**
+ * Core processing logic:
+ * 1. Transforms GeoJSON to segments
+ * 2. Checks for legacy direction swapping
+ * 3. Deduplicates segments across multiple routes
+ */
+function processAllRoutes(
+    routeIds: string[],
+    fetched: FetchedData
+): SegmentBucket {
+    const segmentMap = new Map<string, PolylineSegment>();
+
+    routeIds.forEach((routeId) => {
+        const data = fetched.dataMap.get(routeId);
+        if (!data) return;
+
+        // 1. Transform (Split)
+        const { upPolyline, downPolyline } = transformPolyline(data);
+
+        // 2. Direction Correction
+        let finalUp = upPolyline;
+        let finalDown = downPolyline;
+
+        const hasExplicit = hasExplicitPolylineDirections(data);
+
+        if (!hasExplicit) {
+            const detail = fetched.detailMap.get(routeId) ?? null;
+            // We need merged lines for the swap check heuristic
+            const mergedUp = mergePolylines(upPolyline);
+            const mergedDown = mergePolylines(downPolyline);
+
+            if (shouldSwapPolylines(detail, fetched.stationMap, mergedUp, mergedDown)) {
+                finalUp = downPolyline;
+                finalDown = upPolyline;
+            }
+        }
+
+        // 3. Deduplicate / Merge
+        mergeIntoSegmentMap(segmentMap, finalUp, routeId, "up");
+        mergeIntoSegmentMap(segmentMap, finalDown, routeId, "down");
+    });
+
+    // Convert Map values to Arrays
+    const upSegments: PolylineSegment[] = [];
+    const downSegments: PolylineSegment[] = [];
+
+    for (const segment of segmentMap.values()) {
+        if (segment.direction === "up") upSegments.push(segment);
+        else downSegments.push(segment);
+    }
+
+    return { upSegments, downSegments };
+}
+
+// ----------------------------------------------------------------------
+// Main Hook
+// ----------------------------------------------------------------------
+
 export function useMultiPolyline(
     routeName: string,
     routeIds: string[],
     activeRouteId?: string | null
 ) {
-    const [dataMap, setDataMap] = useState<Map<string, GeoPolyline | null>>(new Map());
-    const [routeDetailMap, setRouteDetailMap] = useState<Map<string, RouteDetail | null>>(new Map());
-    const [stationMap, setStationMap] = useState<Record<string, BusStop> | null>(null);
+    const [fetched, setFetched] = useState<FetchedData>({
+        dataMap: new Map(),
+        detailMap: new Map(),
+        stationMap: null,
+    });
 
+    // 1. Fetch Data
     useEffect(() => {
         if (!routeName || routeIds.length === 0) {
-            setDataMap(new Map());
-            setRouteDetailMap(new Map());
-            setStationMap(null);
+            setFetched({ dataMap: new Map(), detailMap: new Map(), stationMap: null });
             return;
         }
 
-        // Load all polylines in parallel
-        let cancelled = false;
+        let isMounted = true;
 
         const loadData = async () => {
-            let stations: Record<string, BusStop> | null = null;
-
-            try {
-                stations = await getStationMap();
-            } catch (error) {
-                if (APP_CONFIG.IS_DEV) {
-                    console.error("[useMultiPolyline] Error fetching station map", error);
-                }
-            }
-
-            const results = await Promise.all(routeIds.map(async (routeId) => {
-                const routeKey = `${routeId}`;
-                try {
-                    const [data, routeDetail] = await Promise.all([
-                        getPolyline(routeKey),
-                        getRouteDetails(routeId),
-                    ]);
-                    return { routeId, data, routeDetail };
-                } catch (error) {
-                    if (APP_CONFIG.IS_DEV) {
-                        console.error("[useMultiPolyline] Error fetching polyline data for routeId: " + routeId, error);
-                    }
-                    return { routeId, data: null, routeDetail: null };
-                }
-            }));
-
-            if (cancelled) return;
-
-            const newDataMap = new Map<string, GeoPolyline | null>();
-            const newDetailMap = new Map<string, RouteDetail | null>();
-
-            results.forEach(({ routeId, data, routeDetail }) => {
-                newDataMap.set(routeId, data);
-                newDetailMap.set(routeId, routeDetail ?? null);
+            // Parallel Fetch: Station Map + All Routes
+            const stationMapPromise = getStationMap().catch((err) => {
+                if (APP_CONFIG.IS_DEV) console.error("[useMultiPolyline] Station Map Error", err);
+                return null;
             });
 
-            setDataMap(newDataMap);
-            setRouteDetailMap(newDetailMap);
-            setStationMap(stations);
+            const routesPromise = Promise.all(
+                routeIds.map(async (routeId) => {
+                    try {
+                        // Note: getPolyline takes a 'routeKey' which is usually just routeId
+                        const [data, routeDetail] = await Promise.all([
+                            getPolyline(routeId),
+                            getRouteDetails(routeId),
+                        ]);
+                        return { routeId, data, routeDetail };
+                    } catch (error) {
+                        if (APP_CONFIG.IS_DEV) {
+                            console.error(`[useMultiPolyline] Failed to load ${routeId}`, error);
+                        }
+                        return { routeId, data: null, routeDetail: null };
+                    }
+                })
+            );
+
+            const [stationMap, routesResult] = await Promise.all([
+                stationMapPromise,
+                routesPromise,
+            ]);
+
+            if (!isMounted) return;
+
+            const newDataMap = new Map<string, GeoPolyline>();
+            const newDetailMap = new Map<string, RouteDetail | null>();
+
+            routesResult.forEach(({ routeId, data, routeDetail }) => {
+                if (data) newDataMap.set(routeId, data);
+                newDetailMap.set(routeId, routeDetail);
+            });
+
+            setFetched({
+                dataMap: newDataMap,
+                detailMap: newDetailMap,
+                stationMap,
+            });
         };
 
         void loadData();
 
         return () => {
-            cancelled = true;
+            isMounted = false;
         };
-    }, [routeName, routeIds]);
+    }, [routeName, routeIds]); // Re-fetch only if routeName or IDs change
 
-    const segments = useMemo(() => {
-        if (dataMap.size === 0) return { upSegments: [], downSegments: [] };
+    // 2. Process & Deduplicate Segments
+    const allSegments = useMemo(() => {
+        if (fetched.dataMap.size === 0) {
+            return { upSegments: [], downSegments: [] };
+        }
+        return processAllRoutes(routeIds, fetched);
+    }, [fetched, routeIds]);
 
-        const upSegments: PolylineSegment[] = [];
-        const downSegments: PolylineSegment[] = [];
-        const segmentMap = new Map<string, PolylineSegment>();
+    // 3. Filter Active/Inactive
+    const result = useMemo(() => {
+        const activeUp: PolylineSegment[] = [];
+        const inactiveUp: PolylineSegment[] = [];
+        const activeDown: PolylineSegment[] = [];
+        const inactiveDown: PolylineSegment[] = [];
 
-        // Helper to create a unique key for a segment
-        const createSegmentKey = (coords: [number, number][]) => {
-            return coords.map(([lat, lng]) => `${lat.toFixed(6)},${lng.toFixed(6)}`).join("|");
-        };
-
-        // Process each routeId's polyline
-        routeIds.forEach((routeId) => {
-            const data = dataMap.get(routeId);
-            if (!data) return;
-
-            const { upPolyline, downPolyline } = transformPolyline(data);
-            const isRoundTrip =
-                data.features.length === 1 &&
-                data.features[0]?.properties?.is_turning_point === true;
-
-            let finalUp = upPolyline;
-            let finalDown = downPolyline;
-
-            if (isRoundTrip) {
-                const routeDetail = routeDetailMap.get(routeId) ?? null;
-                const mergedUp = mergePolylines(upPolyline);
-                const mergedDown = mergePolylines(downPolyline);
-
-                if (shouldSwapPolylines(routeDetail, stationMap, mergedUp, mergedDown)) {
-                    finalUp = downPolyline;
-                    finalDown = upPolyline;
-                }
-            }
-
-            // Process up direction segments
-            finalUp.forEach((coords) => {
-                const key = createSegmentKey(coords);
-                if (segmentMap.has(key)) {
-                    // Segment already exists, add this routeId to it
-                    const segment = segmentMap.get(key)!;
-                    if (!segment.routeIds.includes(routeId)) {
-                        segment.routeIds.push(routeId);
-                    }
+        const split = (
+            source: PolylineSegment[],
+            activeTarget: PolylineSegment[],
+            inactiveTarget: PolylineSegment[]
+        ) => {
+            source.forEach((seg) => {
+                // A segment is active if it contains the currently selected routeId
+                if (activeRouteId && seg.routeIds.includes(activeRouteId)) {
+                    activeTarget.push(seg);
                 } else {
-                    // New segment, create it with this routeId
-                    const segment: PolylineSegment = {
-                        coords,
-                        routeIds: [routeId],
-                        direction: "up",
-                    };
-                    segmentMap.set(key, segment);
-                    upSegments.push(segment);
+                    inactiveTarget.push(seg);
                 }
             });
+        };
 
-            // Process down direction segments
-            finalDown.forEach((coords) => {
-                const key = createSegmentKey(coords);
-                if (segmentMap.has(key)) {
-                    // Segment already exists, add this routeId to it
-                    const segment = segmentMap.get(key)!;
-                    if (!segment.routeIds.includes(routeId)) {
-                        segment.routeIds.push(routeId);
-                    }
-                } else {
-                    // New segment, create it with this routeId
-                    const segment: PolylineSegment = {
-                        coords,
-                        routeIds: [routeId],
-                        direction: "down",
-                    };
-                    segmentMap.set(key, segment);
-                    downSegments.push(segment);
-                }
-            });
-        });
+        split(allSegments.upSegments, activeUp, inactiveUp);
+        split(allSegments.downSegments, activeDown, inactiveDown);
 
-        return { upSegments, downSegments };
-    }, [dataMap, routeDetailMap, routeIds, stationMap]);
+        return {
+            activeUpSegments: activeUp,
+            inactiveUpSegments: inactiveUp,
+            activeDownSegments: activeDown,
+            inactiveDownSegments: inactiveDown,
+        };
+    }, [allSegments, activeRouteId]);
 
-    // Classify segments into active and inactive
-    // A segment is ACTIVE if:
-    // 1. activeRouteId is set AND segment contains that routeId, OR
-    // 2. segment's first routeId matches activeRouteId
-    const { activeUpSegments, inactiveUpSegments, activeDownSegments, inactiveDownSegments } = useMemo(() => {
-        const activeUpSegments: PolylineSegment[] = [];
-        const inactiveUpSegments: PolylineSegment[] = [];
-        const activeDownSegments: PolylineSegment[] = [];
-        const inactiveDownSegments: PolylineSegment[] = [];
-
-        segments.upSegments.forEach((segment) => {
-            if (activeRouteId && segment.routeIds.includes(activeRouteId)) {
-                activeUpSegments.push(segment);
-            } else {
-                inactiveUpSegments.push(segment);
-            }
-        });
-
-        segments.downSegments.forEach((segment) => {
-            if (activeRouteId && segment.routeIds.includes(activeRouteId)) {
-                activeDownSegments.push(segment);
-            } else {
-                inactiveDownSegments.push(segment);
-            }
-        });
-
-        return { activeUpSegments, inactiveUpSegments, activeDownSegments, inactiveDownSegments };
-    }, [segments, activeRouteId]);
-
-    return {
-        activeUpSegments,
-        inactiveUpSegments,
-        activeDownSegments,
-        inactiveDownSegments,
-    };
+    return result;
 }

@@ -6,44 +6,91 @@ import { APP_CONFIG } from "@core/config/env";
 
 import { getPolyline, getRouteDetails, getStationMap } from "@bus/api/getStaticData";
 
-import { mergePolylines, transformPolyline } from "@map/utils/polyUtils";
-
+import {
+  hasExplicitPolylineDirections,
+  mergePolylines,
+  transformPolyline
+} from "@/features/bus/utils/polyUtils";
 import { shouldSwapPolylines } from "@bus/utils/polylineDirection";
 
-import type { LatLngTuple } from "leaflet";
+import type { StationLocation } from "@core/domain/station";
+import type { RouteDetail } from "@core/domain/route";
+import type { GeoPolyline } from "@core/domain/polyline";
+
+// ----------------------------------------------------------------------
+// Types
+// ----------------------------------------------------------------------
+
+type Coordinate = [number, number];
 
 export interface BusPolylineSet {
-  upPolyline: LatLngTuple[];
-  downPolyline: LatLngTuple[];
+  upPolyline: Coordinate[];
+  downPolyline: Coordinate[];
 }
+
+interface FetchedRouteData {
+  routeId: string;
+  data: GeoPolyline | null;
+  routeDetail: RouteDetail | null;
+}
+
+// ----------------------------------------------------------------------
+// Helper: Pure Processing Logic
+// ----------------------------------------------------------------------
+
+/**
+ * Processes raw API data into render-ready polylines.
+ * Handles splitting, merging, and direction correction (swapping).
+ */
+function processRouteData(
+  routeId: string,
+  data: GeoPolyline,
+  routeDetail: RouteDetail | null,
+  stationMap: Record<string, StationLocation> | null
+): BusPolylineSet {
+  // 1. Split raw data into Up/Down segments
+  const { upPolyline, downPolyline } = transformPolyline(data);
+
+  // 2. Merge segments into continuous lines
+  const mergedUp = mergePolylines(upPolyline);
+  const mergedDown = mergePolylines(downPolyline);
+
+  return {
+    upPolyline: mergedUp,
+    downPolyline: mergedDown,
+  };
+}
+
+// ----------------------------------------------------------------------
+// Main Hook
+// ----------------------------------------------------------------------
 
 export function useBusPolylineMap(routeIds: string[]) {
   const [polylineMap, setPolylineMap] = useState<Map<string, BusPolylineSet>>(
     new Map()
   );
+
+  // Create a stable key to prevent re-fetching when array reference changes but content is same
   const routeKey = useMemo(() => routeIds.slice().sort().join("|"), [routeIds]);
 
   useEffect(() => {
-    if (routeIds.length === 0) {
+    if (!routeKey) {
       setPolylineMap(new Map());
       return;
     }
 
-    let cancelled = false;
+    let isMounted = true;
 
-    const loadPolylines = async () => {
-      let stationMap = null;
+    const loadData = async () => {
+      // 1. Parallel Fetching: Station Map + All Route Data
+      // We don't wait for stationMap to start fetching routes.
+      const stationMapPromise = getStationMap().catch((err) => {
+        if (APP_CONFIG.IS_DEV) console.error("[useBusPolylineMap] Station Map Error", err);
+        return null;
+      });
 
-      try {
-        stationMap = await getStationMap();
-      } catch (error) {
-        if (APP_CONFIG.IS_DEV) {
-          console.error("[useBusPolylineMap] Error fetching station map", error);
-        }
-      }
-
-      const results = await Promise.all(
-        routeIds.map(async (routeId) => {
+      const routesPromise = Promise.all(
+        routeIds.map(async (routeId): Promise<FetchedRouteData> => {
           try {
             const [data, routeDetail] = await Promise.all([
               getPolyline(routeId),
@@ -52,48 +99,39 @@ export function useBusPolylineMap(routeIds: string[]) {
             return { routeId, data, routeDetail };
           } catch (error) {
             if (APP_CONFIG.IS_DEV) {
-              console.error(
-                "[useBusPolylineMap] Error fetching polyline data for routeId: " +
-                  routeId,
-                error
-              );
+              console.error(`[useBusPolylineMap] Route Error (${routeId})`, error);
             }
             return { routeId, data: null, routeDetail: null };
           }
         })
       );
 
-      if (cancelled) return;
+      const [stationMap, routesData] = await Promise.all([
+        stationMapPromise,
+        routesPromise
+      ]);
 
+      if (!isMounted) return;
+
+      // 2. Process Data
       const nextMap = new Map<string, BusPolylineSet>();
-      results.forEach(({ routeId, data, routeDetail }) => {
+
+      routesData.forEach(({ routeId, data, routeDetail }) => {
         if (!data) return;
-        const { upPolyline, downPolyline } = transformPolyline(data);
-        const mergedUp = mergePolylines(upPolyline);
-        const mergedDown = mergePolylines(downPolyline);
-        const isRoundTrip =
-          data.features.length === 1 &&
-          data.features[0]?.properties?.is_turning_point === true;
 
-        const shouldSwap = isRoundTrip
-          ? shouldSwapPolylines(routeDetail, stationMap, mergedUp, mergedDown)
-          : false;
-
-        nextMap.set(routeId, {
-          upPolyline: shouldSwap ? mergedDown : mergedUp,
-          downPolyline: shouldSwap ? mergedUp : mergedDown,
-        });
+        const processed = processRouteData(routeId, data, routeDetail, stationMap);
+        nextMap.set(routeId, processed);
       });
 
       setPolylineMap(nextMap);
     };
 
-    void loadPolylines();
+    void loadData();
 
     return () => {
-      cancelled = true;
+      isMounted = false;
     };
-  }, [routeIds, routeKey]);
+  }, [routeKey]); // Depends only on the content-based key, not the routeIds array reference.
 
   return polylineMap;
 }

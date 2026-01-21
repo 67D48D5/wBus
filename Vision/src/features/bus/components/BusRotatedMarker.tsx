@@ -3,53 +3,86 @@
 "use client";
 
 import L from "leaflet";
-
-import { Marker, MarkerProps } from "react-leaflet";
+import { Marker, type MarkerProps } from "react-leaflet";
 import { forwardRef, useEffect, useRef } from "react";
 
+// ----------------------------------------------------------------------
+// 1. Module Augmentation & Imports
+// ----------------------------------------------------------------------
+
+// Extend Leaflet's Marker definition to include methods added by 'leaflet-rotatedmarker'
+declare module "leaflet" {
+  interface Marker {
+    setRotationAngle(angle: number): this;
+    setRotationOrigin(origin: string): this;
+  }
+  interface MarkerOptions {
+    rotationAngle?: number;
+    rotationOrigin?: string;
+  }
+}
+
+// Client-side import for the plugin
 if (typeof window !== "undefined") {
   require("leaflet-rotatedmarker");
 }
 
-const BusRotatedMarker = forwardRef<
-  L.Marker,
-  MarkerProps & { rotationAngle?: number; rotationOrigin?: string }
->(({ rotationAngle = 0, rotationOrigin = "center", position, ...props }, ref) => {
-  const markerRef = useRef<L.Marker | null>(null);
+// ----------------------------------------------------------------------
+// 2. Component Types
+// ----------------------------------------------------------------------
 
-  // Update rotation when it changes
-  useEffect(() => {
-    if (markerRef.current) {
-      markerRef.current.setRotationAngle?.(rotationAngle);
-      markerRef.current.setRotationOrigin?.(rotationOrigin);
-    }
-  }, [rotationAngle, rotationOrigin]);
+interface BusRotatedMarkerProps extends MarkerProps {
+  rotationAngle?: number;
+  rotationOrigin?: string;
+}
 
-  // Update position when it changes - this is critical for animation!
-  useEffect(() => {
-    if (markerRef.current && position) {
-      const latLng = Array.isArray(position)
-        ? L.latLng(position[0], position[1])
-        : position;
-      markerRef.current.setLatLng(latLng);
-    }
-  }, [position]);
+// ----------------------------------------------------------------------
+// 3. Component
+// ----------------------------------------------------------------------
 
-  return (
-    <Marker
-      position={position}
-      ref={(instance) => {
-        markerRef.current = instance;
-        if (typeof ref === "function") {
-          ref(instance);
-        } else if (ref) {
-          (ref as React.RefObject<L.Marker | null>).current = instance;
-        }
-      }}
-      {...props}
-    />
-  );
-});
+const BusRotatedMarker = forwardRef<L.Marker, BusRotatedMarkerProps>(
+  ({ rotationAngle = 0, rotationOrigin = "center", ...props }, forwardedRef) => {
+    const internalRef = useRef<L.Marker | null>(null);
+
+    // Sync rotation updates directly to the Leaflet instance
+    // Note: 'position' updates are handled automatically by <Marker> re-rendering
+    useEffect(() => {
+      const marker = internalRef.current;
+      if (!marker) return;
+
+      // Safe to call directly due to Module Augmentation above
+      if (typeof marker.setRotationAngle === "function") {
+        marker.setRotationAngle(rotationAngle);
+      }
+
+      if (typeof marker.setRotationOrigin === "function") {
+        marker.setRotationOrigin(rotationOrigin);
+      }
+    }, [rotationAngle, rotationOrigin]);
+
+    // Handle Ref merging (Internal + Forwarded)
+    const setRef = (instance: L.Marker | null) => {
+      internalRef.current = instance;
+
+      if (!forwardedRef) return;
+
+      if (typeof forwardedRef === "function") {
+        forwardedRef(instance);
+      } else {
+        forwardedRef.current = instance;
+      }
+    };
+
+    return (
+      <Marker
+        ref={setRef}
+        rotationAngle={rotationAngle}
+        rotationOrigin={rotationOrigin}
+        {...props}
+      />
+    );
+  }
+);
 
 BusRotatedMarker.displayName = "BusRotatedMarker";
 

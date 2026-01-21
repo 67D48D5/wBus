@@ -5,28 +5,24 @@ import { CacheManager } from "@core/cache/CacheManager";
 
 import { API_CONFIG, APP_CONFIG } from "@core/config/env";
 
-import type { BusStop } from "@core/domain/station";
+import type { BusStop, StationLocation } from "@core/domain/station";
 import type { GeoPolyline } from "@core/domain/polyline";
 import type { RouteInfo, RouteDetail } from "@core/domain/route";
 
 /**
  * Models for cached data
  */
-interface RouteMapData {
+interface StaticData {
   lastUpdated: string;
   route_numbers: Record<string, string[]>;
   route_details: Record<string, RouteDetail>;
-}
-
-interface StationData {
-  stations: Record<string, BusStop>;
+  stations: Record<string, StationLocation>;
 }
 
 /**
  * Cache Managers
  */
-const routeMapCache = new CacheManager<RouteMapData>();
-const stationCache = new CacheManager<StationData>();
+const staticDataCache = new CacheManager<StaticData>();
 const polylineCache = new CacheManager<GeoPolyline | null>();
 
 /**
@@ -52,12 +48,20 @@ function getRouteMapUrl(): string {
 /**
  * Fetches and caches the routeMap.json data.
  * This function ensures only one fetch request is made even if called multiple times.
+ */
+async function getStaticData(): Promise<StaticData> {
+  return staticDataCache.getOrFetch("staticData", async () => {
+    return fetchAPI<StaticData>(getRouteMapUrl(), { baseUrl: "" });
+  });
+}
+
+/**
+ * Fetches and caches the routeMap.json data.
+ * This function ensures only one fetch request is made even if called multiple times.
  * @returns A promise that resolves to a map of route names to vehicle IDs (excludes empty routes)
  */
 export async function getRouteMap(): Promise<Record<string, string[]>> {
-  const data = await routeMapCache.getOrFetch("routeMap", async () => {
-    return fetchAPI<RouteMapData>(getRouteMapUrl(), { baseUrl: "" });
-  });
+  const data = await getStaticData();
   // Filter out routes with empty vehicle IDs (e.g., "Shuttle": [])
   return Object.fromEntries(
     Object.entries(data.route_numbers).filter(([, ids]) => ids.length > 0)
@@ -72,10 +76,14 @@ export async function getRouteMap(): Promise<Record<string, string[]>> {
  * @param routeKey - filename-friendly key (ex: "30_WJB251000068")
  * @returns {Promise<GeoPolyline | null>} - GeoJSON Data or null if not found
  */
-export async function getPolyline(routeKey: string): Promise<GeoPolyline | null> {
+export async function getPolyline(
+  routeKey: string
+): Promise<GeoPolyline | null> {
   return polylineCache.getOrFetch(routeKey, async () => {
     try {
-      return await fetchAPI<GeoPolyline>(getPolylineUrl(routeKey), { baseUrl: "" });
+      return await fetchAPI<GeoPolyline>(getPolylineUrl(routeKey), {
+        baseUrl: "",
+      });
     } catch (error) {
       // Gracefully handle missing polyline files (404 errors)
       if (error instanceof HttpError && error.status === 404) {
@@ -90,15 +98,13 @@ export async function getPolyline(routeKey: string): Promise<GeoPolyline | null>
 }
 
 /**
- * Fetches bus stop location data for a city bus route from `routeMap.json`.
+ * Fetches station location data from `routeMap.json`.
  * This data is cached to minimize redundant fetch requests.
  * Maps the station key (nodeid) from the object key to the nodeid property.
- * @returns A promise that resolves to an array of bus stop items
+ * @returns A promise that resolves to an array of station items
  */
 export async function getBusStopLocationData(): Promise<BusStop[]> {
-  const data = await stationCache.getOrFetch("Stations", async () => {
-    return fetchAPI<StationData>(getRouteMapUrl(), { baseUrl: "" });
-  });
+  const data = await getStaticData();
   // Map the station key (nodeid) from object keys to the nodeid property
   return Object.entries(data.stations).map(([nodeid, station]) => ({
     ...station,
@@ -110,11 +116,46 @@ export async function getBusStopLocationData(): Promise<BusStop[]> {
  * Fetches the station map keyed by nodeid.
  * Useful for lookup-heavy operations that only need coordinates.
  */
-export async function getStationMap(): Promise<Record<string, BusStop>> {
-  const data = await stationCache.getOrFetch("Stations", async () => {
-    return fetchAPI<StationData>(getRouteMapUrl(), { baseUrl: "" });
-  });
+export async function getStationMap(): Promise<Record<string, StationLocation>> {
+  const data = await getStaticData();
   return data.stations;
+}
+
+/**
+ * Fetches route-specific stops by joining route_details with station metadata.
+ */
+export async function getRouteStopsByRouteName(
+  routeName: string
+): Promise<BusStop[]> {
+  const data = await getStaticData();
+  const routeIds = data.route_numbers[routeName] ?? [];
+
+  if (routeIds.length === 0) return [];
+
+  const stationMap = data.stations;
+  const stopMap = new Map<string, BusStop>();
+
+  routeIds.forEach((routeId) => {
+    const detail = data.route_details[routeId];
+    if (!detail?.sequence) return;
+
+    detail.sequence.forEach((stop) => {
+      const station = stationMap[stop.nodeid];
+      if (!station) return;
+
+      const key = `${stop.nodeid}-${stop.updowncd ?? ""}`;
+      if (stopMap.has(key)) return;
+
+      stopMap.set(key, {
+        ...station,
+        nodeid: stop.nodeid,
+        nodeord: stop.nodeord,
+        updowncd: stop.updowncd,
+      });
+    });
+  });
+
+  return Array.from(stopMap.values());
 }
 
 /**
@@ -167,8 +208,6 @@ export async function getRouteInfo(
 export async function getRouteDetails(
   routeId: string
 ): Promise<RouteDetail | null> {
-  const data = await routeMapCache.getOrFetch("routeMap", async () => {
-    return fetchAPI<RouteMapData>(getRouteMapUrl(), { baseUrl: "" });
-  });
+  const data = await getStaticData();
   return data.route_details[routeId] || null;
 }

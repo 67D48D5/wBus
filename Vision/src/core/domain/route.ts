@@ -16,5 +16,6 @@ export type SequenceItem = {
 
 // Route Detail from routeMap
 export type RouteDetail = {
+  routeno?: string;
   sequence: SequenceItem[];
 };

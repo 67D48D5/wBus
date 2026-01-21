@@ -3,58 +3,142 @@
 "use client";
 
 import { Polyline } from "react-leaflet";
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 
 import { APP_CONFIG } from "@core/config/env";
 
 import { getRouteInfo } from "@bus/api/getStaticData";
 
-import { useMultiPolyline } from "@bus/hooks/useBusMultiPolyline";
 import { useBusLocationData } from "@bus/hooks/useBusLocation";
 import { useBusRoutePreference } from "@bus/hooks/useBusRoutePreference";
+import { useMultiPolyline } from "@bus/hooks/useBusMultiPolyline";
 
-/**
- * Calculate the opacity for each polyline segment based on its index.
- *
- * @param idx Current polyline index
- * @param total Total number of polylines
- * @returns Computed opacity value
- */
-function computeOpacity(idx: number, total: number): number {
-  return Math.max(1 - idx / total, 0.2);
-}
+import type { PathOptions } from "leaflet";
 
-export default function BusRoutePolyline({ routeName }: { routeName: string }) {
-  const { data: busList } = useBusLocationData(routeName);
+import type { PolylineSegment } from "@bus/hooks/useBusMultiPolyline";
+
+// ----------------------------------------------------------------------
+// Constants
+// ----------------------------------------------------------------------
+
+const COLORS = {
+  ACTIVE_UP: "#3b82f6",   // Blue-500
+  ACTIVE_DOWN: "#ef4444", // Red-500
+  INACTIVE_UP: "#93c5fd", // Blue-300
+  INACTIVE_DOWN: "#fca5a5", // Red-300
+} as const;
+
+const BASE_OPTIONS: PathOptions = {
+  lineCap: "round",
+  lineJoin: "round",
+};
+
+// ----------------------------------------------------------------------
+// Helper Hook: useRouteIds
+// ----------------------------------------------------------------------
+
+function useRouteIds(routeName: string) {
   const [routeIds, setRouteIds] = useState<string[]>([]);
 
-  // Load all routeIds for this route
   useEffect(() => {
     let isMounted = true;
 
-    getRouteInfo(routeName)
-      .then((info) => {
-        if (!isMounted) return;
-        setRouteIds(info?.vehicleRouteIds ?? []);
-      })
-      .catch((error) => { if (APP_CONFIG.IS_DEV) { console.error(error); } });
+    const fetchRouteIds = async () => {
+      try {
+        const info = await getRouteInfo(routeName);
+        if (isMounted) {
+          setRouteIds(info?.vehicleRouteIds ?? []);
+        }
+      } catch (error) {
+        if (APP_CONFIG.IS_DEV) console.error(error);
+      }
+    };
+
+    fetchRouteIds();
 
     return () => {
       isMounted = false;
     };
   }, [routeName]);
 
-  // Get live routeId from running buses
+  return routeIds;
+}
+
+// ----------------------------------------------------------------------
+// Sub-Component: PolylineLayer
+// ----------------------------------------------------------------------
+
+interface PolylineLayerProps {
+  segments: PolylineSegment[];
+  color: string;
+  isDashed?: boolean;
+  opacity?: number;
+  useGradient?: boolean; // If true, fades out segments sequentially
+}
+
+const PolylineLayer = memo(({
+  segments,
+  color,
+  isDashed,
+  opacity = 1.0,
+  useGradient = false
+}: PolylineLayerProps) => {
+  const pathOptions = useMemo<PathOptions>(() => ({
+    ...BASE_OPTIONS,
+    color,
+    weight: isDashed ? 3 : 6,
+    dashArray: isDashed ? "6, 6" : undefined,
+  }), [color, isDashed]);
+
+  if (segments.length === 0) return null;
+
+  return (
+    <>
+      {segments.map((segment, idx) => {
+        // Unique key generation using routeIds and index
+        const key = `${segment.direction}-${segment.routeIds.join("_")}-${idx}`;
+
+        // Calculate gradient opacity if enabled, otherwise use fixed opacity
+        const segmentOpacity = useGradient
+          ? Math.max(1 - idx / segments.length, 0.2)
+          : opacity;
+
+        return (
+          <Polyline
+            key={key}
+            positions={segment.coords}
+            pathOptions={{
+              ...pathOptions,
+              opacity: segmentOpacity,
+            }}
+          />
+        );
+      })}
+    </>
+  );
+});
+
+PolylineLayer.displayName = "PolylineLayer";
+
+// ----------------------------------------------------------------------
+// Main Component
+// ----------------------------------------------------------------------
+
+export default function BusRoutePolyline({ routeName }: { routeName: string }) {
+  // 1. Data Fetching
+  const routeIds = useRouteIds(routeName);
+  const { data: busList } = useBusLocationData(routeName);
+
+  // 2. Determine Logic
   const liveRouteId = useMemo(() => {
     return busList.find((bus) => bus.routeid)?.routeid ?? null;
   }, [busList]);
 
-  // Use preference hook to manage user's selected routeId with localStorage
-  const {
-    selectedRouteId,
-    updateSelectedRouteId,
-    availableRouteIds,
-  } = useBusRoutePreference(routeName, routeIds, liveRouteId);
+  const { selectedRouteId } = useBusRoutePreference(
+    routeName,
+    routeIds,
+    liveRouteId
+  );
 
   const {
     activeUpSegments,
@@ -63,80 +147,40 @@ export default function BusRoutePolyline({ routeName }: { routeName: string }) {
     inactiveDownSegments,
   } = useMultiPolyline(routeName, routeIds, selectedRouteId);
 
-  // If there are no buses running, set inactive state
-  const isInactive = busList.length === 0;
-
-  const activePathOptions = useMemo(
-    () => ({
-      weight: 6,
-      dashArray: isInactive ? "8, 4" : undefined,
-      lineCap: "round" as const,
-      lineJoin: "round" as const,
-    }),
-    [isInactive]
-  );
-
-  const inactivePathOptions = useMemo(
-    () => ({
-      weight: 3,
-      dashArray: "6, 6",
-      lineCap: "round" as const,
-      lineJoin: "round" as const,
-    }),
-    []
-  );
+  // 3. Styling Logic
+  const isNoBusRunning = busList.length === 0;
 
   return (
     <>
-      {/* Inactive (alternative) routes - lighter and dashed */}
-      {inactiveUpSegments.map((segment, idx) => (
-        <Polyline
-          key={`inactive-up-${segment.routeIds.join("-")}-${idx}`}
-          positions={segment.coords}
-          pathOptions={{
-            ...inactivePathOptions,
-            color: "#93c5fd",
-            opacity: 0.25,
-          }}
-        />
-      ))}
+      {/* Background Layers (Inactive Routes) */}
+      <PolylineLayer
+        segments={inactiveUpSegments}
+        color={COLORS.INACTIVE_UP}
+        isDashed={true}
+        opacity={0.25}
+      />
+      <PolylineLayer
+        segments={inactiveDownSegments}
+        color={COLORS.INACTIVE_DOWN}
+        isDashed={true}
+        opacity={0.25}
+      />
 
-      {inactiveDownSegments.map((segment, idx) => (
-        <Polyline
-          key={`inactive-down-${segment.routeIds.join("-")}-${idx}`}
-          positions={segment.coords}
-          pathOptions={{
-            ...inactivePathOptions,
-            color: "#fca5a5",
-            opacity: 0.25,
-          }}
-        />
-      ))}
-
-      {/* Active route - prominent and solid */}
-      {activeUpSegments.map((segment, idx) => (
-        <Polyline
-          key={`active-up-${segment.routeIds.join("-")}-${idx}`}
-          positions={segment.coords}
-          pathOptions={{
-            ...activePathOptions,
-            color: "#3b82f6",
-            opacity: computeOpacity(idx, activeUpSegments.length),
-          }}
-        />
-      ))}
-
-      {activeDownSegments.map((segment, idx) => (
-        <Polyline
-          key={`active-down-${segment.routeIds.join("-")}-${idx}`}
-          positions={segment.coords}
-          pathOptions={{
-            ...activePathOptions,
-            color: "#ef4444",
-            opacity: computeOpacity(idx, activeDownSegments.length),
-          }}
-        />
-      ))}
+      {/* Foreground Layers (Active Routes) */}
+      <PolylineLayer
+        segments={activeUpSegments}
+        color={COLORS.ACTIVE_UP}
+        isDashed={isNoBusRunning} // Dash active route if no bus is running
+        useGradient={!isNoBusRunning} // Apply gradient only when buses are active
+        opacity={isNoBusRunning ? 0.5 : 1.0}
+      />
+      <PolylineLayer
+        segments={activeDownSegments}
+        color={COLORS.ACTIVE_DOWN}
+        isDashed={isNoBusRunning}
+        useGradient={!isNoBusRunning}
+        opacity={isNoBusRunning ? 0.5 : 1.0}
+      />
     </>
   );
 }

@@ -3,85 +3,108 @@
 import { useEffect, useState } from "react";
 
 import { APP_CONFIG } from "@core/config/env";
-
 import { CacheManager } from "@core/cache/CacheManager";
 
-import { getRouteInfo } from "@bus/api/getStaticData";
-import { getBusStopLocationData } from "@bus/api/getStaticData";
+import { getBusStopLocationData, getRouteStopsByRouteName } from "@bus/api/getStaticData";
 
 import { useBusContext } from "@map/context/MapContext";
 import { getHaversineDistance } from "@map/utils/geoUtils";
 
 import type { BusStop } from "@core/domain/station";
 
-// Cache Managers
+// ----------------------------------------------------------------------
+// 1. Constants & Caches
+// ----------------------------------------------------------------------
+
+const MIN_VALID_STOPS = 4;
 const stopCache = new CacheManager<BusStop[]>();
 const routeStopsCache = new CacheManager<BusStop[]>();
 
-// Minimum number of stops required to consider route filtering valid
-const MIN_VALID_STOPS = 4;
+// ----------------------------------------------------------------------
+// 2. Helpers (Pure Functions)
+// ----------------------------------------------------------------------
+
+function getSortValue(stop: BusStop, fallback: number): number {
+  const nodeord = Number(stop.nodeord);
+  if (Number.isFinite(nodeord)) return nodeord;
+
+  const nodeno = Number(stop.nodeno);
+  if (Number.isFinite(nodeno)) return nodeno;
+
+  return fallback;
+}
+
+function sortStops(list: BusStop[]): BusStop[] {
+  return list
+    .map((stop, index) => ({ stop, index }))
+    .sort((a, b) => getSortValue(a.stop, a.index) - getSortValue(b.stop, b.index))
+    .map(({ stop }) => stop);
+}
+
+// ----------------------------------------------------------------------
+// 3. Main Hook: Data Fetching
+// ----------------------------------------------------------------------
 
 export function useBusStop(routeName: string) {
+  // Initialize from cache if available
   const [stops, setStops] = useState<BusStop[]>(() => {
     return routeStopsCache.get(routeName) ?? [];
   });
 
   useEffect(() => {
-    let isMounted = true;
     if (!routeName) return;
 
-    const load = async () => {
-      try {
-        const cachedStops = routeStopsCache.get(routeName);
-        if (cachedStops) {
-          if (isMounted) setStops(cachedStops);
-        }
+    let isMounted = true;
 
-        const routeInfo = await getRouteInfo(routeName);
-        if (!routeInfo) {
-          if (APP_CONFIG.IS_DEV) {
-            console.warn("[useBusStop] No route info found for routeName: " + routeName);
-          }
+    const fetchStops = async () => {
+      try {
+        // 1. Check Cache Again (for strict mode safety)
+        const cached = routeStopsCache.get(routeName);
+        if (cached) {
+          if (isMounted) setStops(cached);
+          // If cached, we might still want to re-validate or just return.
+          // In this static data case, we can usually stop here if cache is trusted.
           return;
         }
 
-        const allStops = await stopCache.getOrFetch("Stations", async () => {
-          const fetchedData = await getBusStopLocationData();
-          return fetchedData.sort(
-            (a: BusStop, b: BusStop) => a.nodeord - b.nodeord
-          );
+        // 2. Fetch All Stations (Global Fallback)
+        // This is memoized by stopCache
+        const allStopsPromise = stopCache.getOrFetch("Stations", async () => {
+          const data = await getBusStopLocationData();
+          return sortStops(data);
         });
 
-        const routeVehicleIds = new Set(routeInfo.vehicleRouteIds);
-        const filteredByRoute = allStops.filter(
-          (stop) => stop.nodeid && routeVehicleIds.has(stop.nodeid)
-        );
+        // 3. Fetch Specific Route Stops
+        const routeStopsPromise = getRouteStopsByRouteName(routeName).then(sortStops);
 
-        // Matching Logic:
-        // 1. If the number of matched stops is sufficient, use them.
-        // 2. If the number of matched stops is too few (added logic: fix for route 90)
-        // -> abandon filtering and use the entire stop dataset.
-        const isValidRoute = filteredByRoute.length >= MIN_VALID_STOPS;
+        const [allStops, routeStops] = await Promise.all([
+          allStopsPromise,
+          routeStopsPromise
+        ]);
 
-        const stopsToUse = isValidRoute ? filteredByRoute : allStops;
+        // 4. Validation Strategy
+        // If route 90 returns too few stops (API issue), fallback to all stops.
+        const isValid = routeStops.length >= MIN_VALID_STOPS;
+        const finalStops = isValid ? routeStops : allStops;
 
-        // Cache the stops for this route
-        routeStopsCache.set(routeName, stopsToUse);
+        // 5. Update Cache & State
+        routeStopsCache.set(routeName, finalStops);
 
         if (APP_CONFIG.IS_DEV) {
           console.debug(
-            `[useBusStop] Route "${routeName}": rawIds=${routeInfo.vehicleRouteIds.length}, matched=${filteredByRoute.length}, threshold=${MIN_VALID_STOPS}, fallback=${!isValidRoute}`
+            `[useBusStop] Route="${routeName}": matched=${routeStops.length}, fallback=${!isValid}`
           );
         }
-        if (isMounted) setStops(stopsToUse);
+
+        if (isMounted) setStops(finalStops);
       } catch (err) {
         if (APP_CONFIG.IS_DEV) {
-          console.error("[useBusStop] Error fetching bus stops for routeName: " + routeName, err);
+          console.error(`[useBusStop] Failed to load stops for ${routeName}`, err);
         }
       }
     };
 
-    load();
+    fetchStops();
 
     return () => {
       isMounted = false;
@@ -91,6 +114,10 @@ export function useBusStop(routeName: string) {
   return stops;
 }
 
+// ----------------------------------------------------------------------
+// 4. Secondary Hook: Closest Stop Calculation
+// ----------------------------------------------------------------------
+
 export function useClosestStopOrd(routeName: string): number | null {
   const { map } = useBusContext();
   const stops = useBusStop(routeName);
@@ -99,37 +126,32 @@ export function useClosestStopOrd(routeName: string): number | null {
   useEffect(() => {
     if (!map || stops.length === 0) return;
 
-    let isUnmounted = false;
+    const calculateClosest = () => {
+      // Safety check for Leaflet map instance
+      if (!map.getCenter) return;
 
-    const updateClosest = () => {
-      try {
-        const { lat, lng } = map.getCenter();
-        const closestStop = stops.reduce((prev, curr) => {
-          const prevDistance = getHaversineDistance(lat, lng, prev.gpslati, prev.gpslong);
-          const currDistance = getHaversineDistance(lat, lng, curr.gpslati, curr.gpslong);
-          return currDistance < prevDistance ? curr : prev;
-        }, stops[0]);
+      const { lat, lng } = map.getCenter();
 
-        if (!isUnmounted) {
-          setClosestOrd(closestStop.nodeord);
-        }
-      } catch (err) {
-        if (APP_CONFIG.IS_DEV) {
-          console.warn("[useClosestStopOrd] Unable to read map center yet", err);
-        }
-      }
+      // Find closest stop using reduce
+      // Optimization: Could use squared distance if perf is an issue
+      const closest = stops.reduce((best, current) => {
+        const bestDist = getHaversineDistance(lat, lng, best.gpslati, best.gpslong);
+        const currDist = getHaversineDistance(lat, lng, current.gpslati, current.gpslong);
+        return currDist < bestDist ? current : best;
+      }, stops[0]);
+
+      const ord = Number(closest.nodeord);
+      setClosestOrd(Number.isFinite(ord) ? ord : null);
     };
 
-    const attachListeners = () => {
-      updateClosest();
-      map.on("moveend", updateClosest);
-    };
+    // Initial calculation
+    map.whenReady(calculateClosest);
 
-    map.whenReady(attachListeners);
+    // Event listener
+    map.on("moveend", calculateClosest);
 
     return () => {
-      isUnmounted = true;
-      map.off("moveend", updateClosest);
+      map.off("moveend", calculateClosest);
     };
   }, [map, stops]);
 

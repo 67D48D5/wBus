@@ -1,14 +1,18 @@
 // src/core/domain/station.ts
 
-// Bus Stop Info
-export type BusStop = {
+// Station location data (routeMap stations map)
+export type StationLocation = {
     gpslati: number;
     gpslong: number;
-    nodeid: string;
     nodenm: string;
-    nodeno: number;
-    nodeord: number;
-    updowncd: number;
+    nodeno: string | number;
+};
+
+// Bus Stop Info (route-specific stop with optional sequencing info)
+export type BusStop = StationLocation & {
+    nodeid: string;
+    nodeord?: number;
+    updowncd?: number;
 };
 
 // Bus Stop Arrival Info
