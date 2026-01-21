@@ -1,93 +1,117 @@
-# Polly
+# Polly: The wBus Data Pipeline
 
-Polly is the data pipeline for `wBus`. It collects route shapes from the TAGO public API,
-snaps them to real road geometry with OSRM, and crawls static schedules from the Wonju bus
-information site. The output is ready-to-serve GeoJSON and JSON for the rest of the stack.
+[![License: MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Rust: 2024 Edition](https://img.shields.io/badge/Rust-2024%20Edition-orange.svg)](https://www.rust-lang.org/)
 
-## What It Does
+Polly is the backend data processing engine for `wBus`. It is a Rust-based command-line tool responsible for collecting, processing, and packaging bus route and schedule data. It fetches raw data from public APIs and websites, cleans it, and transforms it into a format ready to be consumed by the frontend application.
 
-- Route collection: fetches route lists and stop sequences from the TAGO API.
-- Route snapping: converts raw stop-to-stop paths into road-aligned geometry via OSRM.
-- Schedule crawling: parses the Wonju schedule tables into structured JSON.
-- Packaging: writes a compact `routeMap.json` and per-route schedule files.
+## Overview
 
-## Requirements
+Polly serves two primary functions:
 
-- Rust (edition 2024)
-- TAGO service key (DATA_GO_KR_SERVICE_KEY)
-- OSRM backend (local recommended)
-- Network access to `its.wonju.go.kr` for schedule crawling
+1. **Route Processing**: It fetches bus route information, including stop locations and sequences, from the national [TAGO (Transport APIs of Government Open Data)](https://www.data.go.kr/) service. It then uses an [OSRM](http://project-osrm.org/) backend to snap the raw point-to-point routes to actual road geometries, producing clean GeoJSON polylines.
+2. **Schedule Scraping**: It crawls the Wonju Bus Information website to extract static bus schedules, converting the HTML tables into structured JSON files for each route.
 
-## Setup
+The resulting data is stored locally, ready for deployment to a static file host or for use by the `wBus` frontend.
 
-```bash
-cd Polly
-cp .env.example .env
-```
+## Features
 
-Fill in `.env` with your decoded TAGO service key.
-If you want a local routing backend, follow `OSRM.md`.
+- **Route Collection**: Fetches route metadata and stop coordinates from the TAGO API.
+- **Route Snapping**: Aligns raw route paths with road networks using a configurable OSRM instance.
+- **Schedule Crawling**: Parses HTML from the Wonju bus information system for schedule data.
+- **Data Packaging**: Generates a consolidated `routeMap.json` containing all stops and route metadata, plus individual GeoJSON files for each route's path and JSON files for schedules.
+- **CLI Interface**: Provides commands to run the route and schedule processors independently, with options for filtering and controlling the workflow.
+
+## Prerequisites
+
+- **Rust** (2024 Edition or later)
+- **TAGO API Service Key**: A valid (decoded) service key from [data.go.kr](https://www.data.go.kr/).
+- **OSRM Backend**: An accessible OSRM instance for route snapping. A local setup is recommended for performance. See [OSRM.md](./OSRM.md) for setup instructions.
+- **Network Access**: Internet connectivity to reach the TAGO API and the Wonju bus information website.
+
+## Setup and Configuration
+
+1. **Clone the repository and navigate to the Polly directory:**
+
+    ```bash
+    git clone https://github.com/your-repo/wBus.git
+    cd wBus/Polly
+    ```
+
+2. **Create a `.env` file from the example:**
+
+    ```bash
+    cp .env.example .env
+    ```
+
+3. **Configure your environment variables in the `.env` file:**
+    - `DATA_GO_KR_SERVICE_KEY`: Your decoded TAGO API key. **(Required)**
+    - `OSRM_API_URL`: The URL of your OSRM routing server. Defaults to the public OSRM demo server, but a local instance is highly recommended.
+    - `TAGO_API_URL`: The base URL for the TAGO API. The default should be sufficient.
+
+    ```dotenv
+    # .env
+    DATA_GO_KR_SERVICE_KEY="YOUR_DECODED_TAGO_API_KEY"
+    OSRM_API_URL="http://localhost:5000/route/v1/driving"
+    ```
 
 ## Usage
 
+Polly provides two main commands: `route` and `schedule`.
+
 ### Route Processor
 
-Collects routes and generates a station map. Optionally snaps routes using OSRM.
+This command handles fetching, processing, and snapping route data.
+
+**Run a full pipeline for all routes:**
+*(Fetches from TAGO, snaps with OSRM, and builds the station map)*
 
 ```bash
-# All routes for the default city code (Wonju 32020)
-cargo run -- route
-
-# Only one route number
-cargo run -- route --route 2
-
-# Only build routeMap.json (skip snapping)
-cargo run -- route --station-map-only
-
-# Only snap existing raw routes (skip TAGO)
-cargo run -- route --osrm-only
+cargo run --release -- route
 ```
 
-Key flags:
+**Common Options:**
 
-- `--city-code` (default: `32020`)
-- `--route` (filter by route number)
-- `--output-dir` (default: `./storage/processed_routes`)
-- `--station-map-only`
-- `--osrm-only`
+- `--city-code <CODE>`: Set the city code for the API. (Default: `32020` for Wonju)
+- `--route <NUMBER>`: Process only a specific route number (e.g., `--route 2`).
+- `--output-dir <PATH>`: Specify a different output directory. (Default: `./storage/processed_routes`)
+- `--station-map-only`: Only fetch data and generate `routeMap.json`, skipping the OSRM snapping process.
+- `--osrm-only`: Only perform OSRM snapping on existing raw route files, skipping the TAGO API fetch.
 
 ### Schedule Processor
 
-Crawls the Wonju schedule site and writes structured JSON.
+This command scrapes the Wonju bus website for schedule information.
+
+**Crawl schedules for all routes:**
 
 ```bash
-# All schedules
-cargo run -- schedule
-
-# Single route number
-cargo run -- schedule --route 2
+cargo run --release -- schedule
 ```
 
-## Output Layout
+**Crawl for a single route:**
+
+```bash
+cargo run --release -- schedule --route 2
+```
+
+## Output Structure
+
+The processed data is saved in the `storage/` directory, organized as follows:
 
 ```text
 storage/
-  processed_routes/
-    raw_routes/        # GeoJSON from TAGO
-    snapped_routes/    # OSRM-snapped GeoJSON
-    routeMap.json      # stop map + route metadata
-  schedules/
-    2.json
+├── processed_routes/
+│   ├── raw_routes/      # Raw GeoJSON routes from TAGO (intermediate)
+│   ├── snapped_routes/  # OSRM-snapped GeoJSON routes (final)
+│   └── routeMap.json    # Consolidated station and route metadata
+└── schedules/
+    ├── 2.json           # Schedule for route 2
+    ├── ...
+    └── 100.json
 ```
 
-## Environment Variables
+## Technical Notes
 
-- `DATA_GO_KR_SERVICE_KEY` (required for TAGO collection)
-- `TAGO_API_URL` (default: `http://apis.data.go.kr/1613000/BusRouteInfoInqireService`)
-- `OSRM_ROUTE_API_URL` (default: `http://router.project-osrm.org/route/v1/driving`)
-
-## Notes
-
-- `OSRM` requests are chunked to avoid URL length limits on public servers.
-- Coordinates are filtered to the South Korea bounding box to drop outliers.
-- The schedule crawler mimics a browser session; HTML changes may require tweaks.
+- OSRM requests are sent in batches to avoid exceeding URL length limits on public servers.
+- GPS coordinates are validated to ensure they fall within a reasonable bounding box for South Korea, filtering out erroneous data points.
+- The schedule scraper is designed for the current structure of the Wonju bus website. Significant changes to the site may require updates to the scraper logic.
