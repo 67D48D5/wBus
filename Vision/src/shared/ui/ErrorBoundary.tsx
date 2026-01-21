@@ -7,9 +7,15 @@ import React, { Component, ReactNode, ErrorInfo } from "react";
 import { APP_CONFIG } from "@core/config/env";
 import { UI_TEXT } from "@core/config/locale";
 
+// ----------------------------------------------------------------------
+// Types
+// ----------------------------------------------------------------------
+
 interface ErrorBoundaryProps {
   children: ReactNode;
+  /** Custom fallback UI to render instead of the default error card */
   fallback?: ReactNode;
+  /** Callback triggered when an error is caught */
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
@@ -18,9 +24,65 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
+interface DefaultFallbackProps {
+  error: Error | null;
+  onRetry: () => void;
+}
+
+// ----------------------------------------------------------------------
+// Internal UI Component (Default Fallback)
+// ----------------------------------------------------------------------
+
 /**
- * Error Boundary component to catch and handle React errors gracefully
- * Prevents the entire app from crashing due to component errors
+ * The default UI displayed when an error occurs and no custom fallback is provided.
+ */
+const DefaultErrorFallback: React.FC<DefaultFallbackProps> = ({ error, onRetry }) => {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full">
+        {/* Icon */}
+        <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+          <span className="text-2xl" role="img" aria-label="Error">⚠️</span>
+        </div>
+
+        {/* Title & Message */}
+        <h2 className="text-xl font-bold text-gray-900 text-center mb-2">
+          {UI_TEXT.ERROR.TITLE}
+        </h2>
+        <p className="text-gray-600 text-center mb-6">
+          {UI_TEXT.ERROR.UNKNOWN(errorMessage)}
+        </p>
+
+        {/* Developer Debug Info (Only in Dev Mode) */}
+        {APP_CONFIG.IS_DEV && error && (
+          <div className="bg-red-50 border border-red-200 rounded p-3 mb-4 text-left">
+            <p className="text-xs font-mono text-red-800 break-all whitespace-pre-wrap">
+              {error.toString()}
+            </p>
+          </div>
+        )}
+
+        {/* Action Button */}
+        <button
+          onClick={onRetry}
+          className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          {UI_TEXT.COMMON.RETRY}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ----------------------------------------------------------------------
+// Main Error Boundary Class
+// ----------------------------------------------------------------------
+
+/**
+ * Error Boundary component to catch and handle React errors gracefully.
+ * Note: Must be a Class Component as hooks do not yet support `componentDidCatch`.
  */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
@@ -31,6 +93,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     };
   }
 
+  /**
+   * Lifecycle: Update state so the next render shows the fallback UI.
+   */
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return {
       hasError: true,
@@ -38,18 +103,25 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     };
   }
 
+  /**
+   * Lifecycle: Log error information.
+   */
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    // Log error details for debugging
+    // 1. Log error details for debugging in development
     if (APP_CONFIG.IS_DEV) {
-      console.error(UI_TEXT.ERROR.UNKNOWN(error instanceof Error ? error.message : String(error)), errorInfo);
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(UI_TEXT.ERROR.UNKNOWN(msg), errorInfo);
     }
 
-    // Call optional error callback
+    // 2. Trigger parent callback if provided (e.g., for analytics logging)
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }
   }
 
+  /**
+   * Resets the error state to attempt re-rendering the children.
+   */
   handleReset = (): void => {
     this.setState({
       hasError: false,
@@ -59,42 +131,21 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   render(): ReactNode {
     if (this.state.hasError) {
-      // Use custom fallback if provided
+      // 1. Return Custom Fallback if provided
       if (this.props.fallback) {
         return this.props.fallback;
       }
 
-      // Default error UI
+      // 2. Return Default Error UI
       return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full">
-            <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
-              <span className="text-2xl">⚠️</span>
-            </div>
-            <h2 className="text-xl font-bold text-gray-900 text-center mb-2">
-              {UI_TEXT.ERROR.TITLE}
-            </h2>
-            <p className="text-gray-600 text-center mb-6">
-              {UI_TEXT.ERROR.UNKNOWN(this.state.error instanceof Error ? this.state.error.message : String(this.state.error))}
-            </p>
-            {APP_CONFIG.IS_DEV && this.state.error && (
-              <div className="bg-red-50 border border-red-200 rounded p-3 mb-4">
-                <p className="text-xs font-mono text-red-800 break-all">
-                  {this.state.error.toString()}
-                </p>
-              </div>
-            )}
-            <button
-              onClick={this.handleReset}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              {UI_TEXT.COMMON.RETRY}
-            </button>
-          </div>
-        </div>
+        <DefaultErrorFallback
+          error={this.state.error}
+          onRetry={this.handleReset}
+        />
       );
     }
 
+    // 3. Render Children (Happy Path)
     return this.props.children;
   }
 }
