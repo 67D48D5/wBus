@@ -118,7 +118,9 @@ function snapToPolylineSegment(
 }
 
 /**
- * Build a path along the polyline from start to end position
+ * Build a path along the polyline from start to end position.
+ * IMPORTANT: Buses should NEVER go backward, so if endSegIdx < startSegIdx,
+ * we snap directly to the end position (no backward animation).
  */
 function buildPolylinePath(
     polyline: LatLngTuple[],
@@ -142,14 +144,14 @@ function buildPolylinePath(
         for (let i = startSegIdx + 1; i <= endSegIdx; i++) {
             path.push(polyline[i]);
         }
+        path.push(endPos);
     } else {
-        // Go backward through vertices
-        for (let i = startSegIdx; i > endSegIdx; i--) {
-            path.push(polyline[i]);
-        }
+        // Backward movement detected - buses don't go backward!
+        // Instead of animating backward, just snap directly to end position
+        // This handles cases like GPS jitter or data errors
+        path.push(endPos);
     }
 
-    path.push(endPos);
     return path;
 }
 

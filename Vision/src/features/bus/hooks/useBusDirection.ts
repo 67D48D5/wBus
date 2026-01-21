@@ -39,6 +39,7 @@ export function useBusDirection(routeName: string) {
   const [routeSequences, setRouteSequences] = useState<
     Array<{ routeid: string; sequence: { nodeid: string; nodeord: number; updowncd: number }[] }>
   >([]);
+  const [routeIdOrder, setRouteIdOrder] = useState<string[]>([]);
 
   // Preload route details for the selected route (uses routeMap.json)
   useEffect(() => {
@@ -48,7 +49,10 @@ export function useBusDirection(routeName: string) {
       try {
         const routeInfo = await getRouteInfo(routeName);
         if (!routeInfo) {
-          if (isMounted) setRouteSequences([]);
+          if (isMounted) {
+            setRouteSequences([]);
+            setRouteIdOrder([]);
+          }
           return;
         }
 
@@ -60,13 +64,18 @@ export function useBusDirection(routeName: string) {
         );
 
         if (isMounted) {
-          setRouteSequences(details.filter(Boolean) as Array<{ routeid: string; sequence: { nodeid: string; nodeord: number; updowncd: number }[] }>);
+          const filtered = details.filter(Boolean) as Array<{ routeid: string; sequence: { nodeid: string; nodeord: number; updowncd: number }[] }>;
+          setRouteSequences(filtered);
+          setRouteIdOrder(filtered.map(({ routeid }) => routeid));
         }
       } catch (err) {
         if (APP_CONFIG.IS_DEV) {
           console.error(`[useBusDirection] Route missing: ${routeName}`, err);
         }
-        if (isMounted) setRouteSequences([]);
+        if (isMounted) {
+          setRouteSequences([]);
+          setRouteIdOrder([]);
+        }
       }
     };
 
@@ -93,6 +102,25 @@ export function useBusDirection(routeName: string) {
   }, [routeSequences]);
 
   const activeRouteIds = useMemo(() => new Set(routeSequences.map(({ routeid }) => routeid)), [routeSequences]);
+
+  const routeIdHasMixedDirection = useMemo(() => {
+    const map = new Map<string, boolean>();
+    for (const { routeid, sequence } of routeSequences) {
+      const directions = new Set(sequence.map((item) => item.updowncd));
+      map.set(routeid, directions.size > 1);
+    }
+    return map;
+  }, [routeSequences]);
+
+  const routeIdFallbackDirection = useMemo(() => {
+    const map = new Map<string, DirectionCode>();
+    if (routeIdOrder.length === 2) {
+      // When up/down is encoded by separate routeIds, fall back to their order.
+      map.set(routeIdOrder[0], Direction.UP);
+      map.set(routeIdOrder[1], Direction.DOWN);
+    }
+    return map;
+  }, [routeIdOrder]);
 
   /**
    * Returns the up/down direction code for a bus stop based on its ID and order in the route.
@@ -154,9 +182,18 @@ export function useBusDirection(routeName: string) {
           return best;
         }, pool[0]);
 
-      return chosen ? normalize(chosen.updowncd) : null;
+      if (!chosen) return null;
+
+      const hasMixed = routeIdHasMixedDirection.get(chosen.routeid) ?? false;
+      const fallback = routeIdFallbackDirection.get(chosen.routeid);
+
+      if (!hasMixed && fallback !== undefined) {
+        return fallback;
+      }
+
+      return normalize(chosen.updowncd);
     },
-    [activeRouteIds, sequenceLookupMap]
+    [activeRouteIds, routeIdFallbackDirection, routeIdHasMixedDirection, sequenceLookupMap]
   );
 
   return getDirection;

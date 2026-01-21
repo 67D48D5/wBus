@@ -21,51 +21,121 @@ function getSqDist(p1: [number, number], p2: [number, number]): number {
 * Transform GeoJSON data into separate polylines for up and down directions.
 * [Important] Data may not come in order, so sorting by start_node_ord is necessary.
 * 
-* New schema:
-* - direction: 0 = up (상행), 1 = down (하행)
-* - start_node_ord: ordering number for segments
-* - is_turning_point: indicates if this segment is a turning point
+* New schema (single Feature with is_turning_point):
+* - One Feature contains the entire route (up + down in single LineString)
+* - is_turning_point: true indicates this is a round-trip route
+* - The turning point is found by detecting where the bus turns back (farthest point from start)
+*
+* Logic:
+* 1) If multiple features with both direction 0 and 1 exist, split by direction.
+* 2) If single feature with is_turning_point, find the turning point and split there.
 */
 export function transformPolyline(data: GeoPolyline) {
-    const upSegments: { coords: [number, number][], seq: number, isTurningPoint: boolean }[] = [];
-    const downSegments: { coords: [number, number][], seq: number, isTurningPoint: boolean }[] = [];
+    // Check if there's only one feature with is_turning_point (new single-feature schema)
+    const hasSingleFeatureWithTurningPoint =
+        data.features.length === 1 &&
+        data.features[0].properties.is_turning_point === true;
 
-    // 1. Iterate through data to separate up/down directions and extract order
+    if (hasSingleFeatureWithTurningPoint) {
+        return transformPolylineSingleFeature(data);
+    }
+
+    // Multiple features - check if direction values exist
+    const hasMultipleDirections = data.features.some(f =>
+        f.properties.direction === 0 || f.properties.direction === 1
+    );
+
+    if (hasMultipleDirections) {
+        return transformPolylineMultiFeature(data);
+    }
+
+    // Fallback: treat as single direction route
+    return transformPolylineSingleFeature(data);
+}
+
+/**
+ * Single Feature schema: One LineString contains the entire route.
+ * Find the turning point (farthest point from start) and split there.
+ */
+function transformPolylineSingleFeature(data: GeoPolyline): {
+    upPolyline: [number, number][][];
+    downPolyline: [number, number][][];
+} {
+    const feature = data.features[0];
+    if (!feature || !feature.geometry.coordinates.length) {
+        return { upPolyline: [], downPolyline: [] };
+    }
+
+    // Convert [lng, lat] to [lat, lng] for Leaflet
+    const coords = feature.geometry.coordinates.map(
+        ([lng, lat]) => [lat, lng] as [number, number]
+    );
+
+    // Find the turning point (farthest point from the start)
+    const start = coords[0];
+    let maxDist = 0;
+    let turningPointIndex = 0;
+
+    for (let i = 0; i < coords.length; i++) {
+        const dist = getSquaredDistanceSimple(start, coords[i]);
+        if (dist > maxDist) {
+            maxDist = dist;
+            turningPointIndex = i;
+        }
+    }
+
+    // Split into up (start to turning point) and down (turning point to end)
+    const upCoords = coords.slice(0, turningPointIndex + 1);
+    const downCoords = coords.slice(turningPointIndex);
+
+    return {
+        upPolyline: upCoords.length > 1 ? [upCoords] : [],
+        downPolyline: downCoords.length > 1 ? [downCoords] : []
+    };
+}
+
+/**
+ * Calculate squared distance between two points (for performance)
+ */
+function getSquaredDistanceSimple(p1: [number, number], p2: [number, number]): number {
+    const dLat = p2[0] - p1[0];
+    const dLng = p2[1] - p1[1];
+    return dLat * dLat + dLng * dLng;
+}
+
+/**
+ * Multi-Feature schema: Split by direction property
+ */
+function transformPolylineMultiFeature(data: GeoPolyline): {
+    upPolyline: [number, number][][];
+    downPolyline: [number, number][][];
+} {
+    const upSegments: { coords: [number, number][]; seq: number }[] = [];
+    const downSegments: { coords: [number, number][]; seq: number }[] = [];
+
     data.features.forEach((feature) => {
-        // Leaflet uses [lat, lng], GeoJSON uses [lng, lat]
         const coords = feature.geometry.coordinates.map(
             ([lng, lat]) => [lat, lng] as [number, number]
         );
 
         const props = feature.properties;
+        const seq = Number(props.start_node_ord ?? 0);
+        const direction = props.direction;
 
-        // Use start_node_ord for ordering (fallback to legacy props if needed)
-        const seq = Number(
-            props.start_node_ord ??
-            (props as any).seq ??
-            (props as any).turn_seq ??
-            (props as any).section_id ??
-            0
-        );
-        const isTurningPoint = props.is_turning_point ?? false;
-
-        // New schema: direction 0 = up, direction 1 = down
-        // Also support legacy schemas for backward compatibility
-        const legacyProps = props as any;
-        if (props.direction === 0 || legacyProps.dir === "up" || legacyProps.updnDir === "1") {
-            upSegments.push({ coords, seq, isTurningPoint });
-        } else if (props.direction === 1 || legacyProps.dir === "down" || legacyProps.updnDir === "0") {
-            downSegments.push({ coords, seq, isTurningPoint });
+        // direction: 0 = down, 1 = up (matches updowncd in routeMap)
+        if (direction === 1) {
+            upSegments.push({ coords, seq });
+        } else if (direction === 0) {
+            downSegments.push({ coords, seq });
         }
     });
 
-    // 2. Sort by order (start_node_ord) to avoid zigzag connections in the polyline
     upSegments.sort((a, b) => a.seq - b.seq);
     downSegments.sort((a, b) => a.seq - b.seq);
 
     return {
-        upPolyline: upSegments.map(s => s.coords),
-        downPolyline: downSegments.map(s => s.coords)
+        upPolyline: upSegments.map((s) => s.coords),
+        downPolyline: downSegments.map((s) => s.coords)
     };
 }
 
