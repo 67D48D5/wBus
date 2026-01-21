@@ -126,7 +126,7 @@ function ArrivalList({
             <div className="p-4 text-center">
                 <div className="py-8 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
                     <Bus className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-                    <p className="text-sm text-slate-500 font-bold">{UI_TEXT.BUS_LIST.NO_RUNNING}</p>
+                    <p className="text-sm text-slate-500 font-bold">{UI_TEXT.BUS_LIST.NO_RUNNING_DESC}</p>
                     <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">No buses scheduled</p>
                 </div>
             </div>

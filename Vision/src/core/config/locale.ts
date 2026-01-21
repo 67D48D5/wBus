@@ -48,7 +48,8 @@ export const UI_TEXT = {
         TITLE_ALL: '전체 버스 목록',
         TITLE_ROUTE: (route: string) => `${route}번 버스`,
         COUNT_RUNNING: (count: number) => `${count}대 운행 중`,
-        NO_RUNNING: '운행 중인 버스가 없습니다.',
+        NO_RUNNING: '운행 중인 버스 없음',
+        NO_RUNNING_DESC: '운행 중인 버스가 없습니다.',
         EMPTY_TODAY: '오늘 운행 예정인 버스가 없습니다.',
     },
 

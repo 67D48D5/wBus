@@ -304,7 +304,7 @@ export default function BusList({ routeNames, allRoutes, selectedRoute, onRouteC
           <ul className={STYLES.LIST_CONTAINER}>
             {uiState.isNoData ? (
               <li className="text-center py-4 text-gray-500 text-xs italic">
-                {UI_TEXT.BUS_LIST.NO_RUNNING}
+                {UI_TEXT.BUS_LIST.NO_RUNNING_DESC}
               </li>
             ) : (
               allBuses.map(({ bus, routeName, getDirection }) => (
