@@ -20,8 +20,8 @@ This separation of concerns allows for a robust and scalable system. The heavy d
 
 ```text
                                +-----------------------------+
-                               |   External Data Sources   |
-                               | (TAGO API, Wonju Website) |
+                               |    External Data Sources    |
+                               |  (TAGO API, Wonju Website)  |
                                +-------------+---------------+
                                              |
                                              | Fetches & Processes
