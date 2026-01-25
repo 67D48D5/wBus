@@ -1,5 +1,7 @@
 // src/route/model.rs
 
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -97,10 +99,21 @@ pub struct FrontendMeta {
     pub source_ver: String, // e.g., "raw-20260121"
 }
 
-// Internal processing structure
+/// Internal processing structure
 pub struct RouteProcessData {
     pub route_id: String,
     pub route_no: String,
     pub details: Value,
     pub stops_map: Vec<(String, Value)>,
+}
+
+/// Main processor structure
+pub struct BusRouteProcessor {
+    pub service_key: String,
+    pub city_code: String,
+    pub raw_dir: PathBuf,
+    pub derived_dir: PathBuf,
+    pub mapping_file: PathBuf,
+    pub tago_base_url: String,
+    pub osrm_base_url: String,
 }

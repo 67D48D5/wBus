@@ -14,10 +14,14 @@ use serde_json::{Value, json};
 
 use crate::config::{CONCURRENCY_FETCH, CONCURRENCY_SNAP, OSRM_CHUNK_SIZE, OSRM_URL, TAGO_URL};
 use crate::route::model::{
-    DerivedFeature, DerivedFeatureCollection, FrontendMeta, FrontendProperties, FrontendStop,
-    RawRouteFile, RawStop, RouteGeometry, RouteIndices, RouteProcessData,
+    BusRouteProcessor, DerivedFeature, DerivedFeatureCollection, FrontendMeta, FrontendProperties,
+    FrontendStop, RawRouteFile, RawStop, RouteGeometry, RouteIndices, RouteProcessData,
 };
-use crate::utils;
+use crate::utils::{
+    ensure_dir, extract_items,
+    geo::{calculate_metrics, closest_point_on_polyline, find_nearest_coord_index},
+    get_env, parse_flexible_string, resolve_url,
+};
 
 // ============================================================================
 // Main Execution
@@ -34,10 +38,10 @@ pub async fn run(
     let raw_dir = output_dir.join("raw_routes");
     let derived_dir = output_dir.join("derived_routes");
 
-    utils::ensure_dir(&raw_dir)?;
-    utils::ensure_dir(&derived_dir)?;
+    ensure_dir(&raw_dir)?;
+    ensure_dir(&derived_dir)?;
 
-    let service_key = utils::get_env("DATA_GO_KR_SERVICE_KEY");
+    let service_key = get_env("DATA_GO_KR_SERVICE_KEY");
     if service_key.is_empty() {
         anyhow::bail!("DATA_GO_KR_SERVICE_KEY is missing!");
     }
@@ -120,10 +124,13 @@ pub async fn run(
 
     // Read all JSONs from `raw_routes/`
     let raw_entries: Vec<_> = fs::read_dir(&raw_dir)?.filter_map(|e| e.ok()).collect();
+
+    // Process with concurrency
     let mut snap_stream = stream::iter(raw_entries)
         .map(|entry| {
             let proc = Arc::clone(&processor);
             let specific = specific_route.clone();
+
             async move {
                 let path = entry.path();
                 if path.extension().map_or(false, |ext| ext == "json") {
@@ -139,6 +146,7 @@ pub async fn run(
                     }
 
                     println!(" Processing {}...", fname);
+
                     proc.process_raw_to_derived(&path).await
                 } else {
                     Ok(())
@@ -162,16 +170,6 @@ pub async fn run(
 // Processor Implementation
 // ============================================================================
 
-struct BusRouteProcessor {
-    service_key: String,
-    city_code: String,
-    raw_dir: PathBuf,
-    derived_dir: PathBuf,
-    mapping_file: PathBuf,
-    tago_base_url: String,
-    osrm_base_url: String,
-}
-
 impl BusRouteProcessor {
     // Phase 1 Logic
 
@@ -183,6 +181,7 @@ impl BusRouteProcessor {
             ("serviceKey", self.service_key.as_str()),
             ("_type", "json"),
         ];
+
         let url = format!("{}/getRouteNoList", self.tago_base_url);
         let resp = reqwest::Client::new()
             .get(&url)
@@ -190,6 +189,7 @@ impl BusRouteProcessor {
             .send()
             .await?;
         let json: Value = resp.json().await?;
+
         extract_items(&json)
     }
 
@@ -212,6 +212,7 @@ impl BusRouteProcessor {
             ("serviceKey", self.service_key.as_str()),
             ("_type", "json"),
         ];
+
         let url = format!("{}/getRouteAcctoThrghSttnList", self.tago_base_url);
         let resp = reqwest::Client::new()
             .get(&url)
@@ -294,11 +295,11 @@ impl BusRouteProcessor {
     }
 
     // Phase 2 Logic
-
     async fn process_raw_to_derived(&self, raw_path: &Path) -> Result<()> {
-        // 1. Read Raw File
+        // Read Raw File
         let content = fs::read_to_string(raw_path)?;
         let raw_data: RawRouteFile = serde_json::from_str(&content)?;
+
         let mut stops = raw_data.stops; // Use stops from raw file
 
         // Sanitize coordinates (drift correction)
@@ -308,26 +309,28 @@ impl BusRouteProcessor {
             return Ok(());
         }
 
-        // 2. Identify Metadata
+        // Identify Metadata
         let route_id = raw_data.route_id;
         let route_no = raw_data.route_no;
 
-        // 3. Identify Turning Point
+        // Identify Turning Point
         let mut turn_idx = stops.len() - 1;
+
         for i in 0..stops.len() - 1 {
             if stops[i].up_down_cd != stops[i + 1].up_down_cd {
                 turn_idx = i;
                 break;
             }
         }
+
         let turn_node_id = stops[turn_idx].node_id.clone();
 
-        // 4. OSRM Logic (Merging)
+        // OSRM Logic (Merging)
+        // `stop_to_coord` stores mapping: Stops index (in stops vec) -> Coordinate index
         let mut full_coordinates: Vec<Vec<f64>> = Vec::new();
-        // stop_to_coord stores mapping: Stops index (in stops vec) -> Coordinate index
         let mut stop_to_coord: Vec<usize> = Vec::with_capacity(stops.len());
-
         let mut start_idx = 0;
+
         while start_idx < stops.len() - 1 {
             let end_idx = (start_idx + OSRM_CHUNK_SIZE).min(stops.len());
             let chunk = &stops[start_idx..end_idx];
@@ -382,7 +385,7 @@ impl BusRouteProcessor {
             stop_to_coord.push(full_coordinates.len().saturating_sub(1));
         }
 
-        // 5. Derive Indices & Metrics
+        // Derive Indices & Metrics
         // Find turn coordinate index
         // We find the index of the turn node in the stops array, then look up its mapped coordinate index.
         let turn_coord_idx = stops
@@ -394,8 +397,7 @@ impl BusRouteProcessor {
         // Calculate BBox & Distance
         let (bbox, total_dist) = calculate_metrics(&full_coordinates);
 
-        // 6. Build Lightweight Derived Struct
-        // We convert RawStop -> FrontendStop (stripping lat/lon/raw_codes)
+        // Build Data Structures
         let frontend_stops: Vec<FrontendStop> = stops
             .iter()
             .map(|s| FrontendStop {
@@ -432,7 +434,7 @@ impl BusRouteProcessor {
             }],
         };
 
-        // 7. Save Derived File
+        // Save Derived File
         // {Derived_Dir}/{RouteID}.geojson
         let output_path = self.derived_dir.join(format!("{}.geojson", route_id));
         fs::write(output_path, serde_json::to_string(&derived_data)?)?; // Minified JSON for frontend
@@ -441,15 +443,15 @@ impl BusRouteProcessor {
     }
 
     // Helpers (Sanitize, OSRM Fetch, Save Map)
-    // (Same as before, just kept concise for this view)
-
     async fn sanitize_stops_to_corridor(&self, stops: &mut [RawStop]) {
         if stops.len() < 3 {
             return;
         }
+
         for i in 1..stops.len() - 1 {
             let prev = stops[i - 1].clone();
             let next = stops[i + 1].clone();
+
             if let Some(corr) = self.fetch_osrm_route_between(&prev, &next).await {
                 let p = (stops[i].gps_long, stops[i].gps_lat);
                 if let Some(((cx, cy), d)) = closest_point_on_polyline(p, &corr) {
@@ -467,6 +469,7 @@ impl BusRouteProcessor {
             "{:.6},{:.6};{:.6},{:.6}",
             a.gps_long, a.gps_lat, b.gps_long, b.gps_lat
         );
+
         self.call_osrm(&coords).await
     }
 
@@ -476,25 +479,28 @@ impl BusRouteProcessor {
             .map(|s| format!("{:.6},{:.6}", s.gps_long, s.gps_lat))
             .collect::<Vec<_>>()
             .join(";");
+
         self.call_osrm(&coords).await
     }
 
+    /// Call OSRM API and return coordinates
     async fn call_osrm(&self, coords_param: &str) -> Option<Vec<Vec<f64>>> {
-        let base = self
-            .osrm_base_url
-            .replace("/match/v1/driving", "/route/v1/driving");
+        // Construct URL
         let url = format!(
             "{}/{coords}?overview=full&geometries=geojson&steps=false&continue_straight=true",
-            base,
+            self.osrm_base_url,
             coords = coords_param
         );
+
         let resp = reqwest::get(&url).await.ok()?;
         if !resp.status().is_success() {
             return None;
         }
+
         let json: Value = resp.json().await.ok()?;
         let coords: Vec<Vec<f64>> =
             serde_json::from_value(json["routes"][0]["geometry"]["coordinates"].clone()).ok()?;
+
         if coords.is_empty() {
             None
         } else {
@@ -514,118 +520,12 @@ impl BusRouteProcessor {
             "route_details": details,
             "stations": stops
         });
+
         fs::write(
             &self.mapping_file,
             serde_json::to_string_pretty(&final_data)?,
         )?;
+
         Ok(())
     }
-}
-
-// ============================================================================
-// Utils
-// ============================================================================
-
-fn resolve_url(key: &str, default: &str) -> String {
-    let v = utils::get_env(key);
-    if v.is_empty() { default.to_string() } else { v }
-}
-
-fn extract_items(json: &Value) -> Result<Vec<Value>> {
-    let items = &json["response"]["body"]["items"]["item"];
-    if let Some(arr) = items.as_array() {
-        Ok(arr.clone())
-    } else if let Some(obj) = items.as_object() {
-        Ok(vec![Value::Object(obj.clone())])
-    } else {
-        Ok(vec![])
-    }
-}
-
-fn parse_flexible_string(v: &Value) -> String {
-    if let Some(s) = v.as_str() {
-        s.to_string()
-    } else if let Some(n) = v.as_i64() {
-        n.to_string()
-    } else {
-        "UNKNOWN".to_string()
-    }
-}
-
-fn meters_between(lon1: f64, lat1: f64, lon2: f64, lat2: f64) -> f64 {
-    let r = 6371000.0;
-    let x = (lon2 - lon1).to_radians() * ((lat1 + lat2) * 0.5).to_radians().cos();
-    let y = (lat2 - lat1).to_radians();
-    (x * x + y * y).sqrt() * r
-}
-
-fn closest_point_on_polyline(point: (f64, f64), line: &Vec<Vec<f64>>) -> Option<((f64, f64), f64)> {
-    if line.len() < 2 {
-        return None;
-    }
-    let (px, py) = point;
-    let mut best = None;
-    for seg in line.windows(2) {
-        let (x1, y1) = (seg[0][0], seg[0][1]);
-        let (x2, y2) = (seg[1][0], seg[1][1]);
-        let dx = x2 - x1;
-        let dy = y2 - y1;
-        let denom = dx * dx + dy * dy;
-        if denom == 0.0 {
-            continue;
-        }
-        let t = ((px - x1) * dx + (py - y1) * dy) / denom;
-        let cx = x1 + t.clamp(0.0, 1.0) * dx;
-        let cy = y1 + t.clamp(0.0, 1.0) * dy;
-        let d = meters_between(px, py, cx, cy);
-        match best {
-            None => best = Some(((cx, cy), d)),
-            Some((_, bd)) if d < bd => best = Some(((cx, cy), d)),
-            _ => {}
-        }
-    }
-    best
-}
-
-fn find_nearest_coord_index(point: (f64, f64), line: &Vec<Vec<f64>>) -> Option<usize> {
-    if line.is_empty() {
-        return None;
-    }
-    let (px, py) = point;
-    let mut best_idx = 0;
-    let mut min_dist = f64::MAX;
-    for (i, coord) in line.iter().enumerate() {
-        let d = meters_between(px, py, coord[0], coord[1]);
-        if d < min_dist {
-            min_dist = d;
-            best_idx = i;
-        }
-    }
-    Some(best_idx)
-}
-
-fn calculate_metrics(coords: &Vec<Vec<f64>>) -> ([f64; 4], f64) {
-    let mut min_lon = 180.0;
-    let mut min_lat = 90.0;
-    let mut max_lon = -180.0;
-    let mut max_lat = -90.0;
-    let mut dist = 0.0;
-    for (i, c) in coords.iter().enumerate() {
-        if c[0] < min_lon {
-            min_lon = c[0];
-        }
-        if c[0] > max_lon {
-            max_lon = c[0];
-        }
-        if c[1] < min_lat {
-            min_lat = c[1];
-        }
-        if c[1] > max_lat {
-            max_lat = c[1];
-        }
-        if i > 0 {
-            dist += meters_between(coords[i - 1][0], coords[i - 1][1], c[0], c[1]);
-        }
-    }
-    ([min_lon, min_lat, max_lon, max_lat], dist)
 }

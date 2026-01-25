@@ -1,15 +1,14 @@
 // src/main.rs
 
-use std::path::PathBuf;
-
-use anyhow::Result;
-use clap::{Parser, Subcommand};
-
-// Import modules
 mod config;
 mod route;
 mod schedule;
 mod utils;
+
+use std::path::PathBuf;
+
+use anyhow::Result;
+use clap::{Parser, Subcommand};
 
 /// Polly CLI Tool
 #[derive(Parser)]
