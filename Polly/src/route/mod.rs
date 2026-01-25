@@ -1,5 +1,7 @@
 // src/route/mod.rs
 
+mod model;
+
 use std::collections::{BTreeMap, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -8,123 +10,14 @@ use std::sync::Arc;
 use anyhow::Result;
 use chrono::Local;
 use futures::stream::{self, StreamExt};
-use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use super::utils;
-
-// ============================================================================
-// Constants
-// ============================================================================
-
-const TAGO_URL: &str = "http://apis.data.go.kr/1613000/BusRouteInfoInqireService";
-const OSRM_URL: &str = "http://router.project-osrm.org/route/v1/driving";
-
-const CONCURRENCY_FETCH: usize = 10;
-const CONCURRENCY_SNAP: usize = 4;
-const OSRM_CHUNK_SIZE: usize = 120;
-
-// ============================================================================
-// 1. Raw Data Models (Saved to raw_routes/)
-// ============================================================================
-
-/// Raw station information fetched from the API (for preservation)
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct RawStop {
-    node_id: String,
-    node_nm: String,
-    node_ord: i64,
-    node_no: String,
-    gps_lat: f64,
-    gps_long: f64,
-    up_down_cd: i64,
-}
-
-/// Raw file save format
-#[derive(Serialize, Deserialize)]
-struct RawRouteFile {
-    route_id: String,
-    route_no: String,
-    fetched_at: String,
-    stops: Vec<RawStop>,
-}
-
-// ============================================================================
-// 2. Derived Data Models (Saved to derived_routes/ - Frontend Optimized)
-// ============================================================================
-
-/// GeoJSON structure for Frontend
-#[derive(Serialize)]
-struct DerivedFeatureCollection {
-    #[serde(rename = "type")]
-    type_: String, // "FeatureCollection"
-    features: Vec<DerivedFeature>,
-}
-
-#[derive(Serialize)]
-struct DerivedFeature {
-    #[serde(rename = "type")]
-    type_: String, // "Feature"
-    id: String,
-    geometry: RouteGeometry,
-    properties: FrontendProperties,
-}
-
-#[derive(Serialize)]
-struct RouteGeometry {
-    #[serde(rename = "type")]
-    type_: String, // "LineString"
-    coordinates: Vec<Vec<f64>>,
-}
-
-/// [Core] Lightweight Properties containing only essential info for Frontend
-#[derive(Serialize)]
-struct FrontendProperties {
-    // Basic Info
-    route_id: String,
-    route_no: String,
-
-    // Station list for UI display (excluding coordinates, only Name/ID/Order)
-    // Coordinates are referenced via geometry or routeMap.json.
-    // Included here to map logical position on the path.
-    stops: Vec<FrontendStop>,
-
-    // Indices for rendering/animation
-    indices: RouteIndices,
-
-    // Metadata (Minimal, for debugging)
-    meta: FrontendMeta,
-}
-
-#[derive(Serialize)]
-struct FrontendStop {
-    id: String,
-    name: String,
-    ord: i64,
-    up_down: i64,
-}
-
-#[derive(Serialize)]
-struct RouteIndices {
-    turn_idx: usize, // Index of the turning point coordinate
-    // Mapping: Station ID -> Index on the full route path (coordinates)
-    stop_to_coord: Vec<usize>,
-}
-
-#[derive(Serialize)]
-struct FrontendMeta {
-    total_dist: f64,
-    bbox: [f64; 4],
-    source_ver: String, // e.g., "raw-20260121"
-}
-
-// Internal processing structure
-struct RouteProcessData {
-    route_id: String,
-    route_no: String,
-    details: Value,
-    stops_map: Vec<(String, Value)>,
-}
+use crate::config::{CONCURRENCY_FETCH, CONCURRENCY_SNAP, OSRM_CHUNK_SIZE, OSRM_URL, TAGO_URL};
+use crate::route::model::{
+    DerivedFeature, DerivedFeatureCollection, FrontendMeta, FrontendProperties, FrontendStop,
+    RawRouteFile, RawStop, RouteGeometry, RouteIndices, RouteProcessData,
+};
+use crate::utils;
 
 // ============================================================================
 // Main Execution
@@ -137,9 +30,9 @@ pub async fn run(
     station_map_only: bool,
     osrm_only: bool,
 ) -> Result<()> {
-    // 1. Setup Directories
+    // Setup Directories
     let raw_dir = output_dir.join("raw_routes");
-    let derived_dir = output_dir.join("derived_routes"); // Renamed to derived_routes
+    let derived_dir = output_dir.join("derived_routes");
 
     utils::ensure_dir(&raw_dir)?;
     utils::ensure_dir(&derived_dir)?;
@@ -159,11 +52,11 @@ pub async fn run(
         osrm_base_url: resolve_url("OSRM_API_URL", OSRM_URL),
     });
 
-    // 2. [Phase 1] Data Collection (Raw Save)
+    // [Phase 1] Data Collection (Raw Save)
     if !osrm_only {
         println!("\n[Phase 1: Fetching Raw Data to {:?}]", raw_dir);
-        let routes = processor.get_all_routes().await?;
 
+        let routes = processor.get_all_routes().await?;
         let target_routes: Vec<Value> = if let Some(target_no) = specific_route.as_ref() {
             routes
                 .into_iter()
@@ -172,6 +65,7 @@ pub async fn run(
         } else {
             routes
         };
+
         println!(" Targeting {} routes...", target_routes.len());
 
         let mut route_stream = stream::iter(target_routes)
@@ -208,23 +102,24 @@ pub async fn run(
             }
         }
         println!("\n Processed {} raw routes.", count);
+
         processor.save_route_map_json(&route_mapping, &route_details_map, &all_stops)?;
 
         if station_map_only {
             println!("✓ Station map generated.");
+
             return Ok(());
         }
     }
 
-    // 3. [Phase 2] Data Processing (Raw -> Derived)
+    // [Phase 2] Data Processing (Raw -> Derived)
     println!(
-        "\n[Phase 2: Generating Lightweight GeoJSON to {:?}]",
+        "\n[Phase 2: Processing raw data to GeoJSON: {:?}]",
         derived_dir
     );
 
-    // Read all JSONs from raw_routes/
+    // Read all JSONs from `raw_routes/`
     let raw_entries: Vec<_> = fs::read_dir(&raw_dir)?.filter_map(|e| e.ok()).collect();
-
     let mut snap_stream = stream::iter(raw_entries)
         .map(|entry| {
             let proc = Arc::clone(&processor);
@@ -259,6 +154,7 @@ pub async fn run(
     }
 
     println!("✓ Pipeline Complete.");
+
     Ok(())
 }
 

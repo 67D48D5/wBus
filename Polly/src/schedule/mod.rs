@@ -1,5 +1,7 @@
 // src/schedule/mod.rs
 
+mod model;
+
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
 use std::path::PathBuf;
@@ -13,36 +15,9 @@ use scraper::{Html, Selector};
 use serde_json::json;
 use tokio::time::sleep;
 
-use super::utils;
-
-// Constants for the Wonju Bus Information System website.
-const BASE_URL: &str = "http://its.wonju.go.kr/bus/bus04.do";
-const DETAIL_URL: &str = "http://its.wonju.go.kr/bus/bus04Detail.do";
-
-/// Holds metadata for a bus route, such as its start and end points
-/// and a list of all unique directions (termini) it serves.
-#[derive(Debug, Clone)]
-struct RouteMeta {
-    origin: String,
-    destination: String,
-    directions: Vec<String>,
-}
-
-/// Represents a single departure time entry in the schedule.
-#[derive(Debug)]
-struct TimeEntry {
-    time: String,
-    note: Option<String>,
-}
-
-/// Represents the fully parsed schedule for a specific route on a specific day type.
-#[derive(Debug)]
-struct ParsedSchedule {
-    route_number: String,
-    day_type: String,
-    directions: Vec<String>,
-    times_by_direction: HashMap<String, Vec<TimeEntry>>,
-}
+use crate::config::{BASE_URL, DETAIL_URL};
+use crate::schedule::model::{ParsedSchedule, RouteMeta, TimeEntry};
+use crate::utils;
 
 /// Main entry point for the schedule crawler.
 ///
@@ -56,6 +31,7 @@ struct ParsedSchedule {
 ///
 pub async fn run(specific_route: Option<String>, output_dir: PathBuf) -> Result<()> {
     let schedule_dir = output_dir.join("schedules");
+
     utils::ensure_dir(&schedule_dir)?;
 
     println!("\n============================================================");
@@ -73,11 +49,13 @@ pub async fn run(specific_route: Option<String>, output_dir: PathBuf) -> Result<
 
     // Fetch the main schedule page to acquire session cookies and the list of all routes.
     println!("Fetching main page (Initializing Session)...");
+
     let resp = client.get(BASE_URL).send().await?.text().await?;
     let document = Html::parse_document(&resp);
 
     // Extract basic route information and the target route IDs to crawl.
     let (route_meta_map, targets) = extract_route_info(&document, specific_route.as_deref())?;
+
     println!("✓ Found info for {} routes", route_meta_map.len());
     println!("✓ Found {} route schedules to process", targets.len());
 
@@ -148,6 +126,7 @@ pub async fn run(specific_route: Option<String>, output_dir: PathBuf) -> Result<
 
     // Merge the collected schedules and save them to JSON files.
     println!("\nOrganizing and saving schedules...");
+
     let merged_routes = merge_schedules(collected_schedules, &route_meta_map);
 
     for (route_number, data) in merged_routes {

@@ -6,6 +6,7 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 
 // Import modules
+mod config;
 mod route;
 mod schedule;
 mod utils;
