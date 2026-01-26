@@ -27,6 +27,7 @@ import type { BusItem } from "@core/domain/bus";
 // ----------------------------------------------------------------------
 
 const SETTINGS = MAP_SETTINGS.MARKERS.BUS;
+const SNAP_INDEX_RANGE = 80;
 
 const CSS_STYLES = `
 @keyframes busRouteMarquee {
@@ -198,12 +199,17 @@ export default function BusMarker({ routeName, onPopupOpen, onPopupClose }: BusM
 
     return busList.map((bus) => {
       // Determine which polyline to snap to
-      const targetRouteId = bus.routeid ?? activeRouteId ?? routeInfo.representativeRouteId;
+      const targetRouteId = bus.routeid ?? activeRouteId ?? routeInfo.vehicleRouteIds[0] ?? null;
       const polylineSet = targetRouteId ? polylineMap.get(targetRouteId) : null;
-      const { upPolyline, downPolyline } = polylineSet ?? fallbackPolylines;
+      const { upPolyline, downPolyline, stopIndexMap, turnIndex, isSwapped } = polylineSet ?? fallbackPolylines;
 
       // Calculate Snap
-      const snapped = getSnappedPosition(bus, getDirection, upPolyline, downPolyline);
+      const snapped = getSnappedPosition(bus, getDirection, upPolyline, downPolyline, {
+        stopIndexMap,
+        turnIndex,
+        isSwapped,
+        snapIndexRange: SNAP_INDEX_RANGE,
+      });
       const activePolyline = snapped.direction === 1 ? upPolyline : downPolyline;
 
       return {
@@ -213,6 +219,7 @@ export default function BusMarker({ routeName, onPopupOpen, onPopupClose }: BusM
         angle: snapped.angle,
         direction: snapped.direction,
         polyline: activePolyline,
+        snapIndexHint: snapped.segmentIndex ?? null,
       };
     });
   }, [
@@ -229,7 +236,7 @@ export default function BusMarker({ routeName, onPopupOpen, onPopupClose }: BusM
 
   return (
     <>
-      {markers.map(({ key, bus, position, angle, direction, polyline }) => {
+      {markers.map(({ key, bus, position, angle, direction, polyline, snapIndexHint }) => {
         const icon = createIcon(bus.routenm);
         if (!icon) return null;
 
@@ -240,6 +247,8 @@ export default function BusMarker({ routeName, onPopupOpen, onPopupClose }: BusM
             rotationAngle={angle % 360}
             icon={icon}
             polyline={polyline}
+            snapIndexHint={snapIndexHint}
+            snapIndexRange={SNAP_INDEX_RANGE}
             animationDuration={MAP_SETTINGS.ANIMATION.BUS_MOVE_MS}
             refreshKey={refreshKey}
             eventHandlers={{

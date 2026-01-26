@@ -6,12 +6,12 @@ import { APP_CONFIG } from "@core/config/env";
 
 import { getPolyline, getRouteDetails, getStationMap } from "@bus/api/getStaticData";
 
-import { transformPolyline } from "@bus/utils/polyUtils";
+import { transformPolyline, getPolylineMeta, type StopIndexMap } from "@bus/utils/polyUtils";
 import { shouldSwapPolylines } from "@bus/utils/polylineDirection";
 
 import type { StationLocation } from "@core/domain/station";
 import type { RouteDetail } from "@core/domain/route";
-import type { GeoPolyline } from "@core/domain/polyline";
+import type { GeoPolyline } from "@core/domain/geojson";
 
 // ----------------------------------------------------------------------
 // Types
@@ -22,6 +22,9 @@ type Coordinate = [number, number];
 export interface BusPolylineSet {
   upPolyline: Coordinate[];
   downPolyline: Coordinate[];
+  stopIndexMap?: StopIndexMap;
+  turnIndex?: number;
+  isSwapped?: boolean;
 }
 
 interface FetchedRouteData {
@@ -39,11 +42,12 @@ interface FetchedRouteData {
  * Handles splitting, merging, and direction correction (swapping).
  */
 function processRouteData(
-  routeId: string,
   data: GeoPolyline,
   routeDetail: RouteDetail | null,
   stationMap: Record<string, StationLocation> | null
 ): BusPolylineSet {
+  const meta = getPolylineMeta(data);
+
   // 1. Split raw data into Up/Down segments
   const { upPolyline, downPolyline } = transformPolyline(data);
 
@@ -52,16 +56,23 @@ function processRouteData(
   const mergedDown = downPolyline.length > 0 ? downPolyline[0] : [];
 
   // 3. Check if we need to swap directions
-  if (shouldSwapPolylines(routeDetail, stationMap, mergedUp, mergedDown)) {
+  const shouldSwap = shouldSwapPolylines(routeDetail, stationMap, mergedUp, mergedDown);
+  if (shouldSwap) {
     return {
       upPolyline: mergedDown, // Swap!
       downPolyline: mergedUp,
+      stopIndexMap: meta.stopIndexMap,
+      turnIndex: meta.turnIndex,
+      isSwapped: true,
     };
   }
 
   return {
     upPolyline: mergedUp,
     downPolyline: mergedDown,
+    stopIndexMap: meta.stopIndexMap,
+    turnIndex: meta.turnIndex,
+    isSwapped: false,
   };
 }
 
@@ -123,7 +134,7 @@ export function useBusPolylineMap(routeIds: string[]) {
       routesData.forEach(({ routeId, data, routeDetail }) => {
         if (!data) return;
 
-        const processed = processRouteData(routeId, data, routeDetail, stationMap);
+        const processed = processRouteData(data, routeDetail, stationMap);
         nextMap.set(routeId, processed);
       });
 

@@ -21,6 +21,8 @@ interface BusAnimatedMarkerProps {
     rotationAngle: number;
     icon: Icon | DivIcon;
     polyline?: LatLngTuple[];
+    snapIndexHint?: number | null;
+    snapIndexRange?: number;
     /** Animation duration in ms. Longer = smoother but more lag behind real-time data */
     animationDuration?: number;
     /** Force a re-sync when external state (like route) changes. */
@@ -54,6 +56,8 @@ function BusAnimatedMarker({
     rotationAngle,
     icon,
     polyline = [],
+    snapIndexHint,
+    snapIndexRange,
     animationDuration = MAP_SETTINGS.ANIMATION.BUS_MOVE_MS,
     refreshKey,
     eventHandlers,
@@ -69,6 +73,8 @@ function BusAnimatedMarker({
             // Only attempt to snap if we have a valid line segment
             snapToPolyline: polyline.length >= 2,
             resetKey: refreshKey,
+            snapIndexHint,
+            snapIndexRange,
         }
     );
 

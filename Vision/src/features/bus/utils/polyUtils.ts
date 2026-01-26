@@ -2,7 +2,7 @@
 
 import { calculateBearing } from "@map/utils/geoUtils";
 
-import type { GeoPolyline } from "@core/domain/polyline";
+import type { GeoPolyline } from "@core/domain/geojson";
 
 // ----------------------------------------------------------------------
 // 1. Types & Interfaces
@@ -14,6 +14,18 @@ type GeoJSONCoordinate = [number, number]; // [Longitude, Latitude] for GeoJSON
 export interface SplitResult {
     upPolyline: Coordinate[][];
     downPolyline: Coordinate[][];
+}
+
+export type StopIndexMap = {
+    byId: Record<string, number>;
+    byIdDir: Record<string, number>;
+    byOrd: Record<string, number>;
+    byOrdDir: Record<string, number>;
+};
+
+export interface PolylineMeta {
+    turnIndex?: number;
+    stopIndexMap?: StopIndexMap;
 }
 
 // ----------------------------------------------------------------------
@@ -29,6 +41,50 @@ function toLatLngCoords(coords: GeoJSONCoordinate[]): Coordinate[] {
 
 function clampIndex(value: number, max: number): number {
     return Math.max(0, Math.min(value, max));
+}
+
+function isFiniteNumber(value: unknown): value is number {
+    return typeof value === "number" && Number.isFinite(value);
+}
+
+function buildStopIndexMap(data: GeoPolyline): StopIndexMap | undefined {
+    const feature = data.features?.[0];
+    const stops = feature?.properties?.stops ?? [];
+    const stopToCoord = feature?.properties?.indices?.stop_to_coord ?? [];
+
+    if (stops.length === 0 || stopToCoord.length === 0) return undefined;
+
+    const map: StopIndexMap = {
+        byId: {},
+        byIdDir: {},
+        byOrd: {},
+        byOrdDir: {},
+    };
+
+    stops.forEach((stop, idx) => {
+        const coordIndex = stopToCoord[idx];
+        if (!isFiniteNumber(coordIndex)) return;
+
+        const rawId = typeof stop.id === "string" ? stop.id.trim() : "";
+        const ord = Number(stop.ord);
+        const dir = Number(stop.up_down);
+
+        if (rawId) {
+            map.byId[rawId] = coordIndex;
+            if (Number.isFinite(dir)) {
+                map.byIdDir[`${rawId}-${dir}`] = coordIndex;
+            }
+        }
+
+        if (Number.isFinite(ord)) {
+            map.byOrd[String(ord)] = coordIndex;
+            if (Number.isFinite(dir)) {
+                map.byOrdDir[`${ord}-${dir}`] = coordIndex;
+            }
+        }
+    });
+
+    return map;
 }
 
 /**
@@ -85,6 +141,25 @@ export function transformPolyline(data: GeoPolyline): SplitResult {
     };
 }
 
+/**
+ * Extracts turn index and stop-to-coordinate lookups for stop-based snapping.
+ */
+export function getPolylineMeta(data: GeoPolyline): PolylineMeta {
+    if (!data.features || data.features.length === 0) {
+        return {};
+    }
+
+    const feature = data.features[0];
+    const turnIndex = isFiniteNumber(feature.properties?.indices?.turn_idx)
+        ? feature.properties.indices?.turn_idx
+        : undefined;
+
+    return {
+        turnIndex,
+        stopIndexMap: buildStopIndexMap(data),
+    };
+}
+
 // ----------------------------------------------------------------------
 // 4. Geometry Snapping (Marker Projection)
 // ----------------------------------------------------------------------
@@ -103,11 +178,21 @@ interface SnapResult {
  */
 export function snapToPolyline(
     P: Coordinate,
-    polyline: Coordinate[]
+    polyline: Coordinate[],
+    options?: { segmentHint?: number | null; searchRadius?: number }
 ): SnapResult {
     if (!polyline || polyline.length < 2) {
         return { position: P, angle: 0, segmentIndex: 0, t: 0 };
     }
+
+    const lastSegment = polyline.length - 2;
+    const hint = options?.segmentHint;
+    const hasHint = typeof hint === "number" && Number.isFinite(hint);
+    const radius = Math.max(0, Math.floor(options?.searchRadius ?? 0));
+
+    const clampedHint = hasHint ? clampIndex(Math.round(hint), lastSegment) : 0;
+    const startIdx = hasHint ? clampIndex(clampedHint - radius, lastSegment) : 0;
+    const endIdx = hasHint ? clampIndex(clampedHint + radius, lastSegment) : lastSegment;
 
     let bestDistSq = Infinity;
     let bestPos: Coordinate = polyline[0];
@@ -116,7 +201,7 @@ export function snapToPolyline(
     let bestSegment = { A: polyline[0], B: polyline[0] };
 
     // Iterate all segments to find the closest projection
-    for (let i = 0; i < polyline.length - 1; i++) {
+    for (let i = startIdx; i <= endIdx; i++) {
         const A = polyline[i];
         const B = polyline[i + 1];
 

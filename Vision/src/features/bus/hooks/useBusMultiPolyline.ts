@@ -10,7 +10,7 @@ import { transformPolyline } from "@bus/utils/polyUtils";
 
 import { shouldSwapPolylines } from "@bus/utils/polylineDirection";
 
-import type { GeoPolyline } from "@core/domain/polyline";
+import type { GeoPolyline } from "@core/domain/geojson";
 import type { RouteDetail } from "@core/domain/route";
 import type { StationLocation } from "@core/domain/station";
 
@@ -37,6 +37,9 @@ interface SegmentBucket {
     downSegments: PolylineSegment[];
 }
 
+type BBox = [number, number, number, number]; // [minLng, minLat, maxLng, maxLat]
+type Bounds = [[number, number], [number, number]]; // [[minLat, minLng], [maxLat, maxLng]]
+
 // ----------------------------------------------------------------------
 // Helpers: Pure Logic
 // ----------------------------------------------------------------------
@@ -49,6 +52,57 @@ function generateSegmentKey(coords: Coordinate[]): string {
     // Optimization: Only use start, mid, and end points for hash if segments are long?
     // For safety, we currently stringify the whole path.
     return coords.map(([lat, lng]) => `${lat.toFixed(6)},${lng.toFixed(6)}`).join("|");
+}
+
+function isFiniteNumber(value: unknown): value is number {
+    return typeof value === "number" && Number.isFinite(value);
+}
+
+function isValidBBox(value: unknown): value is BBox {
+    return Array.isArray(value)
+        && value.length === 4
+        && value.every((item) => isFiniteNumber(item));
+}
+
+function mergeBBox(base: BBox, next: BBox): BBox {
+    return [
+        Math.min(base[0], next[0]),
+        Math.min(base[1], next[1]),
+        Math.max(base[2], next[2]),
+        Math.max(base[3], next[3]),
+    ];
+}
+
+function getBBoxFromFeature(data: GeoPolyline): BBox | null {
+    const feature = data.features?.[0];
+    if (!feature) return null;
+
+    if (isValidBBox(feature.bbox)) {
+        return feature.bbox;
+    }
+
+    const metaBBox = (feature.properties?.meta as { bbox?: BBox } | undefined)?.bbox;
+    if (isValidBBox(metaBBox)) {
+        return metaBBox;
+    }
+
+    const coords = feature.geometry?.coordinates ?? [];
+    if (coords.length === 0) return null;
+
+    let minLng = coords[0][0];
+    let maxLng = coords[0][0];
+    let minLat = coords[0][1];
+    let maxLat = coords[0][1];
+
+    coords.forEach(([lng, lat]) => {
+        if (!isFiniteNumber(lng) || !isFiniteNumber(lat)) return;
+        if (lng < minLng) minLng = lng;
+        if (lng > maxLng) maxLng = lng;
+        if (lat < minLat) minLat = lat;
+        if (lat > maxLat) maxLat = lat;
+    });
+
+    return [minLng, minLat, maxLng, maxLat];
 }
 
 /**
@@ -138,7 +192,7 @@ function processAllRoutes(
 export function useMultiPolyline(
     routeName: string,
     routeIds: string[],
-    activeRouteId?: string | null
+    activeRouteIds?: string[]
 ) {
     const [fetched, setFetched] = useState<FetchedData>({
         dataMap: new Map(),
@@ -217,12 +271,38 @@ export function useMultiPolyline(
         return processAllRoutes(routeIds, fetched);
     }, [fetched, routeIds]);
 
+    const bounds = useMemo<Bounds | null>(() => {
+        if (fetched.dataMap.size === 0) return null;
+
+        let merged: BBox | null = null;
+
+        routeIds.forEach((routeId) => {
+            const data = fetched.dataMap.get(routeId);
+            if (!data) return;
+
+            const bbox = getBBoxFromFeature(data);
+            if (!bbox) return;
+
+            merged = merged ? mergeBBox(merged, bbox) : bbox;
+        });
+
+        if (!merged) return null;
+
+        const [minLng, minLat, maxLng, maxLat] = merged;
+        return [
+            [minLat, minLng],
+            [maxLat, maxLng],
+        ];
+    }, [fetched.dataMap, routeIds]);
+
     // 3. Filter Active/Inactive
     const result = useMemo(() => {
         const activeUp: PolylineSegment[] = [];
         const inactiveUp: PolylineSegment[] = [];
         const activeDown: PolylineSegment[] = [];
         const inactiveDown: PolylineSegment[] = [];
+
+        const activeSet = new Set(activeRouteIds ?? []);
 
         const split = (
             source: PolylineSegment[],
@@ -231,7 +311,7 @@ export function useMultiPolyline(
         ) => {
             source.forEach((seg) => {
                 // A segment is active if it contains the currently selected routeId
-                if (activeRouteId && seg.routeIds.includes(activeRouteId)) {
+                if (activeSet.size > 0 && seg.routeIds.some((id) => activeSet.has(id))) {
                     activeTarget.push(seg);
                 } else {
                     inactiveTarget.push(seg);
@@ -247,8 +327,9 @@ export function useMultiPolyline(
             inactiveUpSegments: inactiveUp,
             activeDownSegments: activeDown,
             inactiveDownSegments: inactiveDown,
+            bounds,
         };
-    }, [allSegments, activeRouteId]);
+    }, [allSegments, activeRouteIds, bounds]);
 
     return result;
 }

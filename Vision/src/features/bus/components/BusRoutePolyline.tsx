@@ -3,14 +3,15 @@
 "use client";
 
 import { Polyline } from "react-leaflet";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 
-import { APP_CONFIG } from "@core/config/env";
+import { APP_CONFIG, MAP_SETTINGS } from "@core/config/env";
+
+import { useBusContext } from "@map/context/MapContext";
 
 import { getRouteInfo } from "@bus/api/getStaticData";
 
 import { useBusLocationData } from "@bus/hooks/useBusLocation";
-import { useBusRoutePreference } from "@bus/hooks/useBusRoutePreference";
 import { useMultiPolyline } from "@bus/hooks/useBusMultiPolyline";
 
 import type { PathOptions } from "leaflet";
@@ -126,29 +127,44 @@ PolylineLayer.displayName = "PolylineLayer";
 
 export default function BusRoutePolyline({ routeName }: { routeName: string }) {
   // 1. Data Fetching
+  const { map } = useBusContext();
   const routeIds = useRouteIds(routeName);
   const { data: busList } = useBusLocationData(routeName);
+  const lastBoundsKeyRef = useRef<string | null>(null);
 
   // 2. Determine Logic
-  const liveRouteId = useMemo(() => {
-    return busList.find((bus) => bus.routeid)?.routeid ?? null;
-  }, [busList]);
-
-  const { selectedRouteId } = useBusRoutePreference(
-    routeName,
-    routeIds,
-    liveRouteId
-  );
+  const activeRouteIds = useMemo(() => {
+    const set = new Set(busList.map((bus) => bus.routeid).filter(Boolean));
+    if (set.size === 0 && routeIds.length > 0) {
+      routeIds.forEach((id) => set.add(id));
+    }
+    return Array.from(set);
+  }, [busList, routeIds]);
 
   const {
     activeUpSegments,
     inactiveUpSegments,
     activeDownSegments,
     inactiveDownSegments,
-  } = useMultiPolyline(routeName, routeIds, selectedRouteId);
+    bounds,
+  } = useMultiPolyline(routeName, routeIds, activeRouteIds);
 
   // 3. Styling Logic
   const isNoBusRunning = busList.length === 0;
+
+  useEffect(() => {
+    if (!map || !bounds) return;
+
+    const key = bounds.flat().join(",");
+    if (lastBoundsKeyRef.current === key) return;
+    lastBoundsKeyRef.current = key;
+
+    map.fitBounds(bounds, {
+      padding: [32, 32],
+      animate: true,
+      duration: MAP_SETTINGS.ANIMATION.FLY_TO_MS / 1000,
+    });
+  }, [map, bounds]);
 
   return (
     <>
