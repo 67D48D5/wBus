@@ -1,7 +1,5 @@
 // src/shared/ui/Splash.tsx
 
-import { useState, useEffect } from "react";
-
 import { APP_CONFIG, UI_CONFIG } from "@core/config/env";
 import { UI_TEXT } from "@core/config/locale";
 
@@ -31,31 +29,12 @@ export default function Splash({
   duration = UI_CONFIG.TRANSITIONS.SPLASH_FADE_MS || 500,
   showLoader = true,
 }: SplashProps) {
-  // Internal state to keep the component mounted while the fade-out animation plays
-  const [shouldRender, setShouldRender] = useState(isVisible);
-
-  useEffect(() => {
-    if (isVisible) {
-      setShouldRender(true);
-    } else {
-      // Wait for the animation duration before actually unmounting the DOM elements
-      const timer = setTimeout(() => {
-        setShouldRender(false);
-      }, duration);
-      return () => clearTimeout(timer);
-    }
-  }, [isVisible, duration]);
-
-  // If completely hidden and animation finished, do not render anything
-  if (!shouldRender) {
-    return null;
-  }
-
   return (
     <div
       role="status"
-      aria-live="polite"
+      aria-live={isVisible ? "polite" : "off"}
       aria-atomic="true"
+      aria-hidden={!isVisible}
       className={`
         fixed inset-0 z-[9999] 
         flex flex-col items-center justify-center
@@ -65,13 +44,13 @@ export default function Splash({
       `}
       style={{ transitionDuration: `${duration}ms` }}
     >
-      {/* 1. Background Decoration (Blobs) */}
+      {/* Background Decoration (Blobs) */}
       <div className="absolute inset-0 overflow-hidden opacity-10 pointer-events-none">
         <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-white rounded-full blur-3xl animate-pulse" />
         <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-white rounded-full blur-3xl animate-pulse delay-1000" />
       </div>
 
-      {/* 2. Main Content */}
+      {/* Main Content */}
       <div className="relative z-10 flex flex-col items-center">
 
         {/* Spinner */}

@@ -58,16 +58,16 @@ function findNextBus(
         const hourNum = parseInt(hour, 10);
         const currentHourNum = parseInt(currentHour, 10);
 
-        // 1. Skip past hours
+        // Skip past hours
         if (hourNum < currentHourNum) continue;
 
         for (const bus of buses) {
             const busMinute = parseInt(bus.minute, 10);
 
-            // 2. If it's the current hour, skip past minutes
+            // If it's the current hour, skip past minutes
             if (hourNum === currentHourNum && busMinute < currentMinute) continue;
 
-            // 3. Calculate exact time difference
+            // Calculate exact time difference
             const busTime = new Date(now);
             busTime.setHours(hourNum, busMinute, 0, 0);
 
@@ -106,10 +106,10 @@ function useScheduleLogic(data: BusSchedule) {
         return () => clearInterval(interval);
     }, []);
 
-    // Effect: Reset direction if data changes
-    useEffect(() => {
-        setDirection(data.directions[0]);
-    }, [data.directions]);
+    const resolvedDirection = useMemo(() => {
+        if (data.directions.includes(direction)) return direction;
+        return data.directions[0];
+    }, [data.directions, direction]);
 
     // Derived State: Current active schedule based on day type
     const activeSchedule = useMemo(
@@ -125,8 +125,8 @@ function useScheduleLogic(data: BusSchedule) {
 
     // Derived State: Next bus info
     const nextBus = useMemo(
-        () => findNextBus(activeSchedule, hours, direction, now),
-        [activeSchedule, hours, direction, now]
+        () => findNextBus(activeSchedule, hours, resolvedDirection, now),
+        [activeSchedule, hours, resolvedDirection, now]
     );
 
     // Determine which hour to highlight (Next bus hour OR current hour)
@@ -136,7 +136,7 @@ function useScheduleLogic(data: BusSchedule) {
         isGeneralSchedule,
         dayType,
         setDayType,
-        direction,
+        direction: resolvedDirection,
         setDirection,
         activeSchedule,
         hours,

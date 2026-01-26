@@ -216,7 +216,11 @@ export default function BusList({ routeNames, allRoutes, selectedRoute, onRouteC
 
   const setMapScroll = useCallback((enabled: boolean) => {
     if (!map?.scrollWheelZoom) return;
-    enabled ? map.scrollWheelZoom.enable() : map.scrollWheelZoom.disable();
+    if (enabled) {
+      map.scrollWheelZoom.enable();
+    } else {
+      map.scrollWheelZoom.disable();
+    }
   }, [map]);
 
   // UI State Logic

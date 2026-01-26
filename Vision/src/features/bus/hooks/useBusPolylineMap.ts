@@ -48,14 +48,14 @@ function processRouteData(
 ): BusPolylineSet {
   const meta = getPolylineMeta(data);
 
-  // 1. Split raw data into Up/Down segments
+  // Split raw data into Up/Down segments
   const { upPolyline, downPolyline } = transformPolyline(data);
 
-  // 2. Merge segments into continuous lines
+  // Merge segments into continuous lines
   const mergedUp = upPolyline.length > 0 ? upPolyline[0] : [];
   const mergedDown = downPolyline.length > 0 ? downPolyline[0] : [];
 
-  // 3. Check if we need to swap directions
+  // Check if we need to swap directions
   const shouldSwap = shouldSwapPolylines(routeDetail, stationMap, mergedUp, mergedDown);
   if (shouldSwap) {
     return {
@@ -81,23 +81,25 @@ function processRouteData(
 // ----------------------------------------------------------------------
 
 export function useBusPolylineMap(routeIds: string[]) {
-  const [polylineMap, setPolylineMap] = useState<Map<string, BusPolylineSet>>(
-    new Map()
-  );
+  const [snapshot, setSnapshot] = useState<{
+    key: string;
+    map: Map<string, BusPolylineSet>;
+  }>({
+    key: "",
+    map: new Map(),
+  });
 
   // Create a stable key to prevent re-fetching when array reference changes but content is same
   const routeKey = useMemo(() => routeIds.slice().sort().join("|"), [routeIds]);
 
   useEffect(() => {
-    if (!routeKey) {
-      setPolylineMap(new Map());
-      return;
-    }
+    if (!routeKey) return;
 
     let isMounted = true;
+    const sortedRouteIds = routeKey.split("|").filter(Boolean);
 
     const loadData = async () => {
-      // 1. Parallel Fetching: Station Map + All Route Data
+      // Parallel Fetching: Station Map + All Route Data
       // We don't wait for stationMap to start fetching routes.
       const stationMapPromise = getStationMap().catch((err) => {
         if (APP_CONFIG.IS_DEV) console.error("[useBusPolylineMap] Station Map Error", err);
@@ -105,7 +107,7 @@ export function useBusPolylineMap(routeIds: string[]) {
       });
 
       const routesPromise = Promise.all(
-        routeIds.map(async (routeId): Promise<FetchedRouteData> => {
+        sortedRouteIds.map(async (routeId): Promise<FetchedRouteData> => {
           try {
             const [data, routeDetail] = await Promise.all([
               getPolyline(routeId),
@@ -128,7 +130,7 @@ export function useBusPolylineMap(routeIds: string[]) {
 
       if (!isMounted) return;
 
-      // 2. Process Data
+      // Process Data
       const nextMap = new Map<string, BusPolylineSet>();
 
       routesData.forEach(({ routeId, data, routeDetail }) => {
@@ -138,7 +140,7 @@ export function useBusPolylineMap(routeIds: string[]) {
         nextMap.set(routeId, processed);
       });
 
-      setPolylineMap(nextMap);
+      setSnapshot({ key: routeKey, map: nextMap });
     };
 
     void loadData();
@@ -148,5 +150,5 @@ export function useBusPolylineMap(routeIds: string[]) {
     };
   }, [routeKey]); // Depends only on the content-based key, not the routeIds array reference.
 
-  return polylineMap;
+  return snapshot.key === routeKey ? snapshot.map : new Map();
 }

@@ -69,7 +69,7 @@ function getServerBaseUrl(): string {
  * @param resourcePath - Relative path to the resource (e.g., 'schedules/101.json' or 'notice.json')
  */
 function resolveResourceLocation(resourcePath: string): ResourceLocation {
-    // 1. Remote Mode
+    // Remote Mode
     if (API_CONFIG.STATIC.USE_REMOTE) {
         const baseUrl = getServerBaseUrl();
         // Construct remote URL: e.g., https://api.example.com/schedules/101.json
@@ -82,7 +82,7 @@ function resolveResourceLocation(resourcePath: string): ResourceLocation {
         };
     }
 
-    // 2. Local File System Mode
+    // Local File System Mode
     // Construct local path: e.g., /User/project/public/data/schedules/101.json
     return {
         isRemote: false,
@@ -111,8 +111,12 @@ async function loadJsonData<T>(resourcePath: string, contextLabel: string): Prom
         }
     } catch (error) {
         // Handle "File Not Found" scenarios (ENOENT for fs, 404/403 for HTTP)
+        const errorCode =
+            typeof error === "object" && error !== null && "code" in error
+                ? (error as { code?: string }).code
+                : undefined;
         const isNotFound =
-            (error as any).code === 'ENOENT' ||
+            errorCode === "ENOENT" ||
             (error instanceof HttpError && (error.status === 404 || error.status === 403));
 
         if (isNotFound) {

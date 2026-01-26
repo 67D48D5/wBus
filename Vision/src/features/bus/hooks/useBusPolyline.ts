@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { APP_CONFIG } from "@core/config/env";
 
 import { getPolyline } from "@bus/api/getStaticData";
-
 import { transformPolyline } from "@bus/utils/polyUtils";
 
 // ----------------------------------------------------------------------
@@ -31,19 +30,16 @@ const INITIAL_STATE: PolylineState = {
 // ----------------------------------------------------------------------
 
 export function useBusPolyline(routeId?: string | null) {
-  const [polylines, setPolylines] = useState<PolylineState>(INITIAL_STATE);
+  const [snapshot, setSnapshot] = useState<{
+    routeId: string;
+    polylines: PolylineState;
+  } | null>(null);
 
   useEffect(() => {
-    // 1. Reset or Early Return
-    if (!routeId) {
-      setPolylines(INITIAL_STATE);
-      return;
-    }
+    // Reset or Early Return
+    if (!routeId) return;
 
     let isMounted = true;
-
-    // Reset previous data immediately to prevent "ghosting" of the old route
-    setPolylines(INITIAL_STATE);
 
     const fetchAndTransform = async () => {
       try {
@@ -54,26 +50,32 @@ export function useBusPolyline(routeId?: string | null) {
         if (rawData) {
           // Optimization: Transform immediately, don't store raw GeoJSON in state
           const transformed = transformPolyline(rawData);
-          setPolylines(transformed);
+          setSnapshot({ routeId, polylines: transformed });
         } else {
           // Handle 404 or empty data
-          setPolylines(INITIAL_STATE);
+          setSnapshot({ routeId, polylines: INITIAL_STATE });
         }
       } catch (error) {
         if (APP_CONFIG.IS_DEV) {
           console.error(`[useBusPolyline] Failed to fetch route ${routeId}`, error);
         }
-        if (isMounted) setPolylines(INITIAL_STATE);
+        if (isMounted) {
+          setSnapshot({ routeId, polylines: INITIAL_STATE });
+        }
       }
     };
 
     void fetchAndTransform();
 
-    // 2. Cleanup to prevent race conditions
+    // Cleanup to prevent race conditions
     return () => {
       isMounted = false;
     };
   }, [routeId]);
 
-  return polylines;
+  if (!routeId || snapshot?.routeId !== routeId) {
+    return INITIAL_STATE;
+  }
+
+  return snapshot.polylines;
 }

@@ -91,11 +91,11 @@ export function shouldSwapPolylines(
   upPolyline: Coordinate[],
   downPolyline: Coordinate[]
 ): boolean {
-  // 1. Validation
+  // Validation
   if (!routeDetail || !stationMap) return false;
   if (upPolyline.length < 2 || downPolyline.length < 2) return false;
 
-  // 2. Extract Station Coordinates by Direction
+  // Extract Station Coordinates by Direction
   const upStops: Coordinate[] = [];
   const downStops: Coordinate[] = [];
 
@@ -114,11 +114,11 @@ export function shouldSwapPolylines(
 
   if (upStops.length === 0 || downStops.length === 0) return false;
 
-  // 3. Sampling for Performance
+  // Sampling for Performance
   const upSample = sampleCoordinates(upStops);
   const downSample = sampleCoordinates(downStops);
 
-  // 4. Calculate Errors (Cross-Checking)
+  // Calculate Errors (Cross-Checking)
   // MSE: Mean Squared Error
   const mseUpToUp = calculateMeanSquaredError(upSample, upPolyline);
   const mseUpToDown = calculateMeanSquaredError(upSample, downPolyline);
@@ -132,7 +132,7 @@ export function shouldSwapPolylines(
     return false;
   }
 
-  // 5. Verify Hypothesis
+  // Verify Hypothesis
   // "Is the Up route actually closer to the Down line?"
   const upStopsMatchDownPoly = mseUpToDown < (mseUpToUp * SWAP_RATIO_SQ);
 

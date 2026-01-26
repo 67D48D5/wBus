@@ -107,13 +107,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
    * Lifecycle: Log error information.
    */
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    // 1. Log error details for debugging in development
+    // Log error details for debugging in development
     if (APP_CONFIG.IS_DEV) {
       const msg = error instanceof Error ? error.message : String(error);
       console.error(UI_TEXT.ERROR.UNKNOWN(msg), errorInfo);
     }
 
-    // 2. Trigger parent callback if provided (e.g., for analytics logging)
+    // Trigger parent callback if provided (e.g., for analytics logging)
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }
@@ -131,12 +131,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   render(): ReactNode {
     if (this.state.hasError) {
-      // 1. Return Custom Fallback if provided
+      // Return Custom Fallback if provided
       if (this.props.fallback) {
         return this.props.fallback;
       }
 
-      // 2. Return Default Error UI
+      // Return Default Error UI
       return (
         <DefaultErrorFallback
           error={this.state.error}
@@ -145,7 +145,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       );
     }
 
-    // 3. Render Children (Happy Path)
+    // Render Children (Happy Path)
     return this.props.children;
   }
 }

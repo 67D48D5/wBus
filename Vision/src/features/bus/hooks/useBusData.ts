@@ -47,7 +47,7 @@ export function useBusData(routeName: string): UseBusData {
 
   const polylineMap = useBusPolylineMap(routeIds);
 
-  const fallbackPolylines = useMemo<BusPolylineSet>(() => {
+  const fallbackPolylines: BusPolylineSet = (() => {
     if (activeRouteId && polylineMap.has(activeRouteId)) {
       return polylineMap.get(activeRouteId)!;
     }
@@ -57,7 +57,7 @@ export function useBusData(routeName: string): UseBusData {
     }
 
     return { upPolyline: [], downPolyline: [] };
-  }, [activeRouteId, polylineMap]);
+  })();
 
   return {
     routeInfo,

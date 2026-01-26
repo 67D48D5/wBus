@@ -2,15 +2,13 @@
 
 "use client";
 
+import L from "leaflet";
 import { useMemo } from "react";
 
-import { APP_CONFIG, MAP_SETTINGS } from "@core/config/env";
+import { MAP_SETTINGS } from "@core/config/env";
 
 // Check if we are in a client environment
 const isClient = typeof window !== "undefined";
-
-// Create a global variable to store icons
-let globalIcons: Partial<IconMap> | null = null;
 
 type IconMap = {
   busIcon: L.Icon;
@@ -20,17 +18,6 @@ type IconMap = {
 export function useIcons(): Partial<IconMap> {
   return useMemo(() => {
     if (!isClient) return {};
-    if (globalIcons) return globalIcons;
-
-    let L;
-    try {
-      L = require("leaflet");
-    } catch (error) {
-      if (APP_CONFIG.IS_DEV) {
-        console.error("[useIcons] Unhandled exception occurred", error);
-      }
-      return {};
-    }
 
     const createIcon = (
       url: string,
@@ -47,7 +34,7 @@ export function useIcons(): Partial<IconMap> {
 
     const busMarkerSettings = MAP_SETTINGS.MARKERS.BUS;
 
-    globalIcons = {
+    return {
       busIcon: createIcon(
         "/icons/bus-icon.png",
         busMarkerSettings.ICON_SIZE,
@@ -61,7 +48,5 @@ export function useIcons(): Partial<IconMap> {
         [0, -14]
       )
     };
-
-    return globalIcons;
   }, []);
 }

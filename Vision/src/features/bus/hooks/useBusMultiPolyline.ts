@@ -40,6 +40,12 @@ interface SegmentBucket {
 type BBox = [number, number, number, number]; // [minLng, minLat, maxLng, maxLat]
 type Bounds = [[number, number], [number, number]]; // [[minLat, minLng], [maxLat, maxLng]]
 
+const EMPTY_FETCHED: FetchedData = {
+    dataMap: new Map(),
+    detailMap: new Map(),
+    stationMap: null,
+};
+
 // ----------------------------------------------------------------------
 // Helpers: Pure Logic
 // ----------------------------------------------------------------------
@@ -151,10 +157,10 @@ function processAllRoutes(
         const data = fetched.dataMap.get(routeId);
         if (!data) return;
 
-        // 1. Transform (Split)
+        // Transform (Split)
         const { upPolyline, downPolyline } = transformPolyline(data);
 
-        // 2. Direction Correction
+        // Direction Correction
         let finalUp = upPolyline;
         let finalDown = downPolyline;
 
@@ -168,7 +174,7 @@ function processAllRoutes(
             finalDown = upPolyline;
         }
 
-        // 3. Deduplicate / Merge
+        // Deduplicate / Merge
         mergeIntoSegmentMap(segmentMap, finalUp, routeId, "up");
         mergeIntoSegmentMap(segmentMap, finalDown, routeId, "down");
     });
@@ -194,20 +200,29 @@ export function useMultiPolyline(
     routeIds: string[],
     activeRouteIds?: string[]
 ) {
-    const [fetched, setFetched] = useState<FetchedData>({
-        dataMap: new Map(),
-        detailMap: new Map(),
-        stationMap: null,
+    const [snapshot, setSnapshot] = useState<{
+        key: string;
+        data: FetchedData;
+    }>({
+        key: "",
+        data: EMPTY_FETCHED,
     });
+    const fetchKey = useMemo(() => {
+        if (!routeName || routeIds.length === 0) return "";
+        return `${routeName}::${routeIds.slice().sort().join("|")}`;
+    }, [routeName, routeIds]);
+    const activeFetched = useMemo(
+        () => (snapshot.key === fetchKey ? snapshot.data : EMPTY_FETCHED),
+        [snapshot.key, snapshot.data, fetchKey]
+    );
 
-    // 1. Fetch Data
+    // Fetch Data
     useEffect(() => {
-        if (!routeName || routeIds.length === 0) {
-            setFetched({ dataMap: new Map(), detailMap: new Map(), stationMap: null });
-            return;
-        }
+        if (!fetchKey) return;
 
         let isMounted = true;
+        const [, routeKey = ""] = fetchKey.split("::");
+        const sortedRouteIds = routeKey ? routeKey.split("|").filter(Boolean) : [];
 
         const loadData = async () => {
             // Parallel Fetch: Station Map + All Routes
@@ -217,7 +232,7 @@ export function useMultiPolyline(
             });
 
             const routesPromise = Promise.all(
-                routeIds.map(async (routeId) => {
+                sortedRouteIds.map(async (routeId) => {
                     try {
                         // Note: getPolyline takes a 'routeKey' which is usually just routeId
                         const [data, routeDetail] = await Promise.all([
@@ -249,10 +264,13 @@ export function useMultiPolyline(
                 newDetailMap.set(routeId, routeDetail);
             });
 
-            setFetched({
-                dataMap: newDataMap,
-                detailMap: newDetailMap,
-                stationMap,
+            setSnapshot({
+                key: fetchKey,
+                data: {
+                    dataMap: newDataMap,
+                    detailMap: newDetailMap,
+                    stationMap,
+                },
             });
         };
 
@@ -261,30 +279,30 @@ export function useMultiPolyline(
         return () => {
             isMounted = false;
         };
-    }, [routeName, routeIds]); // Re-fetch only if routeName or IDs change
+    }, [fetchKey]); // Re-fetch only if routeName or IDs change
 
-    // 2. Process & Deduplicate Segments
+    // Process & Deduplicate Segments
     const allSegments = useMemo(() => {
-        if (fetched.dataMap.size === 0) {
+        if (activeFetched.dataMap.size === 0) {
             return { upSegments: [], downSegments: [] };
         }
-        return processAllRoutes(routeIds, fetched);
-    }, [fetched, routeIds]);
+        return processAllRoutes(routeIds, activeFetched);
+    }, [activeFetched, routeIds]);
 
     const bounds = useMemo<Bounds | null>(() => {
-        if (fetched.dataMap.size === 0) return null;
+        if (activeFetched.dataMap.size === 0) return null;
 
         let merged: BBox | null = null;
 
-        routeIds.forEach((routeId) => {
-            const data = fetched.dataMap.get(routeId);
-            if (!data) return;
+        for (const routeId of routeIds) {
+            const data = activeFetched.dataMap.get(routeId);
+            if (!data) continue;
 
             const bbox = getBBoxFromFeature(data);
-            if (!bbox) return;
+            if (!bbox) continue;
 
             merged = merged ? mergeBBox(merged, bbox) : bbox;
-        });
+        }
 
         if (!merged) return null;
 
@@ -293,9 +311,9 @@ export function useMultiPolyline(
             [minLat, minLng],
             [maxLat, maxLng],
         ];
-    }, [fetched.dataMap, routeIds]);
+    }, [activeFetched.dataMap, routeIds]);
 
-    // 3. Filter Active/Inactive
+    // Filter Active/Inactive
     const result = useMemo(() => {
         const activeUp: PolylineSegment[] = [];
         const inactiveUp: PolylineSegment[] = [];

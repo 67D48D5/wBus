@@ -5,7 +5,7 @@ import { calculateBearing } from "@map/utils/geoUtils";
 import type { GeoPolyline } from "@core/domain/geojson";
 
 // ----------------------------------------------------------------------
-// 1. Types & Interfaces
+// Types & Interfaces
 // ----------------------------------------------------------------------
 
 export type Coordinate = [number, number]; // [Latitude, Longitude] for Leaflet
@@ -29,7 +29,7 @@ export interface PolylineMeta {
 }
 
 // ----------------------------------------------------------------------
-// 2. Helpers
+// Helpers
 // ----------------------------------------------------------------------
 
 /**
@@ -108,7 +108,7 @@ function splitByTurnIndex(coords: Coordinate[], turnIndex: number): SplitResult 
 }
 
 // ----------------------------------------------------------------------
-// 3. Main Transformation Logic
+// Main Transformation Logic
 // ----------------------------------------------------------------------
 
 /**
@@ -116,24 +116,24 @@ function splitByTurnIndex(coords: Coordinate[], turnIndex: number): SplitResult 
  * Strictly adheres to the new GeoPolyline schema using `indices.turn_idx`.
  */
 export function transformPolyline(data: GeoPolyline): SplitResult {
-    // 1. Validate Feature Existence
+    // Validate Feature Existence
     if (!data.features || data.features.length === 0) {
         return { upPolyline: [], downPolyline: [] };
     }
 
-    // 2. Extract the main feature (Assume 1 Feature per route in new schema)
+    // Extract the main feature (Assume 1 Feature per route in new schema)
     const feature = data.features[0];
     const { geometry, properties } = feature;
 
-    // 3. Convert Coordinates (GeoJSON [Lng,Lat] -> Leaflet [Lat,Lng])
+    // Convert Coordinates (GeoJSON [Lng,Lat] -> Leaflet [Lat,Lng])
     const coords = toLatLngCoords(geometry.coordinates);
 
-    // 4. Split based on Turn Index if available
+    // Split based on Turn Index if available
     if (properties.indices?.turn_idx !== undefined) {
         return splitByTurnIndex(coords, properties.indices.turn_idx);
     }
 
-    // 5. Fallback: If no turn_idx, treat entire line as Up direction (One-way or Loop)
+    // Fallback: If no turn_idx, treat entire line as Up direction (One-way or Loop)
     // This is the safest default for the new schema if metadata is missing.
     return {
         upPolyline: coords.length > 1 ? [coords] : [],
@@ -161,7 +161,7 @@ export function getPolylineMeta(data: GeoPolyline): PolylineMeta {
 }
 
 // ----------------------------------------------------------------------
-// 4. Geometry Snapping (Marker Projection)
+// Geometry Snapping (Marker Projection)
 // ----------------------------------------------------------------------
 // Keeps the math logic for snapping bus markers to the road, 
 // as this is independent of the schema structure but highly useful.

@@ -16,38 +16,52 @@ export function useBusLocationData(routeName: string): {
   error: BusDataError;
   hasFetched: boolean;
 } {
-  const [busList, setBusList] = useState<BusItem[]>([]);
-  const [error, setError] = useState<BusDataError>(null);
-  const [hasFetched, setHasFetched] = useState(false);
+  const [snapshot, setSnapshot] = useState<{
+    routeName: string;
+    data: BusItem[];
+    error: BusDataError;
+    hasFetched: boolean;
+  }>({
+    routeName: "",
+    data: [],
+    error: null,
+    hasFetched: false,
+  });
 
   useEffect(() => {
     if (!routeName) return;
-
-    setBusList([]);
-    setError(null);
-    setHasFetched(false);
 
     // Subscribe to bus location updates
     const unsubscribe = busPollingService.subscribe(
       routeName,
       (data) => {
-        setBusList(data);
-        setError(null);
-        setHasFetched(true);
+        setSnapshot({
+          routeName,
+          data,
+          error: null,
+          hasFetched: true,
+        });
         // Only clear other caches after we have data for the new route
         busPollingService.clearOtherCaches(routeName);
       },
       (err) => {
-        setError(err);
-        setHasFetched(true);
-        if (err !== null) {
-          setBusList([]);
-        }
+        setSnapshot((prev) => ({
+          routeName,
+          data: err !== null && err !== undefined ? [] : (prev.routeName === routeName ? prev.data : []),
+          error: err,
+          hasFetched: true,
+        }));
       }
     );
 
     return unsubscribe;
   }, [routeName]);
 
-  return { data: busList, error, hasFetched };
+  const isActive = snapshot.routeName === routeName;
+
+  return {
+    data: isActive ? snapshot.data : [],
+    error: isActive ? snapshot.error : null,
+    hasFetched: isActive ? snapshot.hasFetched : false,
+  };
 }

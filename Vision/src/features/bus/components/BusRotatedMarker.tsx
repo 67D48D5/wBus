@@ -2,12 +2,14 @@
 
 "use client";
 
+import "leaflet-rotatedmarker";
+
 import L from "leaflet";
 import { Marker, type MarkerProps } from "react-leaflet";
 import { forwardRef, useEffect, useRef } from "react";
 
 // ----------------------------------------------------------------------
-// 1. Module Augmentation & Imports
+// Module Augmentation & Imports
 // ----------------------------------------------------------------------
 
 // Extend Leaflet's Marker definition to include methods added by 'leaflet-rotatedmarker'
@@ -22,13 +24,8 @@ declare module "leaflet" {
   }
 }
 
-// Client-side import for the plugin
-if (typeof window !== "undefined") {
-  require("leaflet-rotatedmarker");
-}
-
 // ----------------------------------------------------------------------
-// 2. Component Types
+// Component Types
 // ----------------------------------------------------------------------
 
 interface BusRotatedMarkerProps extends MarkerProps {
@@ -37,7 +34,7 @@ interface BusRotatedMarkerProps extends MarkerProps {
 }
 
 // ----------------------------------------------------------------------
-// 3. Component
+// Component
 // ----------------------------------------------------------------------
 
 const BusRotatedMarker = forwardRef<L.Marker, BusRotatedMarkerProps>(

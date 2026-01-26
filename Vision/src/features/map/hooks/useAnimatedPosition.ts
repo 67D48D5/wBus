@@ -222,7 +222,7 @@ function interpolateAlongPath(
     if (path.length === 0) return { position: [0, 0], angle: 0 };
     if (path.length === 1) return { position: path[0], angle: 0 };
 
-    // 1. Calculate total length
+    // Calculate total length
     const distances: number[] = [0];
     for (let i = 1; i < path.length; i++) {
         distances.push(distances[i - 1] + getDistance(path[i - 1], path[i]));
@@ -231,10 +231,10 @@ function interpolateAlongPath(
 
     if (totalDistance === 0) return { position: path[path.length - 1], angle: 0 };
 
-    // 2. Find target distance
+    // Find target distance
     const targetDistance = totalDistance * Math.max(0, Math.min(1, progress));
 
-    // 3. Find active segment
+    // Find active segment
     let segIdx = 0;
     for (let i = 1; i < distances.length; i++) {
         if (distances[i] >= targetDistance) {
@@ -244,7 +244,7 @@ function interpolateAlongPath(
         segIdx = i - 1;
     }
 
-    // 4. Interpolate within segment
+    // Interpolate within segment
     const segStart = distances[segIdx];
     const segEnd = distances[segIdx + 1] || segStart;
     const segLen = segEnd - segStart;
@@ -375,7 +375,7 @@ export function useAnimatedPosition(
     useEffect(() => {
         const hasPolyline = polyline.length >= 2;
 
-        // 1. First Render Initialization
+        // First Render Initialization
         if (isFirstRender.current) {
             isFirstRender.current = false;
             let initPos: LatLngTuple = targetPosition;
@@ -400,7 +400,7 @@ export function useAnimatedPosition(
             return;
         }
 
-        // 2. Check if update is needed
+        // Check if update is needed
         const prev = prevTargetRef.current;
         const isSamePosition = targetPosition[0] === prev[0] && targetPosition[1] === prev[1];
 
@@ -414,7 +414,7 @@ export function useAnimatedPosition(
             return;
         }
 
-        // 3. Prepare Animation
+        // Prepare Animation
         if (animationRef.current !== null) {
             cancelAnimationFrame(animationRef.current);
         }
@@ -427,7 +427,7 @@ export function useAnimatedPosition(
         let endPos: LatLngTuple;
         let endAngle: number;
 
-        // 4. Calculate Path (Linear or Polyline-Snapped)
+        // Calculate Path (Linear or Polyline-Snapped)
         if (shouldSnap && hasPolyline) {
             const startSnapped = snapToPolylineSegment(startPos, polyline, {
                 segmentHint: prevSnapIndexRef.current,
@@ -479,7 +479,7 @@ export function useAnimatedPosition(
             endAngle = targetAngle;
         }
 
-        // 5. Start Animation Loop
+        // Start Animation Loop
         animationPathRef.current = path;
         animationStartTimeRef.current = performance.now();
         animationStartAngleRef.current = startAngle;

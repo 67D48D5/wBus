@@ -48,7 +48,7 @@ export function useBusDirection(routeName: string) {
     routeIdOrder: [],
   });
 
-  // 1. Load Route Data
+  // Load Route Data
   useEffect(() => {
     let isMounted = true;
 
@@ -95,8 +95,7 @@ export function useBusDirection(routeName: string) {
     };
   }, [routeName]);
 
-  // 2. Build Lookup Maps (Memoized)
-
+  // Build Lookup Maps (Memoized)
   // Lookup: NodeID -> List of potential sequence items
   const sequenceLookupMap = useMemo<SequenceLookupMap>(() => {
     if (!isReady) return new Map(); // Return empty map if not ready
@@ -109,7 +108,7 @@ export function useBusDirection(routeName: string) {
       }
     }
     return map;
-  }, [routeState.sequences]);
+  }, [routeState.sequences, isReady]);
 
   // Lookup: RouteID -> Does this route contain both Up(1) and Down(0) stops?
   const routeMixedDirMap = useMemo(() => {
@@ -136,7 +135,7 @@ export function useBusDirection(routeName: string) {
     [routeState.sequences]
   );
 
-  // 3. The Direction Resolver Function
+  // The Direction Resolver Function
   const getDirection = useCallback(
     (
       nodeid: string | null | undefined,
@@ -199,7 +198,7 @@ export function useBusDirection(routeName: string) {
       // Default: Use the specific stop's direction code
       return bestMatch.updowncd === 0 ? Direction.DOWN : Direction.UP;
     },
-    [sequenceLookupMap, activeRouteIds, routeMixedDirMap, fallbackDirMap]
+    [sequenceLookupMap, activeRouteIds, routeMixedDirMap, fallbackDirMap, isReady]
   );
 
   return getDirection;

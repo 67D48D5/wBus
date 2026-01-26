@@ -167,7 +167,7 @@ export function getSnappedPosition(
     snapIndexRange = DEFAULT_SNAP_INDEX_RANGE,
   } = options ?? {};
 
-  // 1. Get API Direction Hint
+  // Get API Direction Hint
   const apiDirection = getDirection(nodeid, nodeord, bus.routeid);
 
   // Default fallback result (Raw GPS)
@@ -182,7 +182,7 @@ export function getSnappedPosition(
   const stopIndexDown = getStopCoordIndex(stopIndexMap, nodeid, nodeord, 0);
   const stopIndexAny = getStopCoordIndex(stopIndexMap, nodeid, nodeord, null);
 
-  // 2. Create Snap Candidates
+  // Create Snap Candidates
   const createCandidate = (line: Coordinate[], dir: number): SnapCandidate | null => {
     if (!line || line.length < 2) return null;
 
@@ -208,7 +208,7 @@ export function getSnappedPosition(
   const candidateUp = createCandidate(upPolyline, 1);
   const candidateDown = createCandidate(downPolyline, 0);
 
-  // 3. Selection Strategy
+  // Selection Strategy
 
   // Case A: Trust API Direction (Anti-Jitter)
   // If API says UP and we are close enough to the UP line, stick to it.

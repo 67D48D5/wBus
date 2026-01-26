@@ -13,7 +13,7 @@ import { getHaversineDistance } from "@map/utils/geoUtils";
 import type { BusStop } from "@core/domain/station";
 
 // ----------------------------------------------------------------------
-// 1. Constants & Caches
+// Constants & Caches
 // ----------------------------------------------------------------------
 
 const MIN_VALID_STOPS = 4;
@@ -21,8 +21,9 @@ const stopCache = new CacheManager<BusStop[]>();
 const routeStopsCache = new CacheManager<BusStop[]>();
 
 // ----------------------------------------------------------------------
-// 2. Helpers (Pure Functions)
+// Helpers (Pure Functions)
 // ----------------------------------------------------------------------
+// @TODO: Move to utils if reused elsewhere
 
 function getSortValue(stop: BusStop, fallback: number): number {
   const nodeord = Number(stop.nodeord);
@@ -42,7 +43,7 @@ function sortStops(list: BusStop[]): BusStop[] {
 }
 
 // ----------------------------------------------------------------------
-// 3. Main Hook: Data Fetching
+// Main Hook: Data Fetching
 // ----------------------------------------------------------------------
 
 export function useBusStop(routeName: string) {
@@ -58,7 +59,7 @@ export function useBusStop(routeName: string) {
 
     const fetchStops = async () => {
       try {
-        // 1. Check Cache Again (for strict mode safety)
+        // Check Cache Again (for strict mode safety)
         const cached = routeStopsCache.get(routeName);
         if (cached) {
           if (isMounted) setStops(cached);
@@ -67,14 +68,14 @@ export function useBusStop(routeName: string) {
           return;
         }
 
-        // 2. Fetch All Stations (Global Fallback)
+        // Fetch All Stations (Global Fallback)
         // This is memoized by stopCache
         const allStopsPromise = stopCache.getOrFetch("Stations", async () => {
           const data = await getBusStopLocationData();
           return sortStops(data);
         });
 
-        // 3. Fetch Specific Route Stops
+        // Fetch Specific Route Stops
         const routeStopsPromise = getRouteStopsByRouteName(routeName).then(sortStops);
 
         const [allStops, routeStops] = await Promise.all([
@@ -82,12 +83,12 @@ export function useBusStop(routeName: string) {
           routeStopsPromise
         ]);
 
-        // 4. Validation Strategy
+        // Validation Strategy
         // If route 90 returns too few stops (API issue), fallback to all stops.
         const isValid = routeStops.length >= MIN_VALID_STOPS;
         const finalStops = isValid ? routeStops : allStops;
 
-        // 5. Update Cache & State
+        // Update Cache & State
         routeStopsCache.set(routeName, finalStops);
 
         if (APP_CONFIG.IS_DEV) {
@@ -115,7 +116,7 @@ export function useBusStop(routeName: string) {
 }
 
 // ----------------------------------------------------------------------
-// 4. Secondary Hook: Closest Stop Calculation
+// Secondary Hook: Closest Stop Calculation
 // ----------------------------------------------------------------------
 
 export function useClosestStopOrd(routeName: string): number | null {

@@ -23,9 +23,9 @@ import type { PolylineSegment } from "@bus/hooks/useBusMultiPolyline";
 // ----------------------------------------------------------------------
 
 const COLORS = {
-  ACTIVE_UP: "#3b82f6",   // Blue-500
-  ACTIVE_DOWN: "#ef4444", // Red-500
-  INACTIVE_UP: "#93c5fd", // Blue-300
+  ACTIVE_UP: "#3b82f6",     // Blue-500
+  ACTIVE_DOWN: "#ef4444",   // Red-500
+  INACTIVE_UP: "#93c5fd",   // Blue-300
   INACTIVE_DOWN: "#fca5a5", // Red-300
 } as const;
 
@@ -126,20 +126,17 @@ PolylineLayer.displayName = "PolylineLayer";
 // ----------------------------------------------------------------------
 
 export default function BusRoutePolyline({ routeName }: { routeName: string }) {
-  // 1. Data Fetching
+  // Data Fetching
   const { map } = useBusContext();
   const routeIds = useRouteIds(routeName);
   const { data: busList } = useBusLocationData(routeName);
   const lastBoundsKeyRef = useRef<string | null>(null);
 
-  // 2. Determine Logic
+  // Determine Logic
   const activeRouteIds = useMemo(() => {
     const set = new Set(busList.map((bus) => bus.routeid).filter(Boolean));
-    if (set.size === 0 && routeIds.length > 0) {
-      routeIds.forEach((id) => set.add(id));
-    }
     return Array.from(set);
-  }, [busList, routeIds]);
+  }, [busList]);
 
   const {
     activeUpSegments,
@@ -149,8 +146,13 @@ export default function BusRoutePolyline({ routeName }: { routeName: string }) {
     bounds,
   } = useMultiPolyline(routeName, routeIds, activeRouteIds);
 
-  // 3. Styling Logic
+  // Styling Logic
+  const hasActiveSegments = activeUpSegments.length > 0 || activeDownSegments.length > 0;
+  const showInactiveSegments = hasActiveSegments;
   const isNoBusRunning = busList.length === 0;
+
+  const displayActiveUpSegments = hasActiveSegments ? activeUpSegments : inactiveUpSegments;
+  const displayActiveDownSegments = hasActiveSegments ? activeDownSegments : inactiveDownSegments;
 
   useEffect(() => {
     if (!map || !bounds) return;
@@ -169,29 +171,33 @@ export default function BusRoutePolyline({ routeName }: { routeName: string }) {
   return (
     <>
       {/* Background Layers (Inactive Routes) */}
-      <PolylineLayer
-        segments={inactiveUpSegments}
-        color={COLORS.INACTIVE_UP}
-        isDashed={true}
-        opacity={0.25}
-      />
-      <PolylineLayer
-        segments={inactiveDownSegments}
-        color={COLORS.INACTIVE_DOWN}
-        isDashed={true}
-        opacity={0.25}
-      />
+      {showInactiveSegments && (
+        <PolylineLayer
+          segments={inactiveUpSegments}
+          color={COLORS.INACTIVE_UP}
+          isDashed={true}
+          opacity={0.25}
+        />
+      )}
+      {showInactiveSegments && (
+        <PolylineLayer
+          segments={inactiveDownSegments}
+          color={COLORS.INACTIVE_DOWN}
+          isDashed={true}
+          opacity={0.25}
+        />
+      )}
 
       {/* Foreground Layers (Active Routes) */}
       <PolylineLayer
-        segments={activeUpSegments}
+        segments={displayActiveUpSegments}
         color={COLORS.ACTIVE_UP}
         isDashed={isNoBusRunning} // Dash active route if no bus is running
         useGradient={!isNoBusRunning} // Apply gradient only when buses are active
         opacity={isNoBusRunning ? 0.5 : 1.0}
       />
       <PolylineLayer
-        segments={activeDownSegments}
+        segments={displayActiveDownSegments}
         color={COLORS.ACTIVE_DOWN}
         isDashed={isNoBusRunning}
         useGradient={!isNoBusRunning}

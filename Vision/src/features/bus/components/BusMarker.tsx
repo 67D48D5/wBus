@@ -178,11 +178,11 @@ interface BusMarkerProps {
 }
 
 export default function BusMarker({ routeName, onPopupOpen, onPopupClose }: BusMarkerProps) {
-  // 1. Inits
+  // Initializations
   useBusMarkerStyles();
   const createIcon = useBusMarkerIcon();
 
-  // 2. Data Fetching
+  // Data Fetching
   const {
     routeInfo,
     busList,
@@ -191,9 +191,9 @@ export default function BusMarker({ routeName, onPopupOpen, onPopupClose }: BusM
     fallbackPolylines,
     activeRouteId
   } = useBusData(routeName);
-  const refreshKey = `${routeName}-${activeRouteId ?? "none"}`;
+  const refreshKey = `${routeName}-${activeRouteId ?? "none"}-${busList.length > 0 ? "ready" : "idle"}`;
 
-  // 3. Process Data (Snap & Prepare)
+  // Data Processing (Snap & Prepare)
   const markers = useMemo(() => {
     if (!routeInfo || busList.length === 0) return [];
 

@@ -131,11 +131,13 @@ export default function MapLibreBaseLayer({ onReady }: MapLibreBaseLayerProps) {
       if (bind) {
         bind("idle", handleLoadEvent);
         bind("load", handleLoadEvent);
+        glMap.on?.("styleimagemissing", handleMissingImage);
 
         // Store cleanup function
         cleanupListenersRef.current = () => {
           glMap.off?.("idle", handleLoadEvent);
           glMap.off?.("load", handleLoadEvent);
+          glMap.off?.("styleimagemissing", handleMissingImage);
         };
       } else {
         signalReady();
@@ -151,7 +153,7 @@ export default function MapLibreBaseLayer({ onReady }: MapLibreBaseLayerProps) {
         if (!isActive || layerRef.current) return;
 
         // Initialize the Leaflet-MapLibre adapter
-        // @ts-ignore - L.maplibreGL is injected by the import side-effect
+        // @ts-expect-error - L.maplibreGL is injected by the import side-effect
         const glLayer = L.maplibreGL({ style }) as LeafletMapLibreLayer;
 
         glLayer.addTo(map);

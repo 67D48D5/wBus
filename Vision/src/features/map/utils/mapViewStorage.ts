@@ -61,7 +61,7 @@ export function loadStoredMapView(): StoredMapView | null {
 
     const parsed = JSON.parse(raw);
 
-    // 1. Structure Check
+    // Structure Check
     if (!parsed || !Array.isArray(parsed.center) || parsed.center.length !== 2) {
       return null;
     }
@@ -70,12 +70,12 @@ export function loadStoredMapView(): StoredMapView | null {
     const lng = Number(parsed.center[1]);
     const zoom = Number(parsed.zoom);
 
-    // 2. Type Validity Check
+    // Type Validity Check
     if (!isValidCoordinate(lat) || !isValidCoordinate(lng) || !isValidCoordinate(zoom)) {
       return null;
     }
 
-    // 3. Logic Validity Check (Is it within the allowed map area?)
+    // Logic Validity Check (Is it within the allowed map area?)
     // Uses Leaflet's bounds check to ensure we don't load a view pointing to the middle of the ocean
     const maxBounds = L.latLngBounds(MAP_SETTINGS.BOUNDS.MAX);
     if (!maxBounds.contains([lat, lng])) {

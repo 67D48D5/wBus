@@ -1,6 +1,6 @@
 // src/features/bus/hooks/useBusRoutePreference.ts
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { APP_CONFIG, STORAGE_KEYS } from "@core/config/env";
 
@@ -13,41 +13,39 @@ export function useBusRoutePreference(
     availableRouteIds: string[],
     liveRouteId: string | null
 ) {
-    const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
-    const [isMounted, setIsMounted] = useState(false);
+    const [selectionByRoute, setSelectionByRoute] = useState<Record<string, string>>({});
 
-    // Load saved preference from localStorage on mount
-    useEffect(() => {
-        setIsMounted(true);
+    const storedRouteId = useMemo(() => {
+        if (typeof window === "undefined") return null;
         try {
-            const saved = localStorage.getItem(`${STORAGE_KEYS.ROUTE_ID}_${routeName}`);
-            if (saved && availableRouteIds.includes(saved)) {
-                setSelectedRouteId(saved);
-                return;
+            return localStorage.getItem(`${STORAGE_KEYS.ROUTE_ID}_${routeName}`);
+        } catch (error) {
+            if (APP_CONFIG.IS_DEV) {
+                console.warn("[useBusRoutePreference] Failed to load route preference from localStorage:", error);
             }
-        } catch (e) {
-            // localStorage might not be available
+            return null;
         }
+    }, [routeName]);
 
-        // Fallback: use live routeId or first available
-        if (liveRouteId && availableRouteIds.includes(liveRouteId)) {
-            setSelectedRouteId(liveRouteId);
-        } else if (availableRouteIds.length > 0) {
-            setSelectedRouteId(availableRouteIds[0]);
-        }
-    }, [routeName, availableRouteIds, liveRouteId]);
+    const resolvedRouteId = useMemo(() => {
+        const explicit = selectionByRoute[routeName];
+        if (explicit && availableRouteIds.includes(explicit)) return explicit;
+        if (storedRouteId && availableRouteIds.includes(storedRouteId)) return storedRouteId;
+        if (liveRouteId && availableRouteIds.includes(liveRouteId)) return liveRouteId;
+        return availableRouteIds[0] ?? null;
+    }, [selectionByRoute, routeName, availableRouteIds, storedRouteId, liveRouteId]);
 
     // Save preference to localStorage when it changes
     const updateSelectedRouteId = useCallback(
         (routeId: string) => {
             if (availableRouteIds.includes(routeId)) {
-                setSelectedRouteId(routeId);
+                setSelectionByRoute((prev) => ({ ...prev, [routeName]: routeId }));
                 try {
                     localStorage.setItem(`${STORAGE_KEYS.ROUTE_ID}_${routeName}`, routeId);
-                } catch (e) {
+                } catch (error) {
                     // localStorage might not be available
                     if (APP_CONFIG.IS_DEV)
-                        console.warn("[useBusRoutePreference] Failed to save route preference to localStorage:", e);
+                        console.warn("[useBusRoutePreference] Failed to save route preference to localStorage:", error);
                 }
             }
         },
@@ -55,7 +53,7 @@ export function useBusRoutePreference(
     );
 
     return {
-        selectedRouteId: isMounted ? selectedRouteId : null,
+        selectedRouteId: resolvedRouteId,
         updateSelectedRouteId,
         availableRouteIds,
     };

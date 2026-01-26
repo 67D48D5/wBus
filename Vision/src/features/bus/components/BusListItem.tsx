@@ -1,17 +1,19 @@
 // src/features/bus/components/BusListItem.tsx
 
 import React from "react";
+import { ArrowDown, ArrowUp, HelpCircle } from "lucide-react";
 
 import PopupMarquee from "@shared/ui/MarqueeText";
 
 import { UI_TEXT } from "@core/config/locale";
 
-import { getDirectionIcon } from "@bus/utils/directionIcons";
+import type { BusItem } from "@core/domain/bus";
+import type { DirectionCode } from "@bus/hooks/useBusDirection";
 
 type BusListItemProps = {
-    bus: any;
+    bus: BusItem;
     routeName: string;
-    getDirection: (nodeId: string, nodeOrd: number, routeId: string) => any;
+    getDirection: (nodeId: string | null | undefined, nodeOrd: number, routeId?: string | null) => DirectionCode;
     onClick: (lat: number, lng: number) => void;
 };
 
@@ -20,8 +22,16 @@ export const BusListItem = React.memo(({ bus, routeName, getDirection, onClick }
         ? getDirection(bus.nodeid, bus.nodeord, bus.routeid)
         : null;
 
-    const DirectionIcon = getDirectionIcon(direction);
     const stopName = bus.nodenm || "";
+    const iconProps = {
+        className: "w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0 text-gray-400",
+        "aria-hidden": true as const,
+    };
+    const directionIcon = direction === 1
+        ? <ArrowUp {...iconProps} />
+        : direction === 0
+            ? <ArrowDown {...iconProps} />
+            : <HelpCircle {...iconProps} />;
 
     return (
         <li>
@@ -57,7 +67,7 @@ export const BusListItem = React.memo(({ bus, routeName, getDirection, onClick }
                         <PopupMarquee text={stopName} maxLength={8} />
                     </div>
 
-                    <DirectionIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0 text-gray-400" aria-hidden="true" />
+                    {directionIcon}
                 </div>
             </button>
         </li>

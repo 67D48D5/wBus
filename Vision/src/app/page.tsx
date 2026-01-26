@@ -22,10 +22,28 @@ import NavBar from "@shared/ui/NavBar";
  */
 export default function HomePage() {
     const [isSplashVisible, setIsSplashVisible] = useState(true);
-    const [selectedRoute, setSelectedRoute] = useState<string>(MAP_SETTINGS.DEFAULT_ROUTE);
+    const [selectedRoute, setSelectedRoute] = useState<string>(() => {
+        if (typeof window === "undefined") return MAP_SETTINGS.DEFAULT_ROUTE;
+        try {
+            return localStorage.getItem(STORAGE_KEYS.ROUTE_ID) ?? MAP_SETTINGS.DEFAULT_ROUTE;
+        } catch (e) {
+            if (APP_CONFIG.IS_DEV) {
+                console.warn("[handleRouteChange] Failed to load route preference from localStorage", e);
+            }
+            return MAP_SETTINGS.DEFAULT_ROUTE;
+        }
+    });
 
     const routeMap = useBusRouteMap();
     const allRoutes = useMemo(() => routeMap ? Object.keys(routeMap) : [], [routeMap]);
+    const activeRoute = useMemo(() => {
+        if (!routeMap) return selectedRoute;
+        if (routeMap[selectedRoute]) return selectedRoute;
+
+        return routeMap[MAP_SETTINGS.DEFAULT_ROUTE]
+            ? MAP_SETTINGS.DEFAULT_ROUTE
+            : Object.keys(routeMap)[0] ?? selectedRoute;
+    }, [routeMap, selectedRoute]);
 
     // Persist route selection to localStorage
     const handleRouteChange = useCallback((route: string) => {
@@ -43,16 +61,17 @@ export default function HomePage() {
     }, []);
 
     useEffect(() => {
+        if (!routeMap) return;
+        if (!activeRoute || activeRoute === selectedRoute) return;
         if (typeof window === "undefined") return;
         try {
-            const saved = localStorage.getItem(STORAGE_KEYS.ROUTE_ID);
-            if (saved) setSelectedRoute(saved);
+            localStorage.setItem(STORAGE_KEYS.ROUTE_ID, activeRoute);
         } catch (e) {
             if (APP_CONFIG.IS_DEV) {
-                console.warn("[handleRouteChange] Failed to load route preference from localStorage", e);
+                console.warn("[handleRouteChange] Failed to save route preference to localStorage", e);
             }
         }
-    }, []);
+    }, [routeMap, activeRoute, selectedRoute]);
 
     const handleMapReady = useCallback(() => {
         setIsSplashVisible(false);
@@ -60,27 +79,14 @@ export default function HomePage() {
 
     // Effect to start bus polling for selected route only
     useEffect(() => {
-        if (!selectedRoute) return;
+        if (!activeRoute) return;
 
-        const cleanup = busPollingService.startPolling(selectedRoute);
+        const cleanup = busPollingService.startPolling(activeRoute);
 
         return () => {
             cleanup();
         };
-    }, [selectedRoute]);
-
-    useEffect(() => {
-        if (!routeMap) return;
-        if (routeMap[selectedRoute]) return;
-
-        const fallbackRoute = routeMap[MAP_SETTINGS.DEFAULT_ROUTE]
-            ? MAP_SETTINGS.DEFAULT_ROUTE
-            : Object.keys(routeMap)[0];
-
-        if (fallbackRoute) {
-            handleRouteChange(fallbackRoute);
-        }
-    }, [routeMap, selectedRoute, handleRouteChange]);
+    }, [activeRoute]);
 
     return (
         <>
@@ -89,15 +95,15 @@ export default function HomePage() {
                 <NavBar />
                 <div className="relative flex-1 overflow-hidden">
                     <MapWrapper
-                        routeNames={[selectedRoute]}
+                        routeNames={[activeRoute]}
                         onReady={handleMapReady}
                         onRouteChange={handleRouteChange}
                     />
                     <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] left-[calc(env(safe-area-inset-left)+0.5rem)] z-30 flex flex-col gap-3 sm:bottom-[calc(env(safe-area-inset-bottom)+1rem)] sm:left-[calc(env(safe-area-inset-left)+1rem)]">
                         <BusList
-                            routeNames={[selectedRoute]}
+                            routeNames={[activeRoute]}
                             allRoutes={allRoutes}
-                            selectedRoute={selectedRoute}
+                            selectedRoute={activeRoute}
                             onRouteChange={handleRouteChange}
                         />
                     </div>

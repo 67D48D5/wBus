@@ -11,7 +11,7 @@ import { fetchAPI } from "@core/network/fetchAPI";
 // ----------------------------------------------------------------------
 
 // @TODO: Define strict typing for Mapbox/MapLibre style JSON structure
-export type MapStyleConfig = Record<string, any>;
+export type MapStyleConfig = Record<string, unknown>;
 
 /**
  * Cache instance to prevent redundant network requests for the static map style.
@@ -41,7 +41,7 @@ function joinUrl(base: string, path: string): string {
 export function getMapStyleUrl(): string {
     const { STATIC } = API_CONFIG;
 
-    // 1. Explicit Override via Environment Variable
+    // Explicit Override via Environment Variable
     // Useful for using third-party styles or a specific CDN in production
     if (process.env.NEXT_PUBLIC_MAP_URL) {
         return process.env.NEXT_PUBLIC_MAP_URL;
@@ -49,7 +49,7 @@ export function getMapStyleUrl(): string {
 
     const styleFileName = STATIC.PATHS.MAP_STYLE || "config.json";
 
-    // 2. Remote Mode
+    // Remote Mode
     if (STATIC.USE_REMOTE) {
         if (!STATIC.BASE_URL || STATIC.BASE_URL === "NOT_SET") {
             if (APP_CONFIG.IS_DEV) {
@@ -62,7 +62,7 @@ export function getMapStyleUrl(): string {
         return joinUrl(STATIC.BASE_URL, styleFileName);
     }
 
-    // 3. Local Mode (Default)
+    // Local Mode (Default)
     // Falls back to serving from the local /public/data directory
     const localBase = STATIC.BASE_URL && STATIC.BASE_URL !== "NOT_SET"
         ? STATIC.BASE_URL

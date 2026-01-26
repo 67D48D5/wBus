@@ -63,38 +63,31 @@ async function fetchScheduleData(routeId: string): Promise<BusSchedule | null> {
  * @param routeId - The ID of the route to fetch (e.g., "34-1"). Pass null to reset.
  */
 export function useScheduleData(routeId: string | null) {
-  const [data, setData] = useState<BusSchedule | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [missing, setMissing] = useState(false);
+  const [snapshot, setSnapshot] = useState<{
+    routeId: string;
+    data: BusSchedule | null;
+    error: string | null;
+    missing: boolean;
+  } | null>(null);
+
+  const cachedData = routeId ? GlobalScheduleCache.get(routeId) : undefined;
+  const hasCache = routeId ? GlobalScheduleCache.has(routeId) : false;
+  const activeSnapshot = snapshot?.routeId === routeId ? snapshot : null;
+
+  const data = hasCache ? (cachedData ?? null) : activeSnapshot?.data ?? null;
+  const error = hasCache ? null : activeSnapshot?.error ?? null;
+  const missing = hasCache ? cachedData === null : activeSnapshot?.missing ?? false;
+  const loading = Boolean(routeId && !hasCache && !activeSnapshot);
 
   useEffect(() => {
     // Flag to prevent state updates if the component unmounts or routeId changes
     let isActive = true;
 
-    // 1. Reset state if no routeId is provided
-    if (!routeId) {
-      setData(null);
-      setError(null);
-      setMissing(false);
-      setLoading(false);
-      return;
-    }
+    // Reset state if no routeId is provided
+    if (!routeId) return;
 
-    // 2. Check Cache First
-    const cachedData = GlobalScheduleCache.get(routeId);
-    if (cachedData !== undefined) {
-      setData(cachedData);
-      setError(null);
-      setMissing(cachedData === null);
-      setLoading(false);
-      return;
-    }
-
-    // 3. Init Fetch
-    setLoading(true);
-    setError(null);
-    setMissing(false);
+    // Check Cache First
+    if (GlobalScheduleCache.has(routeId)) return;
 
     fetchScheduleData(routeId)
       .then((result) => {
@@ -104,8 +97,12 @@ export function useScheduleData(routeId: string | null) {
         GlobalScheduleCache.set(routeId, result);
 
         // Update State
-        setData(result);
-        setMissing(result === null);
+        setSnapshot({
+          routeId,
+          data: result,
+          error: null,
+          missing: result === null,
+        });
       })
       .catch((err) => {
         if (!isActive) return;
@@ -115,13 +112,12 @@ export function useScheduleData(routeId: string | null) {
           console.error(UI_TEXT.ERROR.FETCH_FAILED("Schedule Data", 500), err);
         }
 
-        setError(UI_TEXT.ERROR.UNKNOWN(err instanceof Error ? err.message : String(err)));
-        setMissing(false); // It's an error, not necessarily "missing"
-      })
-      .finally(() => {
-        if (isActive) {
-          setLoading(false);
-        }
+        setSnapshot({
+          routeId,
+          data: null,
+          error: UI_TEXT.ERROR.UNKNOWN(err instanceof Error ? err.message : String(err)),
+          missing: false, // It's an error, not necessarily "missing"
+        });
       });
 
     // Cleanup function
