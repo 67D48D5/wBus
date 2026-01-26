@@ -58,6 +58,7 @@ function useBusMarkerStyles() {
     const style = document.createElement("style");
     style.id = SETTINGS.LABEL_STYLE_ID;
     style.textContent = CSS_STYLES;
+
     document.head.appendChild(style);
   }, []);
 }
@@ -66,9 +67,14 @@ function useBusMarkerStyles() {
 // Hook: Icon Generation
 // ----------------------------------------------------------------------
 
-function useBusMarkerIcon() {
+function useBusMarkerIcon(refreshKey?: string | number) {
   const { busIcon } = useIcons();
   const iconCache = useRef(new Map<string, L.DivIcon>());
+
+  // Clear cache on refreshKey change
+  useEffect(() => {
+    iconCache.current.clear();
+  }, [refreshKey]);
 
   return useMemo(() => {
     return (routeNumber: string) => {
@@ -180,7 +186,6 @@ interface BusMarkerProps {
 export default function BusMarker({ routeName, onPopupOpen, onPopupClose }: BusMarkerProps) {
   // Initializations
   useBusMarkerStyles();
-  const createIcon = useBusMarkerIcon();
 
   // Data Fetching
   const {
@@ -191,7 +196,12 @@ export default function BusMarker({ routeName, onPopupOpen, onPopupClose }: BusM
     fallbackPolylines,
     activeRouteId
   } = useBusData(routeName);
-  const refreshKey = `${routeName}-${activeRouteId ?? "none"}-${busList.length > 0 ? "ready" : "idle"}`;
+
+  // The key to reset markers on route change
+  const refreshKey = `${routeName}-${activeRouteId ?? "none"}`;
+
+  // Icon Creation
+  const createIcon = useBusMarkerIcon(refreshKey);
 
   // Data Processing (Snap & Prepare)
   const markers = useMemo(() => {
@@ -213,6 +223,7 @@ export default function BusMarker({ routeName, onPopupOpen, onPopupClose }: BusM
       const activePolyline = snapped.direction === 1 ? upPolyline : downPolyline;
 
       return {
+        // Include routeName in the key to force unmount/mount on route change
         key: `${routeName}-${bus.vehicleno}`,
         bus,
         position: snapped.position,
@@ -244,7 +255,8 @@ export default function BusMarker({ routeName, onPopupOpen, onPopupClose }: BusM
           <BusAnimatedMarker
             key={key}
             position={position}
-            rotationAngle={angle % 360}
+            // If angle is missing or NaN, use 0 to prevent errors and set initial angle
+            rotationAngle={(angle || 0) % 360}
             icon={icon}
             polyline={polyline}
             snapIndexHint={snapIndexHint}
