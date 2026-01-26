@@ -111,7 +111,6 @@ pub async fn run(
 
         if station_map_only {
             println!("✓ Station map generated.");
-
             return Ok(());
         }
     }
@@ -136,10 +135,8 @@ pub async fn run(
                 if path.extension().map_or(false, |ext| ext == "json") {
                     let fname = path.file_name().unwrap().to_string_lossy();
 
-                    // Filter check (Optional optimization: Filter before reading file)
+                    // Filter check
                     if let Some(ref target) = specific {
-                        // raw filenames format: "{RouteNo}_{RouteID}.json"
-                        // e.g. "10-1_WJB251000004.json"
                         if !fname.starts_with(target) && !fname.contains(target) {
                             return Ok(());
                         }
@@ -220,7 +217,6 @@ impl BusRouteProcessor {
             .send()
             .await?;
 
-        // Handle API errors gracefully
         let json: Value = match resp.json().await {
             Ok(v) => v,
             Err(_) => return Ok(None),
@@ -286,8 +282,6 @@ impl BusRouteProcessor {
 
         Ok(Some(RouteProcessData {
             route_id,
-            // [FIXED] Clone `route_no` because it is used in `details` below as well.
-            // This prevents "borrow of moved value" error.
             route_no: route_no.clone(),
             details: json!({ "routeno": route_no, "sequence": sequence_meta }),
             stops_map: stops_map_data,
@@ -300,7 +294,7 @@ impl BusRouteProcessor {
         let content = fs::read_to_string(raw_path)?;
         let raw_data: RawRouteFile = serde_json::from_str(&content)?;
 
-        let mut stops = raw_data.stops; // Use stops from raw file
+        let mut stops = raw_data.stops;
 
         // Sanitize coordinates (drift correction)
         self.sanitize_stops_to_corridor(&mut stops).await;
@@ -309,24 +303,20 @@ impl BusRouteProcessor {
             return Ok(());
         }
 
-        // Identify Metadata
         let route_id = raw_data.route_id;
         let route_no = raw_data.route_no;
 
         // Identify Turning Point
         let mut turn_idx = stops.len() - 1;
-
         for i in 0..stops.len() - 1 {
             if stops[i].up_down_cd != stops[i + 1].up_down_cd {
                 turn_idx = i;
                 break;
             }
         }
-
         let turn_node_id = stops[turn_idx].node_id.clone();
 
         // OSRM Logic (Merging)
-        // `stop_to_coord` stores mapping: Stops index (in stops vec) -> Coordinate index
         let mut full_coordinates: Vec<Vec<f64>> = Vec::new();
         let mut stop_to_coord: Vec<usize> = Vec::with_capacity(stops.len());
         let mut start_idx = 0;
@@ -351,7 +341,6 @@ impl BusRouteProcessor {
 
                 // Map Stops to Geometry
                 for (i, stop) in chunk.iter().enumerate() {
-                    // Prevent re-mapping if overlap
                     let global_stop_idx = start_idx + i;
                     if global_stop_idx < stop_to_coord.len() {
                         continue;
@@ -371,7 +360,7 @@ impl BusRouteProcessor {
                         };
                         stop_to_coord.push(global_coord_idx);
                     } else {
-                        stop_to_coord.push(current_total); // Fallback
+                        stop_to_coord.push(current_total);
                     }
                 }
 
@@ -380,24 +369,32 @@ impl BusRouteProcessor {
             start_idx = end_idx - 1;
         }
 
-        // Fill remaining mapping if any
         while stop_to_coord.len() < stops.len() {
             stop_to_coord.push(full_coordinates.len().saturating_sub(1));
         }
 
+        // [OPTIMIZATION] Round coordinates to 6 decimal places to reduce file size
+        // This is important for web performance
+        let optimized_coordinates: Vec<Vec<f64>> = full_coordinates
+            .into_iter()
+            .map(|pt| {
+                pt.iter()
+                    .map(|c| (c * 1_000_000.0).round() / 1_000_000.0)
+                    .collect()
+            })
+            .collect();
+
         // Derive Indices & Metrics
-        // Find turn coordinate index
-        // We find the index of the turn node in the stops array, then look up its mapped coordinate index.
         let turn_coord_idx = stops
             .iter()
             .position(|s| s.node_id == turn_node_id)
             .and_then(|idx| stop_to_coord.get(idx).cloned())
-            .unwrap_or(full_coordinates.len() / 2);
+            .unwrap_or(optimized_coordinates.len() / 2);
 
-        // Calculate BBox & Distance
-        let (bbox, total_dist) = calculate_metrics(&full_coordinates);
+        // Calculate BBox & Distance using optimized coordinates
+        let (bbox, total_dist) = calculate_metrics(&optimized_coordinates);
 
-        // Build Data Structures
+        // Build Frontend Data Structures
         let frontend_stops: Vec<FrontendStop> = stops
             .iter()
             .map(|s| FrontendStop {
@@ -413,9 +410,10 @@ impl BusRouteProcessor {
             features: vec![DerivedFeature {
                 type_: "Feature".to_string(),
                 id: route_id.clone(),
+                bbox: Some(bbox.to_vec()),
                 geometry: RouteGeometry {
                     type_: "LineString".to_string(),
-                    coordinates: full_coordinates,
+                    coordinates: optimized_coordinates,
                 },
                 properties: FrontendProperties {
                     route_id: route_id.clone(),
@@ -427,7 +425,6 @@ impl BusRouteProcessor {
                     },
                     meta: FrontendMeta {
                         total_dist: (total_dist * 10.0).round() / 10.0,
-                        bbox,
                         source_ver: raw_data.fetched_at,
                     },
                 },
@@ -435,9 +432,8 @@ impl BusRouteProcessor {
         };
 
         // Save Derived File
-        // {Derived_Dir}/{RouteID}.geojson
         let output_path = self.derived_dir.join(format!("{}.geojson", route_id));
-        fs::write(output_path, serde_json::to_string(&derived_data)?)?; // Minified JSON for frontend
+        fs::write(output_path, serde_json::to_string(&derived_data)?)?;
 
         Ok(())
     }
@@ -483,9 +479,7 @@ impl BusRouteProcessor {
         self.call_osrm(&coords).await
     }
 
-    /// Call OSRM API and return coordinates
     async fn call_osrm(&self, coords_param: &str) -> Option<Vec<Vec<f64>>> {
-        // Construct URL
         let url = format!(
             "{}/{coords}?overview=full&geometries=geojson&steps=false&continue_straight=true",
             self.osrm_base_url,

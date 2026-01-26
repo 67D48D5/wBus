@@ -47,8 +47,9 @@ pub struct DerivedFeature {
     #[serde(rename = "type")]
     pub type_: String, // "Feature"
     pub id: String,
-    pub geometry: RouteGeometry,
+    pub bbox: Option<Vec<f64>>,
     pub properties: FrontendProperties,
+    pub geometry: RouteGeometry,
 }
 
 #[derive(Serialize)]
@@ -95,7 +96,6 @@ pub struct RouteIndices {
 #[derive(Serialize)]
 pub struct FrontendMeta {
     pub total_dist: f64,
-    pub bbox: [f64; 4],
     pub source_ver: String, // e.g., "raw-20260121"
 }
 
