@@ -3,7 +3,6 @@
 // Route Map
 export type RouteInfo = {
   routeName: string; // The route name shown to users (e.g., "30")
-  representativeRouteId: string; // ID used for TAGO API requests
   vehicleRouteIds: string[]; // List of IDs used for real-time bus location requests
 };
 

@@ -37,7 +37,7 @@ export function useBusData(routeName: string): UseBusData {
 
   const activeRouteId = useMemo(() => {
     const liveRouteId = busList.find((bus) => bus.routeid)?.routeid;
-    return liveRouteId ?? routeInfo?.representativeRouteId ?? null;
+    return liveRouteId ?? routeInfo?.vehicleRouteIds[0] ?? null;
   }, [busList, routeInfo]);
 
   const routeIds = useMemo(
